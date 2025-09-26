@@ -47,3 +47,23 @@ std::cout << (int)ip[0] << '.'
           << " connected on port " << ntohs(client.sin_port) << std::endl;
 
 
+
+
+
+--------------------------------
+- 1) Le programme prend un fichier de configuration en argument, et a un default path.
+- 2) webserv ne doit pas execve() un autre serveur web.
+- 3) webserv peut traiter d’autres clients même si un client nenvoie rien.
+- 4) poll(), select(), epoll_wait() permettent de surveiller plusieurs sockets en même temps.
+une seule boucle de surveillance pour tous les clients, y compris le socket d'écoute (listening).
+Lacceptation des nouveaux clients (accept) et communication avec les clients existants (recv/send)
+se font dans le même mécanisme. Le serveur reste disponible même avec beaucoup de clients simultanés
+- 5) Les macros FD_SET, FD_CLR, FD_ISSET, FD_ZERO sont très utiles pour utiliser plusieurs sockets
+- 6) Le serveur doit gérer les timeouts ou I/O non-bloquantes pour éviter qu’un client inactif bloque tout le serveur.
+- 7) Les réponses et en-têtes de ton serveur peuvent être comparées à NGINX pour vérifier conformité HTTP/1.1
+- 8) Faire une page d'erreur "404 Not Found". Les autres codes HTTP retournés doivent être précis
+- 9) fork() ne doit être utilisé que pour lancer des exécutables CGI (pages dynamiques), pas pour gérer les connexions
+normales du serveur
+- 10) Le serveur doit pouvoir accepter des connexions sur différents ports configurables (ex. 80, 8080...)
+
+

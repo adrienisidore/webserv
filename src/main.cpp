@@ -14,10 +14,14 @@
 
 //Mon code : envoyer du texte dans un serveur qui me le renvoie directement (adresse IPv4)
 
+//accept() attend l'arrivée d'un seul client. Si je veux plusieurs clients il va falloir
+//soit faire du multi-threading soit utiliser select, poll, ou epoll...
+
 //Ce qu'il faudrait c'est pouvoir faire des requêtes HTTP au serveur
 //et qu'il renvoie la ressource (texte, img ...) ou alors poster des choses
 //dans le serveur.
 
+//ATTENTION le recasting doit se faire en mode C++
 int main()
 {
     //1) Créer socket
@@ -50,15 +54,27 @@ int main()
 	// struct in_addr {in_addr_t s_addr; // adresse IPv4 sur 32 bits (ordre réseau) };
     sockaddr_in hint;
     hint.sin_family = AF_INET;
-    hint.sin_port = htons(54000);
+    hint.sin_port = htons(54000);//endian : how we store numbers larger then 255
+	//htons s'adapte au système (little ou big-endian). htons : host to netshort short
+	//ntohs : fonction inverse. L'idée de htons et ntohs c'est de garantir que tout le monde reçoit la même suite d’octets, quel que soit le type de machine.
 	//HOWTO 1
     inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);//"0.0.0.0" : le serveur écoute sur toutes les IP de la machine
  
-	//A PROTEGER
-    bind(listening, (sockaddr*)&hint, sizeof(hint));//connecte le socket à l’adresse/port donné
+	//connecte le socket à l’adresse/port donné
+    // bind(listening, (sockaddr*)&hint, sizeof(hint));//connecte le socket à l’adresse/port donné
+	if(bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1)
+	{
+		std::cerr << "Can't bind socket to IP/Port" << std::endl;
+		return -2;
+	}
  
-	//A PROTEGER
-    listen(listening, SOMAXCONN);//Le socket peut maintenant recevoir des demandes de connexion avec accept
+	//Le socket peut maintenant recevoir des demandes de connexion avec accept
+    // listen(listening, SOMAXCONN);
+	if (listen(listening, SOMAXCONN) == -1)
+	{
+		std::cerr << "Socket can't listen" << std::endl;
+		return -3;		
+	}
 	//SOMAXCONN : on demande au système de créer la file d'attente la plus longue possible si plusieurs
 	//clients se connectent en même temps.
  
@@ -74,6 +90,11 @@ int main()
 	//à IPv4)
 	//clientSize : car IPv4 et IPv6 ne font pas la même taille
     int clientSocket = accept(listening, (sockaddr*)&client, &clientSize);
+	if (clientSocket == -1)
+	{
+		std::cerr << "Problem with client connecting" << std::endl;
+		return -4;		
+	}
  
     char host[NI_MAXHOST];      //Adresse du client
     char service[NI_MAXSERV];   //Port du client
