@@ -1,0 +1,49 @@
+nc localhost 54000 : permet d’envoyer des messages et de tester le serveur echo
+sans navigateur ni programme client spécifique. Ouvre une connexion TCP reçu par mon serveur
+
+HOWTO 1
+
+inet_pton non autorisée. Au lieu de faire inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);, on fait 
+
+// struct addrinfo de <netdb.h>, permet de spécifier les critères pour retourner une adresse compatible
+// à notre socket. getaddrinfo() retournera toutes les adresses compatibles dans res sous forme de liste
+//chainée.
+// struct addrinfo
+// {
+//     int              ai_flags;     // options : AI_PASSIVE, AI_CANONNAME…
+//     int              ai_family;    // AF_INET, AF_INET6, AF_UNSPEC
+//     int              ai_socktype;  // SOCK_STREAM, SOCK_DGRAM…
+//     int              ai_protocol;  // IPPROTO_TCP, IPPROTO_UDP…
+//     socklen_t        ai_addrlen;   // taille de ai_addr
+//     struct sockaddr *ai_addr;      // pointeur vers l’adresse (sockaddr_in ou sockaddr_in6)
+//     char            *ai_canonname; // nom canonique (facultatif)
+//     struct addrinfo *ai_next;      // pointeur vers l’élément suivant de la liste
+// };
+
+struct addrinfo hints{}, *res;//{} permet de mettre tous les champs à 0, comme memset(&hints, 0, sizeof hints)
+hints.ai_family = AF_INET;// IPv4
+hints.ai_socktype = SOCK_STREAM;// TCP
+hints.ai_flags = AI_PASSIVE; // adresse pour un serveur qui écoute
+
+getaddrinfo(NULL, "54000", &hints, &res); // NULL = 0.0.0.0:54000, le serveur accepte les connexions
+//sur toutes les IP à condition que le port soit 54000
+
+bind(listening, res->ai_addr, res->ai_addrlen);//res->ai_addr : la première adresse dispo
+//On spécifie la taille car toutes les adresses IP n'ont pas la même taille (ex IPv6)
+freeaddrinfo(res);
+
+
+HOWTO 2
+//getnameinfo convertit l’adresse du client (sockaddr) en nom d’hôte et port lisibles qu'il stock
+//dans host[NI_MAXHOST] et service[NI_MAXSERV] ? Et donc si ne peux ni utiliser getnameinfo ni inet_ntop
+//alors je dois faire la conversion moi même.
+
+// Pour une IPv4 je peux faire par exemple :
+unsigned char *ip = (unsigned char *)&client.sin_addr.s_addr;
+std::cout << (int)ip[0] << '.'
+          << (int)ip[1] << '.'
+          << (int)ip[2] << '.'
+          << (int)ip[3]
+          << " connected on port " << ntohs(client.sin_port) << std::endl;
+
+
