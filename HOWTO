@@ -25,6 +25,13 @@ hint.sin_port = htons(54000);//endian : how we store numbers larger then 255
 //HOWTO 1
 inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);//"0.0.0.0" : le serveur écoute sur toutes les IP de la machine
 
+ 
+char host[NI_MAXHOST];// NI_MAXHOST → taille maximale pour un nom d’hôte ou une adresse IP en chaîne de caractères
+char service[NI_MAXSERV];// NI_MAXSERV → taille maximale pour un numéro de port ou un nom de service en chaîne de caractères
+
+memset(host, 0, NI_MAXHOST);// buffer pour stocker "192.168.1.5" ou "example.com"
+memset(service, 0, NI_MAXSERV);// buffer pour stocker "54000" ou "http"
+
 //ICI ON AFFICHE JUSTE LES DONNEES DU CLIENT, CA N'EST PAS UNE ETAPE POUR CONNECTER
 //LE SERVEUR AU CLIENT
 //getnameinfo convertit l’adresse du client (sockaddr) en nom d’hôte et port lisibles
@@ -58,5 +65,13 @@ se font dans le même mécanisme. Le serveur reste disponible même avec beaucou
 - 9) fork() ne doit être utilisé que pour lancer des exécutables CGI (pages dynamiques), pas pour gérer les connexions
 normales du serveur
 - 10) Le serveur doit pouvoir accepter des connexions sur différents ports configurables (ex. 80, 8080...)
+
+
+
+
+Utiliser un multiplexeur d’E/S (un « poller ») pour savoir quels FD sont prêts à lire/écrire :
+poll() (POSIX standard)
+epoll_*() (Linux)
+kqueue() (BSD/macOS) BSD est un OS dérivé de Unix
 
 
