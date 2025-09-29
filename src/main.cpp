@@ -6,7 +6,7 @@
 /*   By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 19:32:12 by aisidore          #+#    #+#             */
-/*   Updated: 2025/09/16 11:34:49 by aisidore         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:30:31 by aisidore         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ int main()
 	// AF_INET : protocole de communication défini dans <sys/socket.h>.
 	//C'est le protocole IPv4, compréhensible par des kernel Linux.
 	// SOCK_STREAM : le type de socket ici est défini comme two-way et séquentiel.
-	// 0: il n'existe qu'un typede protocole pour ce type de socket donc on met 0.
+	// 0: il n'existe qu'un type de protocole pour ce type de socket donc on met 0.
 	int listening = socket(AF_INET, SOCK_STREAM, 0);
     if (listening == -1)
     {
@@ -55,14 +55,18 @@ int main()
     //     char            *ai_canonname; // nom canonique (facultatif)
     //     struct addrinfo *ai_next;      // pointeur vers l’élément suivant de la liste
     // };
-    struct addrinfo hints, *res;//{} : C++11 permet de mettre tous les champs à 0, comme memset(&hints, 0, sizeof hints)
+    struct addrinfo hints, *res;
+	memset(&hints, 0, sizeof(hints)); //Les champs non définis contiennent des valeurs aléatoires et peuvent faire échouer getaddrinfo
     hints.ai_family = AF_INET;// IPv4
     hints.ai_socktype = SOCK_STREAM;// TCP
     hints.ai_flags = AI_PASSIVE; // adresse pour un serveur qui écoute
 
-    getaddrinfo(NULL, "54000", &hints, &res); // NULL = 0.0.0.0:54000, le serveur accepte les connexions
-    //sur toutes les IP à condition que le port soit 54000
-    
+    // NULL = 0.0.0.0:54000, le serveur accepte les connexions sur toutes les IP à condition que le port soit 54000
+    int status = getaddrinfo(NULL, "54000", &hints, &res);
+	if (status != 0) {
+		std::cerr << "getaddrinfo error: " << gai_strerror(status) << "\n";
+		return -1;
+	}
 
 	//connecte le socket à l’adresse/port donné
     // bind(listening, (sockaddr*)&hint, sizeof(hint));//connecte le socket à l’adresse/port donné
@@ -84,7 +88,6 @@ int main()
  
     freeaddrinfo(res);
 
-
     // 3) Attendre une connexion
 
     sockaddr_in client;//Structure qui décrit un client qui va se connecter
@@ -96,6 +99,7 @@ int main()
 	//(sockaddr*) : le type attendu par accept() qui peut contenir une IP IPv4 ou IPv6 (sockaddr_in est propre
 	//à IPv4)
 	//clientSize : car IPv4 et IPv6 ne font pas la même taille
+
     int clientSocket = accept(listening, (sockaddr*)&client, &clientSize);
 	if (clientSocket == -1)
 	{
