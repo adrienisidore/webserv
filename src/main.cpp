@@ -41,35 +41,39 @@ int main()
  
     //2) Connecter l'adresse IP locale et notre port au socket
 
-	//Structure <netinet/in.h> qui décrit une adresse IPv4
-	// struct sockaddr_in
-	// {
-    // sa_family_t    sin_family; // Famille d’adresses, toujours AF_INET pour IPv4
-    // in_port_t      sin_port;   // Port, en ordre réseau (par exemple htons(80))
-    // struct in_addr sin_addr;   // Adresse IP (struct in_addr)
-    // char           sin_zero[8];// Remplissage inutile, garder à 0
-	// };
-	//Pour renseigner l'adrrsse IP en chaîne de caractère on fait sin_addr.s_addr = inet_addr("203.0.113.5");
-	//ou on utilise inet_pton
-	// struct in_addr {in_addr_t s_addr; // adresse IPv4 sur 32 bits (ordre réseau) };
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(54000);//endian : how we store numbers larger then 255
-	//htons s'adapte au système (little ou big-endian). htons : host to netshort short
-	//ntohs : fonction inverse. L'idée de htons et ntohs c'est de garantir que tout le monde reçoit la même suite d’octets, quel que soit le type de machine.
-	//HOWTO 1
-    inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);//"0.0.0.0" : le serveur écoute sur toutes les IP de la machine
- 
+    // struct addrinfo de <netdb.h>, permet de spécifier les critères pour retourner une adresse compatible
+    // à notre socket. getaddrinfo() retournera toutes les adresses compatibles dans res sous forme de liste
+    //chainée.
+    // struct addrinfo
+    // {
+    //     int              ai_flags;     // options : AI_PASSIVE, AI_CANONNAME…
+    //     int              ai_family;    // AF_INET, AF_INET6, AF_UNSPEC
+    //     int              ai_socktype;  // SOCK_STREAM, SOCK_DGRAM…
+    //     int              ai_protocol;  // IPPROTO_TCP, IPPROTO_UDP…
+    //     socklen_t        ai_addrlen;   // taille de ai_addr
+    //     struct sockaddr *ai_addr;      // pointeur vers l’adresse (sockaddr_in ou sockaddr_in6)
+    //     char            *ai_canonname; // nom canonique (facultatif)
+    //     struct addrinfo *ai_next;      // pointeur vers l’élément suivant de la liste
+    // };
+    struct addrinfo hints, *res;//{} : C++11 permet de mettre tous les champs à 0, comme memset(&hints, 0, sizeof hints)
+    hints.ai_family = AF_INET;// IPv4
+    hints.ai_socktype = SOCK_STREAM;// TCP
+    hints.ai_flags = AI_PASSIVE; // adresse pour un serveur qui écoute
+
+    getaddrinfo(NULL, "54000", &hints, &res); // NULL = 0.0.0.0:54000, le serveur accepte les connexions
+    //sur toutes les IP à condition que le port soit 54000
+    
+
 	//connecte le socket à l’adresse/port donné
     // bind(listening, (sockaddr*)&hint, sizeof(hint));//connecte le socket à l’adresse/port donné
-	if(bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1)
+    // if(bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1)
+    if(bind(listening, res->ai_addr, res->ai_addrlen) == -1)
 	{
 		std::cerr << "Can't bind socket to IP/Port" << std::endl;
 		return -2;
 	}
  
 	//Le socket peut maintenant recevoir des demandes de connexion avec accept
-    // listen(listening, SOMAXCONN);
 	if (listen(listening, SOMAXCONN) == -1)
 	{
 		std::cerr << "Socket can't listen" << std::endl;
@@ -78,6 +82,9 @@ int main()
 	//SOMAXCONN : on demande au système de créer la file d'attente la plus longue possible si plusieurs
 	//clients se connectent en même temps.
  
+    freeaddrinfo(res);
+
+
     // 3) Attendre une connexion
 
     sockaddr_in client;//Structure qui décrit un client qui va se connecter
@@ -101,23 +108,15 @@ int main()
  
     memset(host, 0, NI_MAXHOST);
     memset(service, 0, NI_MAXSERV);
- 
-	//HOWTO 2
-	//ICI ON AFFICHE JUSTE LES DONNEES DU CLIENT, CA N'EST PAS UNE ETAPE POUR CONNECTER
-	//LE SERVEUR AU CLIENT
-	//getnameinfo convertit l’adresse du client (sockaddr) en nom d’hôte et port lisibles
-	//(sockaddr* : comme plus haut, getnameinfo prend comme type sockaddr (IPv4 ou IPv6)
-    if (getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)
-    {
-        std::cout << host << " connected on port " << service << std::endl;
-    }
-    else
-    {
-        inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);//convertit l’IP binaire en chaîne lisible
-        std::cout << host << " connected on port " << ntohs(client.sin_port) << std::endl;
-		//ntohs converti en entier lisible par l’OS, qu'il soit en big-endian ou little-endian
-    }
- 
+
+    // Pour une IPv4 je peux faire par exemple :
+    unsigned char *ip = (unsigned char *)&client.sin_addr.s_addr;
+    std::cout << (int)ip[0] << '.'
+            << (int)ip[1] << '.'
+            << (int)ip[2] << '.'
+            << (int)ip[3]
+            << " connected on port " << ntohs(client.sin_port) << std::endl;
+
     // Fermeture de listening, dans notre exemple on attendait qu'un seul client
     close(listening);
  
