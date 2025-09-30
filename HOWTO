@@ -71,7 +71,6 @@ normales du serveur
 
 Utiliser un multiplexeur d’E/S (un « poller ») pour savoir quels FD sont prêts à lire/écrire :
 poll() (POSIX standard)
-epoll_*() (Linux)
-kqueue() (BSD/macOS) BSD est un OS dérivé de Unix
-
+epoll_*() (Linux) : plus puissant et adapté à son OS que poll()
+kqueue() (BSD/macOS) BSD est un OS dérivé de Unix : plus puissant et adapté à son OS que poll()
 
