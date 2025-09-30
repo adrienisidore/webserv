@@ -16,8 +16,10 @@
 //Step 1 : pouvoir connecter plusieurs clients
 //Step 2 : enregistrer du texte dans le serveur (PUT)
 
-//NB : accept() attend l'arrivée d'un seul client. Si je veux plusieurs clients il va falloir
-//soit faire du multi-threading soit utiliser select, poll, ou epoll...
+//Que se passe t il si je lance plusieurs webserv sur le même port ? Sur un autre port ?
+// Le sujet dit que le 1er serveur répondra aux requêtes destinées à aucun des autres serveurs lancés :
+// The first server for a host:port will be the default for this host:port (meaning it
+// will respond to all requests that do not belong to another server).
 
 int main()
 {
