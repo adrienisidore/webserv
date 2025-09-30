@@ -13,7 +13,7 @@
 #include "../webserv.hpp"
 
 //Mon code : envoyer du texte dans un serveur qui me le renvoie directement (adresse IPv4)
-//Step 1 : pouvoir connecter plusieurs clients
+//Step 1 : Ctrl + C : on doit pouvoir sortir proprement (gestion de signaux ?)
 //Step 2 : enregistrer du texte dans le serveur (PUT)
 
 //Que se passe t il si je lance plusieurs webserv sur le même port ? Sur un autre port ?
@@ -137,9 +137,9 @@ int main()
             memset(&client, 0, sizeof(client));
             socklen_t clientSize = sizeof(client);////socklen_t est un type qui mesure la taille d'un sockaddr_in. Pourquoi créer une variable dédiée ?
             
-            //Le programme est bloqué ici, dans l'attente d'un client.
+            //Si le serveur est prêt, il attend la connexion d'un client.
             //listening est 'duppliqué' pour créer un nouveau socket (client), et reste disponible pour de futurs
-            //connexions. accept retourne le FD de ce nouveau socket client.
+            //connexions. accept() retourne le FD de ce nouveau socket client.
             //(sockaddr*) : le type attendu par accept() qui peut contenir une IP IPv4 ou IPv6 (sockaddr_in est propre
             //à IPv4)
             //clientSize : car IPv4 et IPv6 ne font pas la même taille
