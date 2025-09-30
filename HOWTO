@@ -74,3 +74,40 @@ poll() (POSIX standard)
 epoll_*() (Linux) : plus puissant et adapté à son OS que poll()
 kqueue() (BSD/macOS) BSD est un OS dérivé de Unix : plus puissant et adapté à son OS que poll()
 
+-----------------------------------
+yt : What is HTTP? How the Internet Works! #1
+(voir sa vidéo sur les cookies et cache : What is an IP Address? How Do Domains Work? #2)
+HTTP est un protocole "stateless" : après qu'une requête ait aboutit,
+la connexion entre le serveur et le client s'arrête.
+
+Code serveur :
+1xx : Information
+2xx : SUCCESS (OK)
+3xx : Redirection
+4xx : Erreur client
+5xx : Erreur serveur
+
+                        REQUÊTE CLIENT
+Header : les lignes qui spécifient le type de requête
+*Method, **Target, ***Version deHTTP, ****Navigateur utilisé
+NB : Body vide lors de la requête, il sera rempli par le serveur
+1er ligne (Start Line) : GET* /background.png** HTTP/1.0***
+2ème ligne (Headers), les infos additionnelles : User-Agent: Mozilla/5.0****
+3ème ligne (Body) : None for GET
+
+                        REPONSE SERVEUR
+*Version, **Status code, ***Status Text
+1er ligne (Start Line) : HTTP/1.1* 404** Not Found***
+2ème ligne (Headers) : Content-Type: Image/png
+3ème ligne (Body) : *the file requested*
+
+yt : What is an IP Address? How Do Domains Work? #2
+DNS : Un serveur qui contient les couples IP/nom de domaine
+ping youtube.com retourne quelque chose comme :
+64 bytes from mad01s26-in-f174.1e100.net (216.58.214.174*): icmp_seq=1 ttl=115 time=6.15 ms**
+*l'adresse IP de youtube
+** temps nécessaire pour que mon ordi envoie une requête et reçoive un réponse
+17mn : Comment acheter un nom de domaine
+
+A REGARDER : What are Internet (Website) Cookies & Cache? #3
+
