@@ -111,3 +111,4 @@ ping youtube.com retourne quelque chose comme :
 
 A REGARDER : What are Internet (Website) Cookies & Cache? #3
 
+A partir d'un index.html dans un sous-dossier, je dois pouvoir le GET depuis un web browser

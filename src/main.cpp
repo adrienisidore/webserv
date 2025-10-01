@@ -6,7 +6,7 @@
 /*   By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 19:32:12 by aisidore          #+#    #+#             */
-/*   Updated: 2025/09/29 17:30:31 by aisidore         ###   ########.fr       */
+/*   Updated: 2025/10/01 16:06:08 by aisidore         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,8 @@ int main()
                                         //1) Créer socket, çàd un point de communication identifiable par son fd(int) : int socket(int domain, int type, int protocol);
 
 	//• AF_INET (famille de domaine acceptée) : le socket intéragit avec des IPv4
-	//• SOCK_STREAM (type de socket) : les données envoyées avec send() arrivent dans le même ordre avec recv(), les erreurs sont gérées par le protocole TCP
+	//• SOCK_STREAM (type de socket) : les données envoyées avec send() arrivent dans le même ordre avec recv(), les erreurs sont gérées par le protocole TCP.
+	//Envoie des infor;qtions de facon continue
 	//• 0 (quel protocole utilisé, 0 est celui par défaut): AF_INET + SOCK_STREAM → TCP par défaut
 	int listening = socket(AF_INET, SOCK_STREAM, 0);
     if (listening == -1)
@@ -87,6 +88,14 @@ int main()
 		return (-3);
 	}
  
+	//On affiche l'IP/Port auquel listening est connecte
+	unsigned char *ip = reinterpret_cast<unsigned char *>(res->ai_addr);
+	std::cout << "Listening connected to  "
+			<< static_cast<int>(ip[0]) << '.'
+			<< static_cast<int>(ip[1]) << '.'
+			<< static_cast<int>(ip[2]) << '.'
+			<< static_cast<int>(ip[3]) << std::endl;
+			
 	//Le socket peut maintenant recevoir une demande de connexion avec accept
 	//SOMAXCONN : on demande au système de créer la file d'attente la plus longue possible si le nb maximal de clients
 	//connectés est atteint. Si la file d'attente est pleine alors les clients qui essaient de se connecter reçoivent : ECONNREFUSED
