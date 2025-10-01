@@ -66,6 +66,8 @@ HTTP uses port 80 and Telnet uses port 23
 4. accept(): take the next pending connection from the listen queue and return a new connected socket (original stays in LISTEN state !)
 5. read / write on the connected socket -> close()
 
+poll() / epoll() (more powerful and linux specific): 
+
 ### Client Side (TCP)
 
 1. socket()
