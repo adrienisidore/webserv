@@ -6,7 +6,7 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/09/29 17:16:53 by aisidore         ###   ########.fr        #
+#    Updated: 2025/10/02 14:43:11 by gfontagn         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,9 +14,9 @@ NAME = webserv
 
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
-SRC = src/main.cpp
+SRC = src/test.cpp
 
-OBJ = objets/main.o
+OBJ = objets/test.o
 
 all: $(NAME)
 
