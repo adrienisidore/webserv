@@ -12,9 +12,15 @@
 
 #include "../webserv.hpp"
 
-//Mon code : envoyer du texte dans un serveur qui me le renvoie directement (adresse IPv4)
-//Step 1 : Ctrl + C : on doit pouvoir sortir proprement (gestion de signaux ?)
-//Step 2 : enregistrer du texte dans le serveur (PUT)
+//NB : le serveur doit pouvoir délivrer des pages statiques
+//+ un fichier de config NGINX permet de décider de la page statique qu'on souhaite délivrer.
+
+//NB 2 : Il ne faut pas que l'utilisateur puisse changer les droits des fichiers enregistrés sur mon serveur,
+// (via le terminal ou l'interface graphique)
+// entre 2 lancement de ./webserv, comme ça si le serveur s'éteint et redémarre : on retrouve les ressources.
+
+//A FAIRE * : Ctrl + C : on doit pouvoir sortir proprement (gestion de signaux ?)
+//A FAIRE : Comprendre pourquoi le web browser ouvre des connexions parallèles lorsqu'il se connecte au serveur.
 
 //Que se passe t il si je lance plusieurs webserv sur le même port ? Sur un autre port ?
 // Le sujet dit que le 1er serveur répondra aux requêtes destinées à aucun des autres serveurs lancés :
@@ -114,7 +120,7 @@ int main()
     //     short events;   // ce qu’on veut surveiller (ex: POLLIN, POLLOUT, POLLERR : erreur)
     //     short revents;  // ce qui s’est réellement passé (rempli par poll), qu'on test après l'appel
     // };
-    struct pollfd fds[3];// Le nombre de client est défini arbitrairement. Le nombre max de clients qui peuvent
+    struct pollfd fds[10];// Le nombre maximal de client est défini arbitrairement. Le nombre max de clients qui peuvent
     //être connectés en même temps dépend de la mémoire de l'ordi.
     memset(fds, 0, sizeof(fds));
     fds[0].fd = listening;       // socket d’écoute
@@ -159,27 +165,19 @@ int main()
                 return (-5);		
             }
 
-            // on accepte max 2 clients pour le moment
-            //Si plus de 2 clients : MSG_DONTWAIT empêche recv de bloquer si aucun octet n’est dispo
-            if (nfds < 3)
-            {
-                fds[nfds].fd = clientSocket;
-                fds[nfds].events = POLLIN;
-                nfds++;
-                // Je peux afficher l'IPv4 du client qui vient de se connecter :
-                unsigned char *ip = reinterpret_cast<unsigned char *>(&client.sin_addr.s_addr);
-                std::cout << "New client "
-                          << static_cast<int>(ip[0]) << '.'
-                          << static_cast<int>(ip[1]) << '.'
-                          << static_cast<int>(ip[2]) << '.'
-                          << static_cast<int>(ip[3])
-                          << " connected on port " << ntohs(client.sin_port) << std::endl;
-            }
-            else
-            {
-                std::cout << "Too many clients, last one has been disconnected" << std::endl;
-                close(clientSocket);
-            }
+
+
+            fds[nfds].fd = clientSocket;
+            fds[nfds].events = POLLIN;
+            nfds++;
+            // Je peux afficher l'IPv4 du client qui vient de se connecter :
+            unsigned char *ip = reinterpret_cast<unsigned char *>(&client.sin_addr.s_addr);
+            std::cout << "New client "
+                        << static_cast<int>(ip[0]) << '.'
+                        << static_cast<int>(ip[1]) << '.'
+                        << static_cast<int>(ip[2]) << '.'
+                        << static_cast<int>(ip[3])
+                        << " connected on port " << ntohs(client.sin_port) << std::endl;
         }
 
         for (int i = 1; i < nfds; i++)
@@ -202,16 +200,14 @@ int main()
                     }
                     std::cout << "Client "  << i << " disconnected" << std::endl;;
                     close(fds[i].fd);
-                    fds[i] = fds[nfds-1]; // supprime le client en compactant
+                    fds[i] = fds[nfds-1]; // supprime le client en compactant le tableau
                     nfds--;
+                    // i--;
                 }
                 else
                 {
                     std::cout << "Client says: " << buf << std::endl;
-                    // * * * Ici on peut essayer de sauvegarder ce qu'il y a dans buff sur le serveur ? * * * //
-
-                    // On renvoie le message reçu au client, pour voir si les octets sont reçus/envoyés dans le bon ordre ("bytesReceived + 1" sert à inclure le \0)
-                    send(fds[i].fd, buf, bytesReceived + 1, 0);
+                    sendResponse(fds[i].fd, "ServerInterface.html");
                 }
             }
         }

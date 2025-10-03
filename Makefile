@@ -12,11 +12,12 @@
 
 NAME = webserv
 
-FLAGS = -Wall -Wextra -Werror -std=c++98
+#-std=c++98
+FLAGS = -Wall -Wextra -Werror
 
-SRC = src/main.cpp
+SRC = src/main.cpp sendResponse.cpp
 
-OBJ = objets/main.o
+OBJ = objets/main.o objets/sendResponse.o
 
 all: $(NAME)
 
