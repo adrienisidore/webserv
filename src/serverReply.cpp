@@ -1,17 +1,14 @@
 #include "../webserv.hpp"
 
-//A FAIRE : 1) AJOUTER TAILLE DU CONTENU DANS header sans utiliser to_string (C++17) : voir itoa de libft ?
-// 2) FAIRE EN SORTE QUE SI LE CLIENT DEMANDE AUTRE CHOSE QUE "/" ON DIT EN HTTP QU'ON A PAS
-// 3) VERIFIER MATCHE DES INDICES CLIENTS AVEC i (i--; ne semble pas fonctionner)
-// 4) COMPRENDRE POURQUOI APRES QUELQUES SECONDES LE NAVIGATEUR WEB SE DECONNECTE (est ce normal ?)
-// 5) remettre std=c++98 dans le Makefile
 
 // src/
-//     ResponseManager/ -> construction de la réponse qu'envoie le serveur
-//         sendResponse.cpp ...
-//     RequestManager/ -> analyse de la requête qu'envoie le client et comment elle est traitée
+//     RequestManager/ -> analyse de la requête qu'envoie le client et comment elle est traitée (créer une classe Request)
+//          parserRequest.cpp ...
+//     DataTransfer/ -> (récupère en argument Request) va chercher la data/transfert de la data (client vers serveur, serveur vers client), gérer les chunk
 //         putRessource.cpp ...
-
+//         sendRessource.cpp ...          
+//     ResponseManager/ -> construction de la réponse qu'envoie le serveur, en fonction de la ressource (taille, existe ou non etc...)
+//         responseBuilder.cpp ... (construire une réponse cohérente avec code 2xx 3xx etc)
 
 //ATTENTION : gérer l'ouverture sécurisée d'un fichier :
 // 1) Vérifier que le fichier existe avant de tenter de l’ouvrir (stat ou access).
@@ -37,8 +34,8 @@
 //     time_t    st_ctime;   // Date dernier changement d’inode (métadonnées)
 // };
 
-//filename : chemin absolu
-void sendResponse(int clientSocket, const char *filename)
+//filename : chemin relatif à partir de la localisation de ./webserv
+void serverReply(int clientSocket, const char *filename)
 {
     struct stat fileStat;
     if (stat(filename, &fileStat) == -1) return;//Envoyer code d'erreur serveur
@@ -58,10 +55,12 @@ void sendResponse(int clientSocket, const char *filename)
     //     "Content-Type: text/html\r\n"
     //     "Connection: keep-alive\r\n\r\n";
     
+    std::ostringstream string_fileSize;
+    string_fileSize << fileSize;
     std::string header = 
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/html\r\n"
-        "Content-Length: " + std::to_string(fileSize) + "\r\n"
+        "Content-Length: " + string_fileSize.str() + "\r\n"
         "Connection: keep-alive\r\n\r\n";
 
 

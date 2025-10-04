@@ -12,15 +12,13 @@
 
 #include "../webserv.hpp"
 
-//NB : le serveur doit pouvoir délivrer des pages statiques
-//+ un fichier de config NGINX permet de décider de la page statique qu'on souhaite délivrer.
+//NB : le serveur doit pouvoir délivrer des pages statiques (configurables)
 
 //NB 2 : Il ne faut pas que l'utilisateur puisse changer les droits des fichiers enregistrés sur mon serveur,
 // (via le terminal ou l'interface graphique)
 // entre 2 lancement de ./webserv, comme ça si le serveur s'éteint et redémarre : on retrouve les ressources.
 
 //A FAIRE * : Ctrl + C : on doit pouvoir sortir proprement (gestion de signaux ?)
-//A FAIRE : Comprendre pourquoi le web browser ouvre des connexions parallèles lorsqu'il se connecte au serveur.
 
 //Que se passe t il si je lance plusieurs webserv sur le même port ? Sur un autre port ?
 // Le sujet dit que le 1er serveur répondra aux requêtes destinées à aucun des autres serveurs lancés :
@@ -200,14 +198,31 @@ int main()
                     }
                     std::cout << "Client "  << i << " disconnected" << std::endl;;
                     close(fds[i].fd);
-                    fds[i] = fds[nfds-1]; // supprime le client en compactant le tableau
-                    nfds--;
-                    // i--;
+                    fds[i] = fds[nfds-1]; // On remplace le client parti par le dernier client de la liste (par ex fds[6] = fds[10])
+                    nfds--; //On réduit le nombre de clients à surveiller de 1
+                    i--; //Le client 10 qui a pris la place de 6 doit être surveillé à la prochane itération, sinon il est ignoré pendant 1 tour
+                    continue;//On s'arrête là. C'est un peu useless dans la mesure où le reste du code n'est pas enclenché (c'est du "else")
                 }
                 else
                 {
-                    std::cout << "Client says: " << buf << std::endl;
-                    sendResponse(fds[i].fd, "ServerInterface.html");
+                    std::cout << "Client " << i << " says: " << buf << std::endl;
+                    //Fonction interdite
+                    if (strstr(buf, "GET /favicon.ico") != NULL)
+                    {
+                        const char* notFound =
+                            "HTTP/1.1 404 Not Found\r\n"
+                            "Content-Type: text/plain\r\n"
+                            "Content-Length: 23\r\n"
+                            "Connection: close\r\n\r\n"
+                            "404 Not Found: favicon.ico";
+                            std::cout << "Server's response: " << notFound << std::endl;
+                            send(fds[i].fd, notFound, strlen(notFound), 0);
+                    }
+                    else
+                    {
+                        serverReply(fds[i].fd, "ServerInterface.html");
+                    }
+                    // serverReply(fds[i].fd, "ServerInterface.html");
                 }
             }
         }
