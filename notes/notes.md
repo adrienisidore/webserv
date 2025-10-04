@@ -98,9 +98,72 @@ Accept-Language: en                     # request header fields (at least 1)
 - **HEAD**: like GET but without the response body, just header. ex: To check if a resource is reachable or metadata
 
 - **POST**: submissions or operations that change the server state. Usually can't be represented by URL alone -> non-cacheable-by-default. ex: posting a message, completing a transaction. Seding to "controller" URL.
+**ADRI'S VERSION** : download a ressource.
 
-- **PUT**: like POST but the client specifies the target location on the server
+- **PUT**: like POST but the client specifies the target location on the server.
+**ADRI'S VERSION** : modify or replace a ressource at a precise location.
+
 
 - **DELETE**
+
+
+#### Authorized functions
+
+**execve : executes a process and replace the current image's process.
+**access : test if a process has a certain permission.
+
+**pipe : one-directionial data transfer pipe.
+**socketpair : bi-directional data transfer pipe.
+**socket : create a socket.
+**accept : accept the connection of one client.
+**connect : connect a client to a server.
+**bind : bind a socket to an IP/Port couple. IP/Port can now receive/send data. 
+**listen : makes a socket look for a new client connection.
+**send : send some data.
+**recv : wait some data to be received.
+**setsockopt : configure a socket behaviour.
+
+**errno : get the last error code.
+**strerror : convert an errno to a message in english.
+**gai_strerror : convert an error code coming from getaddrinfo(), getnameinfo() to a message in english.
+
+**htonl, htons : translate the value of an IP address (htonl) or Port (htons) to a network order, before sending it to another system
+**ntohl, ntohs : convert a network order into an IP address (ntohl) or Port (ntohs), after receiving it from another system
+
+**dup : duplicate the fd.
+**dup2 : redirection of a dataflow from a fd to another.
+**close : close an fd (socket, pipe ...).
+
+**fcntl : configurate an fd (permissions etc...)
+**read : get the bytes of a file.
+**write : write some bytes in a file.
+**stat : a structure containing the properties of a file.
+**open : open a file.
+
+**fork : create a child process.
+waitpid : wait for a process (PID) to terminate.
+
+poll, epoll (epoll_create, epoll_ctl, epoll_wait), kqueue (kqueue, kevent) : monitor the sockets.
+select : similar to poll() but less powerful.
+
+getaddrinfo : returns every IP address that respect certain criterias (IPv4, compatible with TCP ...)
+freeaddrinfo : free the linked list of IP address that respect certain criterias.
+
+getprotobyname: return "struct protoent", that contains the name, the alias and the ID of a protocole (TCP, UDP...)
+
+
+chdir : changes the current directory.
+opendir : open a designated directory.
+readdir :
+closedir :
+
+kill(pid, sig) : send the "sig" signal to a process, identified by it's PID.
+signal : define a function to manage the "sig" signal.
+
+getsockname :
+
+
+
+
 
 
