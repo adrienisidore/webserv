@@ -17,5 +17,7 @@
 # include <string>//std::string
 # include <poll.h>//poll(), struct pollfd
 # include <errno.h>//errno
+# include <signal.h>
+# include <vector>
 
 #endif
