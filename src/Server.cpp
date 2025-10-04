@@ -1,6 +1,7 @@
 #include "webserv.hpp"
 #include "Server.hpp"
 #include "Exceptions.hpp"
+#include "Request.hpp"
 
 Server	*Server::_instance = NULL;
 
@@ -9,7 +10,7 @@ Server::Server() {
 	_instance = this;
 	_socket = -1;
 	_is_running = false;
-	_root = NULL;
+	_root = "./ressources";
 	_port = "8080";
 
 	start();
@@ -20,7 +21,7 @@ Server::Server(std::string port) {
 	_instance = this;
 	_socket = -1;
 	_is_running = false;
-	_root = NULL;
+	_root = "./ressources";
 	_port = port;
 
 	start();
@@ -162,19 +163,25 @@ void	Server::process_clients() {
 	// if a connected socket receives data, THEN we should do stuff with it
 
 	char			buff[BUFF_SIZE];	
+	std::string		message = "";
+	int				bytes_received = 0;
 
 	std::vector<pollfd>::iterator it = _fds.begin();
 	++it;
 	while (it != _fds.end()) {
 
+		message.clear();
 		if (it->revents & POLLIN) {
 
-			memset(buff, 0, sizeof(buff));
+			do {
+				memset(buff, 0, sizeof(buff));
+				bytes_received = recv(it->fd, buff, sizeof(buff), 0); // (or read())
+				message.append(buff);
 
-			int	bytes_received = recv(it->fd, buff, sizeof(buff), 0); // (or read())
+			}
+			while (buffer_incomplete(buff, bytes_received));	// AND bytes_received > 0 AND no timeout
 
 			if (bytes_received < 0) {
-				// client might also have just disconnected
 				std::cout << "Error: " << strerror(errno) << std::endl;
 				throw HttpException("Invalid Request");
 			}
@@ -184,8 +191,9 @@ void	Server::process_clients() {
 				close(it->fd);
 				it = _fds.erase(it);
 			}
+
 			else {
-				process_message(*it, buff, bytes_received);
+				process_message(*it, message);
 				++it;
 			}
 		}
@@ -194,13 +202,28 @@ void	Server::process_clients() {
 	}
 }
 
-void	Server::process_message(struct pollfd client_fd, char buff[BUFF_SIZE], int bytes_received) {
+void	Server::process_message(struct pollfd client_fd, std::string message) {
+	
+	Request	request(message);	// 
 
-	std::cout << "Client says: " << buff << std::endl;
-	send(client_fd.fd, buff, bytes_received + 1, 0); // (or write())
+	/*
+	What are the steps ?
+
+	1. Accumulation: is the request complete ? if no, wait for the remaining chunks (!timeout)
+	2. Syntactic parsing: is the request correctly formatted ?
+	3. Semantic validation: is the request correct according to server's state?
+	
+	4. Generate response
+	5. Send response
+	6. Following connection: should the server keep communication or end it, or else ?
+	
+	If error occured at any point, send corresponding error response and return
+	*/
+
 }
 
-// requires declaring _instance as global variable and setting it to NULL at startup
+	//send(client_fd.fd, buff, bytes_received + 1, 0); // (or write())
+
 void	Server::handle_sigint(int sig) {
 
 	(void)sig;

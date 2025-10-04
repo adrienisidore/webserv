@@ -8,7 +8,7 @@ private:
 	int					_socket;
 	std::string			_port;
 	bool				_is_running;
-	char*				_root;
+	std::string			_root;
 	std::vector<pollfd>	_fds;
 
 	void		create_server_socket();
@@ -17,8 +17,8 @@ private:
 	void		create_connected_socket();
 	
 	void		process_clients();
-	void		process_message(struct pollfd client, char buff[BUFF_SIZE], int bytes);
-	
+	void		process_message(struct pollfd client, std::string message);
+
 	static void	handle_sigint(int sig);
 	void		set_signals_default();
 	

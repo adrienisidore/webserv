@@ -19,5 +19,6 @@
 # include <errno.h>//errno
 # include <signal.h>
 # include <vector>
+# include <map>
 
 #endif
