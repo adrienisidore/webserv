@@ -135,13 +135,11 @@ Accept-Language: en                     # request header fields (at least 1)
 
 **getsockname** : to know which IP/Port a socket is connected to.
 
-
 **errno** : get the last error code.
 
 **strerror** : convert an errno to a message in english.
 
 **gai_strerror** : convert an error code coming from getaddrinfo(), getnameinfo() to a message in english.
-
 
 **htonl, htons** : translate the value of an IP address (htonl) or Port (htons) to a network order, before sending it to another system
 
