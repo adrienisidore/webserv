@@ -1,3 +1,6 @@
+#ifndef EXCEPTIONS_HPP
+# define EXCEPTIONS_HPP
+
 #include "./webserv.hpp"
 
 class	SocketException : public std::runtime_error {
@@ -22,3 +25,5 @@ class	HttpException : public std::runtime_error {
 };
 
 // we should also deal with error codes
+
+#endif

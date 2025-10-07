@@ -1,3 +1,6 @@
+#ifndef REQUEST_HPP
+# define REQUEST_HPP
+
 #include "./webserv.hpp"
 
 class	Request {
@@ -29,3 +32,7 @@ class	Request {
 		std::map<std::string, std::string>	getHeaders();
 
 };
+
+std::ostream&	operator<<(std::ostream& os, const Request &request);
+
+#endif

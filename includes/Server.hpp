@@ -1,3 +1,6 @@
+#ifndef SERVER_HPP
+# define SERVER_HPP
+
 #include "./webserv.hpp"
 
 class	Server {
@@ -40,3 +43,5 @@ public:
 // potentially multiple constructors depending on the specified protocol ?
 //
 // stat pour fonction qui telecharge un contenu sur le serveur (POST)
+
+#endif
