@@ -5,37 +5,17 @@
 
 Server	*Server::_instance = NULL;
 
-Server::Server() {
-
+Server::Server(std::string port)
+: _listening(-1), _is_running(false), _root("./ressources"), _port(port)
+{
 	_instance = this;
-	_socket = -1;
-	_is_running = false;
-	_root = "./ressources";
-	_port = "8080";
-
-	start();
-}
-
-Server::Server(std::string port) {
-
-	_instance = this;
-	_socket = -1;
-	_is_running = false;
-	_root = "./ressources";
-	_port = port;
-
-	start();
+	set_signals_default();
+	create_server_socket();
+	bind_server_socket();
 }
 
 Server::~Server() {
 	stop();
-}
-
-void	Server::start() {
-
-	set_signals_default();
-	create_server_socket();
-	bind_server_socket();
 }
 
 void	Server::stop() {
@@ -49,15 +29,16 @@ void	Server::stop() {
 
 void	Server::run() {
 
-	pollfd	server_pollfd;
+	pollfd	listening_pollfd;//Objet contenant listening
 
-	server_pollfd.fd = _socket;
-	server_pollfd.events = POLLIN;
-	server_pollfd.revents = 0;
+	listening_pollfd.fd = _listening;
+	listening_pollfd.events = POLLIN;
+	listening_pollfd.revents = 0;
 
-	_fds.push_back(server_pollfd);
+	_fds.push_back(listening_pollfd);//Envoye dans la liste des sockets a surveiller
 
-	if (listen(_socket, MAX_QUEUE))
+	//Les clients peuvent se connecter
+	if (listen(_listening, MAX_QUEUE))
 		throw SocketException(strerror(errno));
 
 	_is_running = true;
@@ -71,7 +52,7 @@ void	Server::run() {
 			else
 				throw SocketException(strerror(errno));
 		}
-
+		//Surveillance de listening
 		if (_fds[0].revents & POLLIN)
 			create_connected_socket();
 
@@ -87,14 +68,14 @@ void	Server::create_server_socket() {
 	//	- semantics / type / unit (Streams, datagrams ...) 
 	//	- protocol: dependent of domain + type
 
-	_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (_socket == -1)
+	_listening = socket(AF_INET, SOCK_STREAM, 0);
+	if (_listening == -1)
 		throw SocketException(strerror(errno));
 
 	// bypass the TIME_WAIT socket security
 	
     int opt = 1;
-    setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(_listening, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 }
 
 void	Server::bind_server_socket() {
@@ -121,7 +102,7 @@ void	Server::bind_server_socket() {
 		throw SocketException(gai_strerror(status));
 	}
 	
-	if (bind(_socket, res->ai_addr, res->ai_addrlen) == -1) {
+	if (bind(_listening, res->ai_addr, res->ai_addrlen) == -1) {
 		freeaddrinfo(res);
 		throw SocketException(strerror(errno));
 	}
@@ -138,7 +119,8 @@ void	Server::create_connected_socket() {
 	socklen_t	client_size = sizeof(client);
 	
 
-	int	connected_socket = accept(_socket, (sockaddr *)&client, &client_size);
+	//Creation du socket connecte pour le client
+	int	connected_socket = accept(_listening, (sockaddr *)&client, &client_size);
 
 	if (connected_socket == -1)
 		throw SocketException(strerror(errno));	// where will the exception rise
@@ -158,6 +140,7 @@ void	Server::create_connected_socket() {
 	}
 }
 
+//Suppression/ajout et lecture des clients
 void	Server::process_clients() {
 	
 	// if a connected socket receives data, THEN we should do stuff with it
@@ -167,7 +150,7 @@ void	Server::process_clients() {
 	int				bytes_received = 0;
 
 	std::vector<pollfd>::iterator it = _fds.begin();
-	++it;
+	++it;//Surveillance des clients
 	while (it != _fds.end()) {
 
 		message.clear();
@@ -227,11 +210,13 @@ void	Server::process_message(struct pollfd client_fd, std::string message) {
 void	Server::handle_sigint(int sig) {
 
 	(void)sig;
+	///Evite d'inclure le this
 	if (Server::_instance) {
 		Server::_instance->_is_running = false;
 	}
 }
 
+//Gestion Ctrl + C
 void	Server::set_signals_default() {
 
 	Server::_instance = this;

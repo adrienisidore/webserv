@@ -6,7 +6,7 @@ int	main() {
 
 	try {
 
-		Server	server;
+		Server	server("8080");
 		server.run();
 	}
 	catch (SocketException &er) {
