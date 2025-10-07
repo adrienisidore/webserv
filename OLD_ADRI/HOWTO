@@ -1,0 +1,114 @@
+nc localhost 54000 : permet d’envoyer des messages et de tester le serveur echo
+sans navigateur ni programme client spécifique. Ouvre une connexion TCP reçu par mon serveur
+
+HOWTO 1
+
+inet_pton non autorisée. Au lieu de faire inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);, on fait 
+
+
+//Structure <netinet/in.h> qui décrit une adresse IPv4
+// struct sockaddr_in
+// {
+// sa_family_t    sin_family; // Famille d’adresses, toujours AF_INET pour IPv4
+// in_port_t      sin_port;   // Port, en ordre réseau (par exemple htons(80))
+// struct in_addr sin_addr;   // Adresse IP (struct in_addr)
+// char           sin_zero[8];// Remplissage inutile, garder à 0
+// };
+//Pour renseigner l'adrrsse IP en chaîne de caractère on fait sin_addr.s_addr = inet_addr("203.0.113.5");
+//ou on utilise inet_pton
+// struct in_addr {in_addr_t s_addr; // adresse IPv4 sur 32 bits (ordre réseau) };
+sockaddr_in hint;
+hint.sin_family = AF_INET;
+hint.sin_port = htons(54000);//endian : how we store numbers larger then 255
+//htons s'adapte au système (little ou big-endian). htons : host to netshort short
+//ntohs : fonction inverse. L'idée de htons et ntohs c'est de garantir que tout le monde reçoit la même suite d’octets, quel que soit le type de machine.
+//HOWTO 1
+inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);//"0.0.0.0" : le serveur écoute sur toutes les IP de la machine
+
+ 
+char host[NI_MAXHOST];// NI_MAXHOST → taille maximale pour un nom d’hôte ou une adresse IP en chaîne de caractères
+char service[NI_MAXSERV];// NI_MAXSERV → taille maximale pour un numéro de port ou un nom de service en chaîne de caractères
+
+memset(host, 0, NI_MAXHOST);// buffer pour stocker "192.168.1.5" ou "example.com"
+memset(service, 0, NI_MAXSERV);// buffer pour stocker "54000" ou "http"
+
+//ICI ON AFFICHE JUSTE LES DONNEES DU CLIENT, CA N'EST PAS UNE ETAPE POUR CONNECTER
+//LE SERVEUR AU CLIENT
+//getnameinfo convertit l’adresse du client (sockaddr) en nom d’hôte et port lisibles
+//(sockaddr* : comme plus haut, getnameinfo prend comme type sockaddr (IPv4 ou IPv6)
+if (getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)
+{
+    std::cout << host << " connected on port " << service << std::endl;
+}
+else
+{
+    inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);//convertit l’IP binaire en chaîne lisible
+    std::cout << host << " connected on port " << ntohs(client.sin_port) << std::endl;
+	//ntohs converti en entier lisible par l’OS, qu'il soit en big-endian ou little-endian
+}
+
+
+
+
+--------------------------------
+- 1) Le programme prend un fichier de configuration en argument, et a un default path.
+- 2) webserv ne doit pas execve() un autre serveur web.
+- 3) webserv peut traiter d’autres clients même si un client nenvoie rien.
+- 4) poll(), select(), epoll_wait() permettent de surveiller plusieurs sockets en même temps.
+une seule boucle de surveillance pour tous les clients, y compris le socket d'écoute (listening).
+Lacceptation des nouveaux clients (accept) et communication avec les clients existants (recv/send)
+se font dans le même mécanisme. Le serveur reste disponible même avec beaucoup de clients simultanés
+- 5) Les macros FD_SET, FD_CLR, FD_ISSET, FD_ZERO sont très utiles pour utiliser plusieurs sockets
+- 6) Le serveur doit gérer les timeouts ou I/O non-bloquantes pour éviter qu’un client inactif bloque tout le serveur.
+- 7) Les réponses et en-têtes de ton serveur peuvent être comparées à NGINX pour vérifier conformité HTTP/1.1
+- 8) Faire une page d'erreur "404 Not Found". Les autres codes HTTP retournés doivent être précis
+- 9) fork() ne doit être utilisé que pour lancer des exécutables CGI (pages dynamiques), pas pour gérer les connexions
+normales du serveur
+- 10) Le serveur doit pouvoir accepter des connexions sur différents ports configurables (ex. 80, 8080...)
+
+
+
+
+Utiliser un multiplexeur d’E/S (un « poller ») pour savoir quels FD sont prêts à lire/écrire :
+poll() (POSIX standard)
+epoll_*() (Linux) : plus puissant et adapté à son OS que poll()
+kqueue() (BSD/macOS) BSD est un OS dérivé de Unix : plus puissant et adapté à son OS que poll()
+
+-----------------------------------
+yt : What is HTTP? How the Internet Works! #1
+(voir sa vidéo sur les cookies et cache : What is an IP Address? How Do Domains Work? #2)
+HTTP est un protocole "stateless" : après qu'une requête ait aboutit,
+la connexion entre le serveur et le client s'arrête.
+
+Code serveur :
+1xx : Information
+2xx : SUCCESS (OK)
+3xx : Redirection
+4xx : Erreur client
+5xx : Erreur serveur
+
+                        REQUÊTE CLIENT
+Header : les lignes qui spécifient le type de requête
+*Method, **Target, ***Version deHTTP, ****Navigateur utilisé
+NB : Body vide lors de la requête, il sera rempli par le serveur
+1er ligne (Start Line) : GET* /background.png** HTTP/1.0***
+2ème ligne (Headers), les infos additionnelles : User-Agent: Mozilla/5.0****
+3ème ligne (Body) : None for GET
+
+                        REPONSE SERVEUR
+*Version, **Status code, ***Status Text
+1er ligne (Start Line) : HTTP/1.1* 404** Not Found***
+2ème ligne (Headers) : Content-Type: Image/png
+3ème ligne (Body) : *the file requested*
+
+yt : What is an IP Address? How Do Domains Work? #2
+DNS : Un serveur qui contient les couples IP/nom de domaine
+ping youtube.com retourne quelque chose comme :
+64 bytes from mad01s26-in-f174.1e100.net (216.58.214.174*): icmp_seq=1 ttl=115 time=6.15 ms**
+*l'adresse IP de youtube
+** temps nécessaire pour que mon ordi envoie une requête et reçoive un réponse
+17mn : Comment acheter un nom de domaine
+
+A REGARDER : What are Internet (Website) Cookies & Cache? #3
+
+A partir d'un index.html dans un sous-dossier, je dois pouvoir le GET depuis un web browser

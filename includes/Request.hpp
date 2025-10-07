@@ -22,12 +22,10 @@ class	Request {
 
 	public:
 
-		Request(std::string	message);
+		Request(const std::string &	message);
 		~Request();
 
-		std::string	getMethod();
-		std::string	getRequestTarget();
-		std::string	getProtocol();
-		std::map<std::string, std::string> getHeaders();
-		std::string	getBody();
+		std::string							getInfo(const std::string & which_info);
+		std::map<std::string, std::string>	getHeaders();
+
 };
