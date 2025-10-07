@@ -20,4 +20,6 @@ class Response
 
 };
 
+//Surcharge de l'operateur d'injection pour composer une reponse
+
 #endif

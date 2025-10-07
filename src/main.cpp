@@ -6,7 +6,7 @@
 /*   By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/11 19:32:12 by aisidore          #+#    #+#             */
-/*   Updated: 2025/10/01 16:06:08 by aisidore         ###   ########.fr       */
+/*   Updated: 2025/10/07 12:31:37 by aisidore         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -205,6 +205,7 @@ int main()
                 }
                 else
                 {
+					//Client se deconnecte a cause du 404 Error ou parce qu'il a finit de telecharger la page ?
                     std::cout << "Client " << i << " says: " << buf << std::endl;
                     //Fonction interdite
                     if (strstr(buf, "GET /favicon.ico") != NULL)

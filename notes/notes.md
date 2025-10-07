@@ -177,9 +177,9 @@ Accept-Language: en                     # request header fields (at least 1)
 
 **chdir** : changes the current directory.
 
-**opendir** : open a designated repository.
+**opendir** : open a designated repository, return its pointer.
 
-**readdir** : return a pointer of a repository or a file.
+**readdir** : after opening a repository, readdir reads its content file after file.
 
 **closedir** : close a designated repository.
 
