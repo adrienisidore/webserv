@@ -107,6 +107,21 @@ void	Server::bind_server_socket() {
 	freeaddrinfo(res);
 }
 
+pollfd	Server::new_non_blocking_socket(int fd) {
+
+	pollfd	new_socket;
+	int flags = fcntl(fd, F_GETFL, 0);
+
+	// make the fd non-blocking
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	new_socket.fd = fd;
+	new_socket.events = POLLIN;
+	new_socket.revents = 0;
+
+	return new_socket;
+}
+
 void	Server::create_connected_socket() {
 
 	// if server socket receives data, create a new connected socket 
@@ -137,6 +152,31 @@ void	Server::create_connected_socket() {
 	}
 }
 
+bool	Server::buffer_incomplete(char buff[BUFF_SIZE], int bytes) {
+
+	if (bytes <= 0)
+		return false;
+
+	std::string	str_buff(buff);
+
+
+	// 408 timeout
+	// 413 too large
+	// what is the error code ?
+	// overall timeout -> 30s
+	// between chinks timeout -> 30s
+	// 
+
+    /* Set the server socket to non-blocking mode
+    if (fcntl(server_fd, F_SETFL, O_NONBLOCK) < 0) {
+        perror("fcntl failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+	on EACH socket (client and server)
+	*/
+}
+
 //Suppression/ajout et lecture des clients
 void	Server::process_clients() {
 	
@@ -153,14 +193,14 @@ void	Server::process_clients() {
 		message.clear();
 		if (it->revents & POLLIN) {
 
+			time_t	start = time(NULL);	
 			do {
 				memset(buff, 0, sizeof(buff));
 				bytes_received = recv(it->fd, buff, sizeof(buff), 0); // (or read())
 				message.append(buff);
 
 			}
-			while (0);
-			// while (buffer_incomplete(buff, bytes_received));	// AND bytes_received > 0 AND no timeout
+			while (buffer_incomplete(buff, bytes_received, start));	// AND bytes_received > 0 AND no timeout
 
 			if (bytes_received < 0) {
 				std::cout << "Error: " << strerror(errno) << std::endl;
