@@ -6,7 +6,7 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/10/04 15:43:17 by gfontagn         ###   ########.fr        #
+#    Updated: 2025/10/07 15:45:23 by gfontagn         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,7 @@ SRC = src/main.cpp \
 
 OBJ = objets/
 
-OSRCS = $(SRC:%.cpp=$(OBJ)%.o)
+OSRCS = $(SRC:%.c=$(OBJ)%.o)
 
 all: $(NAME)
 

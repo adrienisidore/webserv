@@ -3,7 +3,7 @@
 Server	*Server::_instance = NULL;
 
 Server::Server(std::string port)
-: _listening(-1), _is_running(false), _root("./ressources"), _port(port)
+: _listening(-1), _port(port), _is_running(false), _root("./ressources")
 {
 	_instance = this;
 	set_signals_default();
@@ -185,9 +185,11 @@ void	Server::process_clients() {
 
 void	Server::process_message(struct pollfd client_fd, std::string message) {
 	
-	Request	request(message);	// 
+	//Request	request(message);	// 
 
-	/*
+	(void)client_fd;
+	(void)message;
+		/*
 	What are the steps ?
 
 	1. Accumulation: is the request complete ? if no, wait for the remaining chunks (!timeout)
