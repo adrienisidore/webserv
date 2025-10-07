@@ -2,6 +2,10 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+# define MAX_QUEUE 3
+# define MAX_CLIENTS 10
+# define BUFF_SIZE 4096
+
 //checker les librairies que j'utilise pas
 # include <iostream>//std::cout, std::cerr.
 # include <sys/types.h>//socklen_t et les socket types et autres...
@@ -12,9 +16,17 @@
 # include <string.h>//memset() : NON AUTORISEE DANS LES FONCTIONS DU SUJET
 # include <string>//std::string : FONCTION INTERDITE
 # include <poll.h>//poll(), struct pollfd
+# include <errno.h>//errno
+# include <signal.h>
+# include <vector>
+# include <map>
 
+#include "./Exceptions.hpp"
+#include "./Server.hpp"
 
-
+// ADRI
+#include "./Request.hpp"
+#include "./Response.hpp"
 #include <sys/stat.h>   // pour struct stat et stat()
 #include <fcntl.h>      // pour open()
 #include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE

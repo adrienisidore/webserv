@@ -2,13 +2,11 @@
 # define RESPONSE_HPP
 
 # include "./webserv.hpp"
-# include "./DataTransfer.hpp"
-
 
 class Response
 {
     public:
-        Response(const Request request, const DataTransfer datatransfer);//On créé une réponse adaptée, et on envoie la donnée dans "Body"
+        Response(const Request request);//On créé une réponse adaptée, et on envoie la donnée dans "Body"
         ~Response();
 
         //Ici on formalise notre instance pour permettre une réponse au client (code d'erreur etc...)

@@ -1,0 +1,8 @@
+cat << 'EOF' > compile_flags.txt
+-Iincludes
+-std=c++98
+-Wall
+-Wextra
+-Werror
+EOF
+

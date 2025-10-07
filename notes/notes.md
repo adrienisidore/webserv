@@ -55,8 +55,29 @@ HTTP uses port 80 and Telnet uses port 23
 
 2 types of sockets:
 
-- listening sockets (server side): bind(), listen()
-- connected sockets (client or server): connect(), accept()
+- listening sockets (server): bind(), listen()
+- connected sockets (client): connect(), accept()
+
+-> We need *3 sockets* to connect 1 client !
+
+CLIENT MACHINE                          SERVER MACHINE
+┌─────────────────┐                    ┌──────────────────────┐
+│                 │                    │  Listening Socket    │
+│                 │                    │  (waiting for        │
+│                 │                    │   connections)       │
+│                 │       ┌────────────┤  fd = 3              │
+│                 │       │            └──────────────────────┘
+│                 │       │                      
+│  Client Socket  │       │            ┌──────────────────────┐
+│  (connects and  │◄──────┴───────────►│  Connected Socket    │
+│   communicates) │                    │  (talks to THIS      │
+│  fd = 10        │                    │   specific client)   │
+│                 │                    │  fd = 4              │
+└─────────────────┘                    └──────────────────────┘
+
+     1 socket                           2 sockets
+
+
 
 ### Server Side (TCP):
 
@@ -65,6 +86,8 @@ HTTP uses port 80 and Telnet uses port 23
 3. listen(): mark it as passive / listening socket
 4. accept(): take the next pending connection from the listen queue and return a new connected socket (original stays in LISTEN state !)
 5. read / write on the connected socket -> close()
+
+poll() / epoll() (more powerful and linux specific): 
 
 ### Client Side (TCP)
 

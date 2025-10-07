@@ -6,26 +6,32 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/09/29 17:16:53 by aisidore         ###   ########.fr        #
+#    Updated: 2025/10/04 15:43:17 by gfontagn         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-FLAGS = -Wall -Wextra -Werror -std=c++98
+FLAGS = -Wall -Wextra -Werror -g -std=c++98
 
-SRC = src/main.cpp serverReply.cpp
+INCLUDES = -I./includes/
 
-OBJ = objets/main.o objets/serverReply.o
+SRC = src/main.cpp \
+      src/Server.cpp \
+	  src/serverReply.cpp
+
+OBJ = objets/
+
+OSRCS = $(SRC:%.cpp=$(OBJ)%.o)
 
 all: $(NAME)
 
-$(NAME): $(OBJ)
-	c++ $(FLAGS) $(OBJ) -o $(NAME)
+$(NAME): $(OSRCS)
+	c++ $(FLAGS) $(INCLUDES) $(OSRCS) -o $(NAME)
 
-objets/%.o: src/%.cpp
+$(OBJ)%.o: src/%.cpp
 	mkdir -p objets
-	c++ $(FLAGS) -c $< -o $@
+	c++ $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -f objets/*.o
