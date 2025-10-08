@@ -33,6 +33,7 @@ class	Request {
 		std::string							getRequestTarget();
 		std::string							getProtocol();
 		std::map<std::string, std::string>	getHeaders();
+		std::string							getBody();
 
 };
 

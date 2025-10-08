@@ -8,7 +8,6 @@ Request::Request(const std::string & message, const int & s_c): _status_code(s_c
 }
 
 void	Request::setStatusCode(const int & st) {
-
 	_status_code = st;
 	std::cout << _status_code;//POUR TESTER (A SUPPRIMER)
 }
@@ -96,29 +95,16 @@ void		Request::setBody(const std::string & message) {
 	_body = message.substr(pos + 4);	
 }
 
-std::string	Request::getMethod() {
-	
-	return (_method);
-}
+std::string	Request::getMethod() {return (_method);}
 
-std::string	Request::getRequestTarget() {
-	
-	return (_request_target);
-}
+std::string	Request::getRequestTarget() {return (_request_target);}
 
-std::string	Request::getProtocol() {
-	
-	return (_protocol);
-}
+std::string	Request::getProtocol() {return (_protocol);}
 
-int	Request::getStatusCode() {
+int	Request::getStatusCode() {return (_status_code);}
 
-	return (_status_code);
-}
+std::map<std::string, std::string> Request::getHeaders() {return (_headers);}
 
-std::map<std::string, std::string> Request::getHeaders() {
-	
-	return (_headers);
-}
+std::string	Request::getBody() {return (_protocol);}
 
 Request::~Request() {}
