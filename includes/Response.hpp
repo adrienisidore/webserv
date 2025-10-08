@@ -12,9 +12,7 @@ class Response
         //Ici on formalise notre instance pour permettre une réponse au client (code d'erreur etc...)
 
     private:
-        Response();//Inutile
-        Response(const Response &copy);//Inutile
-        Response			&operator=(const Response &rhs);//Inutile
+		Request	request;
 
 };
 

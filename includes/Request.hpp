@@ -7,6 +7,8 @@ class	Request {
 
 	private:
 
+	std::string		_message;
+
 	// start-line
 		std::string	_method;
 		std::string	_request_target;//ressource demandee
@@ -14,18 +16,12 @@ class	Request {
 
 	// Headers
 		std::map<std::string, std::string>	_headers;
+		void								setHeaders(const std::string & message);
 
 	// Body
 		std::string	_body;
 
-	// Status : une variable qui devrait etre propre a Request et response ? On peut
-	//On peut faire deriver Request et Response d'une Interface Message.
-	//Dans Message il faut aussi forcement un body meme s'il reste vide (requetes sans body).
-	//Idem pour header ?
-	//Idem pour protocol
 		int	_status_code;
-
-		Request();
 
 	public:
 
@@ -33,10 +29,9 @@ class	Request {
 		~Request();
 
 		std::string							getInfo(const std::string & which_info);
+		int									getStatusCode();
 		std::map<std::string, std::string>	getHeaders();
 
 };
-
-std::ostream&	operator<<(std::ostream& os, const Request &request);
 
 #endif

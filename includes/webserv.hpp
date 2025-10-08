@@ -13,7 +13,7 @@
 # include <netdb.h>//getaddrinfo(), freeaddrinfo(), gai_strerror()
 # include <arpa/inet.h>//ntohs()
 # include <string.h>//memset() : NON AUTORISEE DANS LES FONCTIONS DU SUJET
-# include <string>//std::string : FONCTION INTERDITE
+# include <string>//std::string : FONCTION INTERDITE ?
 # include <poll.h>//poll(), struct pollfd
 # include <errno.h>//errno
 # include <signal.h>
