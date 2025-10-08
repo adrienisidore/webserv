@@ -1,4 +1,7 @@
-#include "./webserv.hpp"
+#ifndef REQUEST_HPP
+# define REQUEST_HPP
+
+#include "webserv.hpp"
 
 class	Request {
 
@@ -18,16 +21,10 @@ class	Request {
 	// Status
 		int	_status_code;
 
-		Request();
-
 	public:
 
-		Request(std::string	message);
+		Request(const std::string &str, const int &s_c);
 		~Request();
-
-		std::string	getMethod();
-		std::string	getRequestTarget();
-		std::string	getProtocol();
-		std::map<std::string, std::string> getHeaders();
-		std::string	getBody();
 };
+
+#endif

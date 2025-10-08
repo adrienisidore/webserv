@@ -18,7 +18,9 @@ INCLUDES = -I./includes/
 
 SRC = src/main.cpp \
       src/Server.cpp \
-	  src/serverReply.cpp
+	  src/serverReply.cpp \
+	  src/Request.cpp \
+	  src/Client.cpp
 
 OBJ = objets/
 

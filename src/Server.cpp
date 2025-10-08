@@ -19,21 +19,21 @@ void	Server::stop() {
 
 	_is_running = false;
 
+	// close all fds
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
 		close(it->fd);
+	}
+	// delete all Clients
+	for (std::map<int, Client *>::iterator it = _map.begin(); it != _map.end(); ++it) {
+		delete it->second;
 	}
 }
 
 void	Server::run() {
 
-	pollfd	listening_pollfd;//Objet contenant listening
-
-	listening_pollfd.fd = _listening;
-	listening_pollfd.events = POLLIN;
-	listening_pollfd.revents = 0;
-
-	_fds.push_back(listening_pollfd);//Envoye dans la liste des sockets a surveiller
-
+	_fds.push_back(new_non_blocking_socket(_listening));
+	//Envoye listening socket dans la liste des sockets a surveiller
+	
 	//Les clients peuvent se connecter
 	if (listen(_listening, MAX_QUEUE))
 		throw SocketException(strerror(errno));
@@ -126,24 +126,26 @@ void	Server::create_connected_socket() {
 
 	// if server socket receives data, create a new connected socket 
 
-	sockaddr_in	client;
-	memset(&client, 0, sizeof(client));
-	socklen_t	client_size = sizeof(client);
+	sockaddr_in	client_socket;
+	memset(&client_socket, 0, sizeof(client_socket));
+	socklen_t	client_size = sizeof(client_socket);
 	
 
 	//Creation du socket connecte pour le client
-	int	connected_socket = accept(_listening, (sockaddr *)&client, &client_size);
+	int	connected_socket = accept(_listening, (sockaddr *)&client_socket, &client_size);
 
 	if (connected_socket == -1)
-		throw SocketException(strerror(errno));	// where will the exception rise
+		throw SocketException(strerror(errno));
 
 	if (_fds.size() < MAX_CLIENTS) {
 
-		pollfd	new_client;
-		new_client.fd = connected_socket;
-		new_client.events = POLLIN;
-		new_client.revents = 0;
-		_fds.push_back(new_client);
+		// add the pollfd derived from the socket to the fds list
+		_fds.push_back(new_non_blocking_socket(connected_socket));
+
+		// create a new client with the socket and add it to the map
+		Client	*client = new Client(connected_socket);
+		_map[connected_socket] = client;
+
 		std::cout << "A new client is on the server !" << std::endl;
 	}
 	else {
@@ -152,58 +154,44 @@ void	Server::create_connected_socket() {
 	}
 }
 
-bool	Server::buffer_incomplete(char buff[BUFF_SIZE], int bytes) {
-
-	if (bytes <= 0)
-		return false;
-
-	std::string	str_buff(buff);
-
-
-	// 408 timeout
-	// 413 too large
-	// what is the error code ?
-	// overall timeout -> 30s
-	// between chinks timeout -> 30s
-	// 
-
-    /* Set the server socket to non-blocking mode
-    if (fcntl(server_fd, F_SETFL, O_NONBLOCK) < 0) {
-        perror("fcntl failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
-	on EACH socket (client and server)
-	*/
-}
-
-//Suppression/ajout et lecture des clients
+/*
+Je dois ajouter:
+- classe Client et iterer dessus (ou hashmap?)
+- classe Request et input directement dans le message
+- mettre a jour status code
+- addClient and removeClient functions
+Je veux une liste de clients dans le serveur et une liste 
+*/
 void	Server::process_clients() {
 	
 	// if a connected socket receives data, THEN we should do stuff with it
 
 	char			buff[BUFF_SIZE];	
-	std::string		message = "";
 	int				bytes_received = 0;
 
 	std::vector<pollfd>::iterator it = _fds.begin();
-	++it;//Surveillance des clients
+	++it;
+
 	while (it != _fds.end()) {
 
-		message.clear();
 		if (it->revents & POLLIN) {
 
-			time_t	start = time(NULL);	
-			do {
-				memset(buff, 0, sizeof(buff));
-				bytes_received = recv(it->fd, buff, sizeof(buff), 0); // (or read())
-				message.append(buff);
+			// TCP DATA READ
+			Client	*client = _map[it->fd];
+			client->start_new_message();
 
+			do {
+				client->read_data(buff, &bytes_received);
 			}
-			while (buffer_incomplete(buff, bytes_received, start));	// AND bytes_received > 0 AND no timeout
+			while (!client->header_complete(bytes_received));
+			
+			Request	request = Request(client->get_current_message(), client->get_status_code());
+
+			// POST -> continuer a lire le body
+
 
 			if (bytes_received < 0) {
-				std::cout << "Error: " << strerror(errno) << std::endl;
+				std::cout << "Error : " << strerror(errno) << std::endl;
 				throw HttpException("Invalid Request");
 			}
 
@@ -214,7 +202,7 @@ void	Server::process_clients() {
 			}
 
 			else {
-				process_message(*it, message);
+				process_message()t;
 				++it;
 			}
 		}

@@ -5,6 +5,9 @@
 # define MAX_QUEUE 3
 # define MAX_CLIENTS 10
 # define BUFF_SIZE 4096
+# define REQUEST_MAX_TIME 60000
+# define CHUNK_MAX_TIME 20000
+# define HEADER_MAX_SIZE 100
 
 //checker les librairies que j'utilise pas
 # include <iostream>//std::cout, std::cerr.
@@ -22,15 +25,17 @@
 # include <map>
 
 #include "./Exceptions.hpp"
+#include "./Request.hpp"
+#include "./Client.hpp"
 #include "./Server.hpp"
 
 // ADRI
-#include "./Request.hpp"
 #include "./Response.hpp"
 #include <sys/stat.h>   // pour struct stat et stat()
 #include <fcntl.h>      // pour open()
 #include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 #include <sstream> // ostream : FONCTION INTERDITE ?
+
 
 void serverReply(int clientSocket, const char *filename);
 

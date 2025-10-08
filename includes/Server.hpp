@@ -1,17 +1,19 @@
-#include "./webserv.hpp"
+#ifndef SERVER_HPP
+# define SERVER_HPP
+
+#include "webserv.hpp"
 
 class	Server {
 
 private:
 
-	static Server*		_instance;
-	int					_listening;
-	std::string			_port;
-	bool				_is_running;
-	std::string			_root;
-	std::vector<pollfd>	_fds;
-	// NOUVELLE LISTE CLIENTS FOR NON-BLOCKING
-	// oui mais aussi besoin de la liste des fds pour poll()
+	static Server*			_instance;
+	int						_listening;
+	std::string				_port;
+	bool					_is_running;
+	std::string				_root;
+	std::vector<pollfd>		_fds;
+	std::map<int, Client *>	_map;
 
 	void		create_server_socket();
 	void		bind_server_socket();
@@ -25,7 +27,6 @@ private:
 	void		set_signals_default();
 
 	pollfd		new_non_blocking_socket(int fd);
-	// getters and setters...
 	
 public:
 
@@ -42,3 +43,4 @@ public:
 // potentially multiple constructors depending on the specified protocol ?
 //
 // stat pour fonction qui telecharge un contenu sur le serveur (POST)
+#endif
