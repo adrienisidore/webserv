@@ -1,8 +1,23 @@
 #include "webserv.hpp"
 
-Request::Request(const std::string & message): _status_code(0) {
+Request::Request(const std::string & message, const int & s_c): _status_code(s_c) {
 
-	// Trouver la position du premier \r\n (fin de la première ligne)
+	setStartLine(message);
+	setHeaders(message);
+	// setBody(message);//setBody hors du constructeur
+}
+
+void	Request::setStatusCode(const int & st) {
+
+	_status_code = st;
+	std::cout << _status_code;//POUR TESTER (A SUPPRIMER)
+}
+
+void	Request::setStartLine(const std::string & message) {
+
+	if (_status_code)
+		return ;
+	// Recuperation de la 1ere ligne
 	// size_t pos = message.find("\r\n");
 	std::string start_line;
 	// if (pos != std::string::npos)
@@ -14,34 +29,25 @@ Request::Request(const std::string & message): _status_code(0) {
 	// 	std::cout << _status_code;
 	// 	return ;
 	// }
-	start_line = message;
-	std::cout << "Start line: [" << start_line << "]" << std::endl;//Verif
-	//Checker qu'il n'y ait pas 2 espaces consecutifs
+	start_line = message;//POUR TESTER (A SUPPRIMER)
+	std::cout << "Start line: [" << start_line << "]" << std::endl;//POUR TESTER (A SUPPRIMER)
+	//<METHOD> <PATH> [HTTP/1.1] : 2 espaces sont necessaires pour une requete valide.
 	size_t first_space = start_line.find(' ');
 	size_t second_space = start_line.find(' ', first_space + 1);
-	if (first_space == std::string::npos || second_space == std::string::npos)
-	{
-		_status_code = 400;
-		std::cout << _status_code;
-		return;
-	}
+	if (first_space == std::string::npos || second_space == std::string::npos) return (setStatusCode(400));
 	//Remplissage des attributs
 	_method = start_line.substr(0, first_space);
 	_request_target = start_line.substr(first_space + 1, second_space - first_space - 1);
 	_protocol = start_line.substr(second_space + 1);
-	std::cout << "Method: [" << _method << "]  Request target: [" << _request_target << "]  Protocole: [" << _protocol << "]" << std::endl;
-	if (_method.empty() || _protocol != "HTTP/1.1")
-		_status_code = 400;
-	else if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
-		_status_code = 501; // Méthode non implémentée dans ce serveur (exemple : GE / HTTP/1.1)
-	std::cout << _status_code;
-
-	//set les Headers dans map
+	if (_method.empty() || _protocol != "HTTP/1.1") return (setStatusCode(400));
+	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE") return (setStatusCode(501));
+	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 }
 
 void	Request::setHeaders(const std::string & message) {
 
-
+	if (_status_code)
+		return ;
 	std::istringstream stream(message);//format compatible pour getline
 	std::string line;//buffer remplit par getline
 
@@ -52,8 +58,42 @@ void	Request::setHeaders(const std::string & message) {
 		//\r : pas de headers
 		//empty : pas de headers ni de body
 		if (line == "\r" || line.empty())
-			break ;		
+			break ;
+		//Si on ne trouve pas de ":" ou pas de \r dans la ligne ou " :" Error 400
+		size_t colonPos = line.find(':');
+		if (colonPos == std::string::npos || line[line.size() - 1] != '\r' || line[colonPos - 1] == ' ') return (setStatusCode(400));
+		//Suppression de \r
+		line.erase(line.size() - 1);
+
+		std::string key = line.substr(0, colonPos);
+		std::string value = line.substr(colonPos + 1);
+		//Suppression des espaces/tab en debut et fin de valeur (HTTP/1.1 trim)
+		while (!value.empty() && (value[0] == ' ' || value[0] == '\t')) value.erase(0,1);
+		while (!value.empty() && (value[value.size()-1] == ' ' || value[value.size()-1] == '\t'))
+		//Serveur non sensible a la casse : content-length == CONTENT-LENGTH
+		for (std::string::size_type i = 0; i < key.size(); ++i) {
+			unsigned char c_ = static_cast<unsigned char>(key[i]);//Sinon comp. indef. sur caracteres accentues
+			if (std::islower(c_)) key[i] = std::toupper(c_);
+		}
+		_headers[key] = value;	
 	}
+	//Verifie que HOST est present (obligatoire)
+	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
+    if (it == _headers.end() || it->second.empty()) return (setStatusCode(400));	
+}
+
+void		Request::setBody(const std::string & message) {
+
+	if (_status_code || _method == "GET" || _method == "HEAD" || _method == "DELETE")
+		return ;
+
+	// Cherche la séparation entre headers et body : "\r\n\r\n"
+	size_t pos = message.find("\r\n\r\n");
+	if (pos == std::string::npos)
+		return ; // Pas de body, on quitte
+
+	// Tout ce qui vient après "\r\n\r\n" est le body
+	_body = message.substr(pos + 4);	
 }
 
 Request::~Request() {}

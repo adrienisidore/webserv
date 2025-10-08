@@ -3,7 +3,8 @@
 int	main(int ac, char **av) {
 
 	(void)ac;
-	Request	request(av[1]);
+	if (av[1])
+		Request	request(av[1], 0);
 
 	// try {
 

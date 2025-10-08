@@ -6,13 +6,15 @@
 class	Request {
 
 	private:
-
-	std::string		_message;
+	//Status_code
+		int		_status_code;
+		void	setStatusCode(const int & st);
 
 	// start-line
 		std::string	_method;
-		std::string	_request_target;//ressource demandee
+		std::string	_request_target;
 		std::string	_protocol;
+		void		setStartLine(const std::string & message);
 
 	// Headers
 		std::map<std::string, std::string>	_headers;
@@ -20,12 +22,10 @@ class	Request {
 
 	// Body
 		std::string	_body;
-
-		int	_status_code;
+		void		setBody(const std::string & message);
 
 	public:
-
-		Request(const std::string &	message);
+		Request(const std::string &	message, const int & s_c);
 		~Request();
 
 		std::string							getInfo(const std::string & which_info);
