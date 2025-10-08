@@ -29,7 +29,7 @@
 #include <sys/stat.h>   // pour struct stat et stat()
 #include <fcntl.h>      // pour open()
 #include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
-#include <sstream> // ostream : FONCTION INTERDITE ?
+#include <sstream> // ostream : INTERDIT
 
 void serverReply(int clientSocket, const char *filename);
 

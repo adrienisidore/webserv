@@ -28,8 +28,10 @@ class	Request {
 		Request(const std::string &	message, const int & s_c);
 		~Request();
 
-		std::string							getInfo(const std::string & which_info);
 		int									getStatusCode();
+		std::string							getMethod();
+		std::string							getRequestTarget();
+		std::string							getProtocol();
 		std::map<std::string, std::string>	getHeaders();
 
 };

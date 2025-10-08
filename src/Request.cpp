@@ -96,4 +96,29 @@ void		Request::setBody(const std::string & message) {
 	_body = message.substr(pos + 4);	
 }
 
+std::string	Request::getMethod() {
+	
+	return (_method);
+}
+
+std::string	Request::getRequestTarget() {
+	
+	return (_request_target);
+}
+
+std::string	Request::getProtocol() {
+	
+	return (_protocol);
+}
+
+int	Request::getStatusCode() {
+
+	return (_status_code);
+}
+
+std::map<std::string, std::string> Request::getHeaders() {
+	
+	return (_headers);
+}
+
 Request::~Request() {}
