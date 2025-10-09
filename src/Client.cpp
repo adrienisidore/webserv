@@ -32,30 +32,37 @@ int	Client::get_status_code() const {
 	return _status_code;
 }
 
-bool	Client::header_complete(char buff[BUFF_SIZE], int bytes) {
+int	Client::header_complete(char buff[BUFF_SIZE], int bytes)
+{
+	std::vector<pollfd>		_fds;
 	
 	time_t	now = time(NULL);
 
-	if (bytes == 0)
-		return true;
+	if (bytes == 0) {
+		return 1;
+	}
 
-	if (bytes < 0 && !buff[0])
-		return true;
+	if (bytes < 0 && buff[0]) {
+		return 1;
+	}
+
+	if (now - _request_start_time > REQUEST_MAX_TIME || now - _last_chunk_time > CHUNK_MAX_TIME) {
+		_status_code = 408 ;
+		return 2;
+	}
+
+	if (_current_message.size() > HEADER_MAX_SIZE) {
+		_status_code = 431;
+		return 2;
+	}
 
 	size_t header_end = _current_message.find("\r\n\r\n");
 	if (header_end != std::string::npos) {
 		_remainder = _current_message.substr(header_end);
-		return true;
+		return 2;
 	}
-	if (now - _request_start_time > REQUEST_MAX_TIME || now - _last_chunk_time > CHUNK_MAX_TIME) {
-		_status_code = 408 ;
-		return true;
-	}
-	if (_current_message.size() > HEADER_MAX_SIZE) {
-		_status_code = 431;
-		return true;
-	}
-	return false;
+
+	return 0;
 }
 	/*
 	

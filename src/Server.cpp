@@ -168,6 +168,7 @@ void	Server::process_clients() {
 
 	char			buff[BUFF_SIZE];	
 	int				bytes_received = 0;
+	int				read_header_status;
 
 	std::vector<pollfd>::iterator it = _fds.begin();
 	++it;
@@ -182,29 +183,32 @@ void	Server::process_clients() {
 
 			do {
 				client->read_data(buff, &bytes_received);
+				read_header_status = client->header_complete(buff, bytes_received);
 			}
-			while (!client->header_complete(buff, bytes_received));
+			while (!read_header_status);
 
-			if (bytes_received < 0 && !buff[0]) {
-				std::cout << "Error : " << strerror(errno) << std::endl;
-				throw HttpException("Client data transfer failed");
-			}
+			if (read_header_status == 1) {
+				// TCP ERROR ON READING HEADER
 
-			if (bytes_received == 0) {
-				std::cout << "client " << std::distance(_fds.begin(), it) << " disconnected" << std::endl;
+				if (bytes_received == 0)
+					std::cout << "client " << std::distance(_fds.begin(), it) << " disconnected" << std::endl;
+				else if (bytes_received < 0 && buff[0])
+					std::cout << "client " << std::distance(_fds.begin(), it) << " data transfer failed" << std::endl;
+
 				close(it->fd);
 				it = _fds.erase(it);
 			}
 
 			else {
-				//process_message()t;
-				++it;
+				// CREATE REQUEST FROM HEADER
+				Request	request = Request(client->get_current_message(), client->get_status_code());
+				std::cout << request;
+				// HANDLE POST ERRORS
+				
+
+				++it; // OR DECIDE TO KEEP-ALIVE CONNECTION OR NOT FROM RESPONSE
 			}
 			
-			Request	request = Request(client->get_current_message(), client->get_status_code());
-			std::cout << request;
-			// POST -> continuer a lire le body
-			// send(it->fd, client->get_current_message().c_str(), client->get_current_message().size(), 0);
 		}
 		else
 			++it;

@@ -4,8 +4,8 @@
 # define MAX_QUEUE 3
 # define MAX_CLIENTS 10
 # define BUFF_SIZE 4096
-# define REQUEST_MAX_TIME 60000
-# define CHUNK_MAX_TIME 20000
+# define REQUEST_MAX_TIME 5
+# define CHUNK_MAX_TIME 5
 # define HEADER_MAX_SIZE 100
 
 //checker les librairies que j'utilise pas

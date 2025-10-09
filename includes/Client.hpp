@@ -19,7 +19,7 @@ public:
 
 	void	start_new_message();
 	void	read_data(char buff[BUFF_SIZE], int *bytes_received);
-	bool	header_complete(char buff[BUFF_SIZE], int bytes_received);
+	int		header_complete(char buff[BUFF_SIZE], int bytes);
 
 	int		get_status_code() const;
 	std::string	get_current_message() const;
