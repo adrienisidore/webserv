@@ -22,22 +22,26 @@ void	Client::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 	_current_message.append(buff);
 }
 
-std::string	Client::get_current_message() {
+std::string	Client::get_current_message() const {
 	
 	return _current_message;
 }
 
-int	Client::get_status_code() {
+int	Client::get_status_code() const {
 	
 	return _status_code;
 }
 
-bool	Client::header_complete(int bytes) {
+bool	Client::header_complete(char buff[BUFF_SIZE], int bytes) {
 	
 	time_t	now = time(NULL);
 
-	if (bytes <= 0)
+	if (bytes == 0)
 		return true;
+
+	if (bytes < 0 && !buff[0])
+		return true;
+
 	size_t header_end = _current_message.find("\r\n\r\n");
 	if (header_end != std::string::npos) {
 		_remainder = _current_message.substr(header_end);
@@ -54,6 +58,11 @@ bool	Client::header_complete(int bytes) {
 	return false;
 }
 	/*
+	
+	IF bytes < 0:
+		-http error
+		-buffer is empty but client is still connected 
+
 	 
 	HOW TO DETECT END OF HEADER
 	-> \r\n\	GET

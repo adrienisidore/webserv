@@ -28,14 +28,16 @@ class	Request {
 		Request(const std::string &	message, const int & s_c);
 		~Request();
 
-		int									getStatusCode();
-		std::string							getMethod();
-		std::string							getRequestTarget();
-		std::string							getProtocol();
-		std::map<std::string, std::string>	getHeaders();
-		std::string							getBody();
+		int									getStatusCode() const;
+		std::string							getMethod() const;
+		std::string							getRequestTarget() const;
+		std::string							getProtocol() const;
+		std::map<std::string, std::string>	getHeaders() const;
+		std::string							getBody() const;
 
 };
 
 //Surcharge d'injection pour les maps (afficher les headers)
+std::ostream&	operator<<(std::ostream& os, const Request &request);
+
 #endif

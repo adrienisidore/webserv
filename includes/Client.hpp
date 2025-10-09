@@ -19,10 +19,10 @@ public:
 
 	void	start_new_message();
 	void	read_data(char buff[BUFF_SIZE], int *bytes_received);
-	bool	header_complete(int bytes_received);
+	bool	header_complete(char buff[BUFF_SIZE], int bytes_received);
 
-	int		get_status_code();
-	std::string	get_current_message();
+	int		get_status_code() const;
+	std::string	get_current_message() const;
 
 };
 // each client could contain a reference to the fd in the fd list

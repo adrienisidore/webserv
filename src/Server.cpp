@@ -183,16 +183,9 @@ void	Server::process_clients() {
 			do {
 				client->read_data(buff, &bytes_received);
 			}
-			while (!client->header_complete(bytes_received));
-			
-			Request	request = Request(client->get_current_message(), client->get_status_code());
-			std::cout << "curl sent :\n" << request.getMethod() << std::endl;
-			std::cout << request.getRequestTarget() << std::endl;
-			std::cout<< request.getRequestTarget() << std::endl;
-			std::cout<< request.getStatusCode() << std::endl;
-			// POST -> continuer a lire le body
-			// send(it->fd, client->get_current_message().c_str(), client->get_current_message().size(), 0);
-			if (bytes_received < 0) {
+			while (!client->header_complete(buff, bytes_received));
+
+			if (bytes_received < 0 && !buff[0]) {
 				std::cout << "Error : " << strerror(errno) << std::endl;
 				throw HttpException("Client data transfer failed");
 			}
@@ -207,6 +200,11 @@ void	Server::process_clients() {
 				//process_message()t;
 				++it;
 			}
+			
+			Request	request = Request(client->get_current_message(), client->get_status_code());
+			std::cout << request;
+			// POST -> continuer a lire le body
+			// send(it->fd, client->get_current_message().c_str(), client->get_current_message().size(), 0);
 		}
 		else
 			++it;
