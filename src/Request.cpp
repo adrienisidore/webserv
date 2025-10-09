@@ -4,7 +4,7 @@ Request::Request(const std::string & message, const int & s_c): _status_code(s_c
 
 	setStartLine(message);
 	setHeaders(message);
-	// setBody(message);//setBody hors du constructeur
+	// addBody(message);//setBody hors du constructeur
 }
 
 void	Request::setStatusCode(const int & st) {
@@ -14,8 +14,9 @@ void	Request::setStatusCode(const int & st) {
 
 void	Request::setStartLine(const std::string & message) {
 
-	if (_status_code)
-		return ;
+	if (_status_code) return ;
+	if (message.find("\r\n\r\n") == std::string::npos) return (setStatusCode(400)); // mauvaise requête : pas de fin de headers
+
 	// Recuperation de la 1ere ligne
 	// size_t pos = message.find("\r\n");
 	std::string start_line;
@@ -45,8 +46,7 @@ void	Request::setStartLine(const std::string & message) {
 
 void	Request::setHeaders(const std::string & message) {
 
-	if (_status_code)
-		return ;
+	if (_status_code) return ;
 	std::istringstream stream(message);//format compatible pour getline
 	std::string line;//buffer remplit par getline
 
@@ -81,16 +81,11 @@ void	Request::setHeaders(const std::string & message) {
     if (it == _headers.end() || it->second.empty()) return (setStatusCode(400));	
 }
 
-void		Request::setBody(const std::string & message) {
+void		Request::addBody(const std::string & message) {
 
-	if (_status_code || _method == "GET" || _method == "HEAD" || _method == "DELETE")
-		return ;
-
+	if (_status_code || _method == "GET" || _method == "HEAD" || _method == "DELETE") return ;
 	// Cherche la séparation entre headers et body : "\r\n\r\n"
 	size_t pos = message.find("\r\n\r\n");
-	if (pos == std::string::npos)
-		return ; // Pas de body, on quitte
-
 	// Tout ce qui vient après "\r\n\r\n" est le body
 	_body = message.substr(pos + 4);	
 }

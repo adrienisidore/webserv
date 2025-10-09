@@ -22,7 +22,7 @@ class	Request {
 
 	// Body
 		std::string	_body;
-		void		setBody(const std::string & message);
+		void		addBody(const std::string & message);
 
 	public:
 		Request(const std::string &	message, const int & s_c);
