@@ -20,7 +20,8 @@ SRC = src/main.cpp \
       src/Server.cpp \
 	  src/serverReply.cpp \
 	  src/Request.cpp \
-	  src/Response.cpp
+	  src/Response.cpp \
+	  src/Client.cpp
 
 OBJ = objets/
 

@@ -7,13 +7,13 @@ class	Server {
 
 private:
 
-	//Variable unique pour toutes les instances : un seul serveur possible
-	static Server*		_instance;//Pour etre utilisable dans handle_sigint
-	int					_listening;
-	std::string			_port;
-	bool				_is_running;
-	std::string			_root;
-	std::vector<pollfd>	_fds;//Contient listening et les sockets connectes
+	static Server*			_instance;
+	int						_listening;
+	std::string				_port;
+	bool					_is_running;
+	std::string				_root;
+	std::vector<pollfd>		_fds;
+	std::map<int, Client *>	_map;
 
 	void		create_server_socket();
 	void		bind_server_socket();
@@ -26,7 +26,7 @@ private:
 	static void	handle_sigint(int sig);//static pour etre accessible par signal
 	void		set_signals_default();
 
-	// getters and setters...
+	pollfd		new_non_blocking_socket(int fd);
 	
 public:
 
