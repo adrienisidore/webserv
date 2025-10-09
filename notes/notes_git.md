@@ -46,6 +46,7 @@ git checkout main
 git pull origin main
 git merge feature-branch # combine the branches and create a merge commit (3 way or fast-forward)
 git push origin main
+git branch -d NAME_OF_BRANCH (git branch -D NAME_OF_BRANCH : forces git to delete)
 ```
 
 ## git rebase vs git merge

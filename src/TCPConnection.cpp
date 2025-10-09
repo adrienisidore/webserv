@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-TCPConnection::TCPConnection(int fd): _fd(fd), _status_code(0) {
+TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket), _status_code(0) {
 
 	_remainder = "";
 }
@@ -17,7 +17,7 @@ void	TCPConnection::start_new_message() {
 void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 
 	memset(buff, 0, BUFF_SIZE);
-	*bytes_received = recv(_fd, buff, BUFF_SIZE, 0);
+	*bytes_received = recv(_tcp_socket, buff, BUFF_SIZE, 0);
 	_last_tcp_chunk_time = time(NULL);
 	_current_message.append(buff);
 }
@@ -34,7 +34,6 @@ int	TCPConnection::get_status_code() const {
 
 int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)
 {
-	std::vector<pollfd>		_fds;
 	
 	time_t	now = time(NULL);
 

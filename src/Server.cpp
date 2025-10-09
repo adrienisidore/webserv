@@ -19,19 +19,17 @@ void	Server::stop() {
 
 	_is_running = false;
 
-	// close all fds
-	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
-		close(it->fd);
-	}
-	// delete all TCP connection
+	close(_listening);
+	// close and delete all TCP connection
 	for (std::map<int, TCPConnection *>::iterator it = _map.begin(); it != _map.end(); ++it) {
+		close(it->first);
 		delete it->second;
 	}
 }
 
 void	Server::run() {
 
-	_fds.push_back(new_non_blocking_socket(_listening));
+	_pollfds.push_back(pollfd_wrapper(_listening));
 	//Envoye listening socket dans la liste des sockets a surveiller
 	
 	//Les clients peuvent se connecter
@@ -42,7 +40,7 @@ void	Server::run() {
 
 	while (_is_running) {
 
-		if (poll(&_fds[0], _fds.size(), -1) == -1) {
+		if (poll(&_pollfds[0], _pollfds.size(), -1) == -1) {
 			int	saved_er = errno;
 			if (saved_er == EINTR)
 				return;
@@ -50,10 +48,10 @@ void	Server::run() {
 				throw SocketException(strerror(errno));
 		}
 		//Surveillance de listening
-		if (_fds[0].revents & POLLIN)
-			create_connected_socket();
+		if (_pollfds[0].revents & POLLIN)
+			create_tcp_socket();
 
-		process_connection();
+		monitor_connections();
 	}
 	std::cout << "end of loop" << std::endl;
 }
@@ -107,12 +105,13 @@ void	Server::bind_server_socket() {
 	freeaddrinfo(res);
 }
 
-pollfd	Server::new_non_blocking_socket(int fd) {
+// configure socket (non-blocking) and wrap it in a pollfd for the tracking_tab
+pollfd	Server::pollfd_wrapper(int fd) {
 
 	pollfd	new_socket;
 	int flags = fcntl(fd, F_GETFL, 0);
 
-	// make the fd non-blocking
+	// make the socket non-blocking
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
 	new_socket.fd = fd;
@@ -122,53 +121,52 @@ pollfd	Server::new_non_blocking_socket(int fd) {
 	return new_socket;
 }
 
-void	Server::create_connected_socket() {
+// fd that represents a client connected using TCP
+void	Server::create_tcp_socket() {
 
-	// if server socket receives data, create a new connected socket 
-
-	sockaddr_in	tcp_socket;
-	memset(&tcp_socket, 0, sizeof(tcp_socket));//FONCTION INTERDITE
-	socklen_t	tcp_size = sizeof(tcp_socket);
+	sockaddr_in	param;
+	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
+	socklen_t	tcp_size = sizeof(param);
 	
 
 	//Creation du socket connecte pour le tcp
-	int	connected_socket = accept(_listening, (sockaddr *)&tcp_socket, &tcp_size);
+	int	tcp_socket = accept(_listening, (sockaddr *)&param, &tcp_size);
 
-	if (connected_socket == -1)
+	if (tcp_socket == -1)
 		throw SocketException(strerror(errno));
 
-	if (_fds.size() < MAX_CONNECTIONS) {
+	if (_pollfds.size() < MAX_CONNECTIONS) {
 
 		// add the pollfd derived from the socket to the fds list
-		_fds.push_back(new_non_blocking_socket(connected_socket));
+		_pollfds.push_back(pollfd_wrapper(tcp_socket));
 
 		// create a new tcp with the socket and add it to the map
-		TCPConnection	*connection = new TCPConnection(connected_socket);
-		_map[connected_socket] = connection;
+		TCPConnection	*connection = new TCPConnection(tcp_socket);
+		_map[tcp_socket] = connection;
 
 		std::cout << "A new TCP connection arrived !" << std::endl;
 	}
 	else {
 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
-		close(connected_socket);
+		close(tcp_socket);
 	}
 }
 
-void	Server::process_connection() {
+void	Server::monitor_connections() {
 
 	char			buff[BUFF_SIZE];	
 	int				bytes_received = 0;
 	int				read_header_status;
 
-	std::vector<pollfd>::iterator it = _fds.begin();
+	std::vector<pollfd>::iterator it = _pollfds.begin();
 	++it;//On ne surveille pas listening
 
-	while (it != _fds.end()) {
+	while (it != _pollfds.end()) {
 
 		if (it->revents & POLLIN) {
 
 			// TCP DATA READ
-			TCPConnection	*connection = _map[it->fd];//_map : associe une cle [fd] a un connection tcp [value]
+			TCPConnection	*connection = _map[it->fd];//_map : many clients can call at the same time, with map we know who's sending data
 			connection->start_new_message();
 
 			//TCP : Recuperation de la data avant transfert dans Request
@@ -182,12 +180,12 @@ void	Server::process_connection() {
 				// TCP ERROR ON READING HEADER
 
 				if (bytes_received == 0)
-					std::cout << "connection " << std::distance(_fds.begin(), it) << " is over" << std::endl;
+					std::cout << "connection " << std::distance(_pollfds.begin(), it) << " is over" << std::endl;
 				else if (bytes_received < 0 && buff[0])
-					std::cout << "connection " << std::distance(_fds.begin(), it) << " data transfer failed" << std::endl;
+					std::cout << "connection " << std::distance(_pollfds.begin(), it) << " data transfer failed" << std::endl;
 
 				close(it->fd);
-				it = _fds.erase(it);
+				it = _pollfds.erase(it);
 			}
 
 			else {
@@ -207,14 +205,14 @@ void	Server::process_connection() {
 						// que se passe t il si content-length > qte de donnees envoyes ?
 						// peut etre egal a 0 ?
 						// gerer content-length : https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
-						//Droit de mettre n'importe quoi ? 
+						//Droit de mettre n'importe quoi dans le body ?
 					}
 					else {
 						request.setStatusCode(411);
 					}
 				}
 				
-				Response response(request);
+				// Response response(request);
 				// SEND RESPONSE
 				//Si dans les headers on a pas de keep alive, ou une erreur qui necessite fin de connexion,
 				//on doit fermer aussi la connection ?

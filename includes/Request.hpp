@@ -3,6 +3,7 @@
 
 #include "./webserv.hpp"
 
+//what a client sent, using TCP
 class	Request {
 
 	private:
@@ -38,7 +39,7 @@ class	Request {
 
 };
 
-//Surcharge d'injection pour les maps (afficher les headers)
+//display the info
 std::ostream&	operator<<(std::ostream& os, const Request &request);
 
 #endif

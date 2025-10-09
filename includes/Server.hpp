@@ -12,30 +12,29 @@ private:
 	std::string				_port;
 	bool					_is_running;
 	std::string				_ressources_path;
-	std::vector<pollfd>		_fds;
-	std::map<int, TCPConnection *>	_map;
+	std::vector<pollfd>		_pollfds; //all sockets we monitor, wrapped up for poll()
+	std::map<int, TCPConnection *>	_map;//_map : many clients can call at the same time, with map we know who's sending data
 
-	void		create_server_socket();
-	void		bind_server_socket();
+	void		create_server_socket();// create a listening socket for the server
+	void		bind_server_socket();// bind listening socket with an IP/Port
 
-	void		create_connected_socket();
+	void		create_tcp_socket();// create a tcp socket, wrapp it in a pollfd and add it to the track list
 	
-	void		process_connection();
+	void		monitor_connections();//monitor the tcp_socket (client connected)
 
 	static void	handle_sigint(int sig);//static pour etre accessible par signal
 	void		set_signals_default();
 
-	pollfd		new_non_blocking_socket(int fd);
+	pollfd		pollfd_wrapper(int fd);
 	
 public:
 
 	Server(std::string port);
 	~Server();
 
-
-	void	run();
+	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
-	void	send_data();
+	void	send_data();// prend en param la TCPConnection et la Response a envoyer
 };
 
 // should I create my own exception class ?

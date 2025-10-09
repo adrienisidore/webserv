@@ -6,7 +6,7 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/10/08 12:20:23 by aisidore         ###   ########.fr        #
+#    Updated: 2025/10/09 18:23:59 by aisidore         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,7 +18,6 @@ INCLUDES = -I./includes/
 
 SRC = src/main.cpp \
       src/Server.cpp \
-	  src/serverReply.cpp \
 	  src/Request.cpp \
 	  src/Response.cpp \
 	  src/TCPConnection.cpp

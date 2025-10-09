@@ -1,5 +1,5 @@
 
-#include "../webserv.hpp"
+#include "webserv.hpp"
 
 int	main() {
 
