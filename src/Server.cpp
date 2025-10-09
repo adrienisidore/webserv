@@ -189,7 +189,6 @@ void	Server::process_clients() {
 
 			// POST -> continuer a lire le body
 
-
 			if (bytes_received < 0) {
 				std::cout << "Error : " << strerror(errno) << std::endl;
 				throw HttpException("Invalid Request");
