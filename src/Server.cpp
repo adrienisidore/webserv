@@ -198,12 +198,12 @@ void	Server::monitor_connections() {
 				{
 					if (request.getHeaders().find("TRANSFER-ENCODING") != request.getHeaders().end() 
 						&& request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-							// gere transfer-encoding
+							connection->read_data_chunked(buff, &bytes_received);
 						}
 					else if (request.getHeaders().find("CONTENT-LENGTH") != request.getHeaders().end()) {
 						// checker si valeur content-length existe
 						// que se passe t il si content-length > qte de donnees envoyes ?
-						// peut etre egal a 0 ?
+						// peut etre eal a 0 ?
 						// gerer content-length : https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
 						//Droit de mettre n'importe quoi dans le body ?
 					}
@@ -211,6 +211,7 @@ void	Server::monitor_connections() {
 						request.setStatusCode(411);
 					}
 				}
+				// ADD BODY TO REQUEST
 				
 				// Response response(request);
 				// SEND RESPONSE

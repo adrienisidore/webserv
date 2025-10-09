@@ -11,7 +11,13 @@ TCPConnection::~TCPConnection() {
 void	TCPConnection::start_new_message() {
 	
 	_current_message.clear();
-	_request_start_time = time(NULL);
+	_header_start_time = time(NULL);
+}
+
+void	TCPConnection::start_new_body() {
+
+	_current_message.clear();
+	_body_start_time = time(NULL);
 }
 
 void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
@@ -20,6 +26,18 @@ void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 	*bytes_received = recv(_tcp_socket, buff, BUFF_SIZE, 0);
 	_last_tcp_chunk_time = time(NULL);
 	_current_message.append(buff);
+}
+
+// besoin d'une nouvelle fonction ? pas sur
+// http chunks are usefull for streaming -> sending data before you have it all
+// ex: video streaming, infinite scrolling (I think)
+// BUT in our case, our usecase for POST is that the client can upload large files, or CGIs
+// -> In this case, the chunk-by-chunk approach is good, because the server can store the data step by step on a file rather than the RAM, avoid DOS attacks, and more...
+//
+
+void	TCPConnection::read_data_chunked(char buff[BUFF_SIZE], int *bytes_received) {
+	memset(buff, 0, BUFF_SIZE);
+	// ...
 }
 
 std::string	TCPConnection::get_current_message() const {
@@ -45,7 +63,6 @@ int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)
 	if (bytes < 0 && buff[0]) {
 		return 1;
 	}
-	//////////////////////////////
 
 	//le client prend trop de temps, ou envoie trop de donnees : on renvoie une reponse
 	if (now - _request_start_time > REQUEST_MAX_TIME || now - _last_tcp_chunk_time > CHUNK_MAX_TIME) {
@@ -63,7 +80,6 @@ int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)
 		_remainder = _current_message.substr(header_end);
 		return 2;//le header est complet, tout s'est bioen passe : on renvoie une reponse
 	}
-	//////////////////////////////
 
 	return 0; // on continue a lire
 }
