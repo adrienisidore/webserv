@@ -37,4 +37,5 @@ class	Request {
 
 };
 
+//Surcharge d'injection pour les maps (afficher les headers)
 #endif
