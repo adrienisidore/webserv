@@ -202,9 +202,11 @@ void	Server::process_clients() {
 			else {
 				// CREATE REQUEST FROM HEADER
 				Request	request = Request(client->get_current_message(), client->get_status_code());
+				std::cout << "After reading header: ";
 				std::cout << request;
-				// HANDLE POST ERRORS
 				
+				// HANDLE POST BODY
+					
 
 				++it; // OR DECIDE TO KEEP-ALIVE CONNECTION OR NOT FROM RESPONSE
 			}
