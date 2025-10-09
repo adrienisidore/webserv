@@ -15,7 +15,7 @@ void	Request::setStatusCode(const int & st) {
 void	Request::setStartLine(const std::string & message) {
 
 	if (_status_code) return ;
-	if (message.find("\r\n\r\n") == std::string::npos) return (setStatusCode(400)); // pas de fin de headers, donc requete mal specifiee
+	// if (message.find("\r\n\r\n") == std::string::npos) return (setStatusCode(400)); // pas de fin de headers, donc requete mal specifiee
 
 	// Recuperation de la 1ere ligne
 	size_t pos = message.find("\r\n");
@@ -25,7 +25,7 @@ void	Request::setStartLine(const std::string & message) {
 	else
 		return (setStatusCode(400));
 
-	//<METHOD> <PATH> [HTTP/1.1] : 2 espaces sont necessaires pour une requete valide.
+	//<METHOD> <RT> [HTTP/1.1] : 2 espaces sont necessaires pour une requete valide.
 	size_t first_space = start_line.find(' ');
 	size_t second_space = start_line.find(' ', first_space + 1);
 	if (first_space == std::string::npos || second_space == std::string::npos) return (setStatusCode(400));
@@ -35,7 +35,7 @@ void	Request::setStartLine(const std::string & message) {
 	_request_target = start_line.substr(first_space + 1, second_space - first_space - 1);
 	_protocol = start_line.substr(second_space + 1);
 
-	//Verification de la methode et du protocole
+	//Verification de la methode et du protocole : verifier logique (adri) du empty
 	if (_method.empty() || _protocol != "HTTP/1.1") return (setStatusCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE") return (setStatusCode(501));
@@ -52,27 +52,29 @@ void	Request::setHeaders(const std::string & message) {
 	//Remplissage de la map contenant les headers
 	while (std::getline(stream, line))
 	{
-		//\r : pas de headers
-		//empty : pas de headers ni de body
-		if (line == "\r" || line.empty())
-			break ;
+		//\r : pas de headers ou c'est fini
+		if (line == "\r")
+			break ;//On sort et on verifie qu'il y a HOST
+			
 		//Si on ne trouve pas de ":" ou pas de \r dans la ligne ou " :" Error 400
 		size_t colonPos = line.find(':');
-		if (colonPos == std::string::npos || line[line.size() - 1] != '\r' || line[colonPos - 1] == ' ') return (setStatusCode(400));
+		if (colonPos == std::string::npos || line[line.size() - 1] != '\r' || line[colonPos - 1] == ' ' || line[colonPos + 1] != ' ') return (setStatusCode(400));
 		//Suppression de \r
 		line.erase(line.size() - 1);
 
 		std::string key = line.substr(0, colonPos);
 		std::string value = line.substr(colonPos + 1);
+
 		//Suppression des espaces/tab en debut et fin de valeur (HTTP/1.1 trim)
 		while (!value.empty() && (value[0] == ' ' || value[0] == '\t')) value.erase(0,1);
-		while (!value.empty() && (value[value.size()-1] == ' ' || value[value.size()-1] == '\t')) value.erase(value.size() - 1); 
+		while (!value.empty() && (value[value.size()-1] == ' ' || value[value.size()-1] == '\t')) value.erase(value.size() - 1);
+
 		//Serveur non sensible a la casse : content-length == CONTENT-LENGTH
 		for (std::string::size_type i = 0; i < key.size(); ++i) {
 			unsigned char c_ = static_cast<unsigned char>(key[i]);//Sinon comp. indef. sur caracteres accentues
 			if (std::islower(c_)) key[i] = std::toupper(c_);
 		}
-		_headers[key] = value;	
+		_headers[key] = value;
 	}
 
 	// std::cout << "inside setHeaders() 1 -> after filling the header's map :" << getStatusCode() << std::endl;

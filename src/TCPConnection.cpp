@@ -1,43 +1,44 @@
 #include "webserv.hpp"
 
-Client::Client(int fd): _fd(fd), _status_code(0) {
+TCPConnection::TCPConnection(int fd): _fd(fd), _status_code(0) {
 
 	_remainder = "";
 }
 
-Client::~Client() {
+TCPConnection::~TCPConnection() {
 }
 
-void	Client::start_new_message() {
+void	TCPConnection::start_new_message() {
 	
 	_current_message.clear();
 	_request_start_time = time(NULL);
 }
 
-void	Client::read_data(char buff[BUFF_SIZE], int *bytes_received) {
+void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 
 	memset(buff, 0, BUFF_SIZE);
 	*bytes_received = recv(_fd, buff, BUFF_SIZE, 0);
-	_last_chunk_time = time(NULL);
+	_last_tcp_chunk_time = time(NULL);
 	_current_message.append(buff);
 }
 
-std::string	Client::get_current_message() const {
+std::string	TCPConnection::get_current_message() const {
 	
 	return _current_message;
 }
 
-int	Client::get_status_code() const {
+int	TCPConnection::get_status_code() const {
 	
 	return _status_code;
 }
 
-int	Client::header_complete(char buff[BUFF_SIZE], int bytes)
+int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)
 {
 	std::vector<pollfd>		_fds;
 	
 	time_t	now = time(NULL);
 
+	// client souhaite partir ou data transfer failed : on deconnecte le client
 	if (bytes == 0) {
 		return 1;
 	}
@@ -45,8 +46,10 @@ int	Client::header_complete(char buff[BUFF_SIZE], int bytes)
 	if (bytes < 0 && buff[0]) {
 		return 1;
 	}
+	//////////////////////////////
 
-	if (now - _request_start_time > REQUEST_MAX_TIME || now - _last_chunk_time > CHUNK_MAX_TIME) {
+	//le client prend trop de temps, ou envoie trop de donnees : on renvoie une reponse
+	if (now - _request_start_time > REQUEST_MAX_TIME || now - _last_tcp_chunk_time > CHUNK_MAX_TIME) {
 		_status_code = 408 ;
 		return 2;
 	}
@@ -59,10 +62,11 @@ int	Client::header_complete(char buff[BUFF_SIZE], int bytes)
 	size_t header_end = _current_message.find("\r\n\r\n");
 	if (header_end != std::string::npos) {
 		_remainder = _current_message.substr(header_end);
-		return 2;
+		return 2;//le header est complet, tout s'est bioen passe : on renvoie une reponse
 	}
+	//////////////////////////////
 
-	return 0;
+	return 0; // on continue a lire
 }
 	/*
 	

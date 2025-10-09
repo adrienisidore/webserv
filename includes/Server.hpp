@@ -11,17 +11,16 @@ private:
 	int						_listening;
 	std::string				_port;
 	bool					_is_running;
-	std::string				_root;
+	std::string				_ressources_path;
 	std::vector<pollfd>		_fds;
-	std::map<int, Client *>	_map;
+	std::map<int, TCPConnection *>	_map;
 
 	void		create_server_socket();
 	void		bind_server_socket();
 
 	void		create_connected_socket();
 	
-	void		process_clients();
-	void		process_message(struct pollfd client, std::string message);
+	void		process_connection();
 
 	static void	handle_sigint(int sig);//static pour etre accessible par signal
 	void		set_signals_default();

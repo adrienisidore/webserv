@@ -3,7 +3,7 @@
 Server	*Server::_instance = NULL;
 
 Server::Server(std::string port)
-: _listening(-1), _port(port), _is_running(false), _root("./ressources")
+: _listening(-1), _port(port), _is_running(false), _ressources_path("./ressources")
 {
 	_instance = this;
 	set_signals_default();
@@ -23,8 +23,8 @@ void	Server::stop() {
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
 		close(it->fd);
 	}
-	// delete all Clients
-	for (std::map<int, Client *>::iterator it = _map.begin(); it != _map.end(); ++it) {
+	// delete all TCP connection
+	for (std::map<int, TCPConnection *>::iterator it = _map.begin(); it != _map.end(); ++it) {
 		delete it->second;
 	}
 }
@@ -53,7 +53,7 @@ void	Server::run() {
 		if (_fds[0].revents & POLLIN)
 			create_connected_socket();
 
-		process_clients();
+		process_connection();
 	}
 	std::cout << "end of loop" << std::endl;
 }
@@ -126,64 +126,55 @@ void	Server::create_connected_socket() {
 
 	// if server socket receives data, create a new connected socket 
 
-	sockaddr_in	client_socket;
-	memset(&client_socket, 0, sizeof(client_socket));
-	socklen_t	client_size = sizeof(client_socket);
+	sockaddr_in	tcp_socket;
+	memset(&tcp_socket, 0, sizeof(tcp_socket));//FONCTION INTERDITE
+	socklen_t	tcp_size = sizeof(tcp_socket);
 	
 
-	//Creation du socket connecte pour le client
-	int	connected_socket = accept(_listening, (sockaddr *)&client_socket, &client_size);
+	//Creation du socket connecte pour le tcp
+	int	connected_socket = accept(_listening, (sockaddr *)&tcp_socket, &tcp_size);
 
 	if (connected_socket == -1)
 		throw SocketException(strerror(errno));
 
-	if (_fds.size() < MAX_CLIENTS) {
+	if (_fds.size() < MAX_CONNECTIONS) {
 
 		// add the pollfd derived from the socket to the fds list
 		_fds.push_back(new_non_blocking_socket(connected_socket));
 
-		// create a new client with the socket and add it to the map
-		Client	*client = new Client(connected_socket);
-		_map[connected_socket] = client;
+		// create a new tcp with the socket and add it to the map
+		TCPConnection	*connection = new TCPConnection(connected_socket);
+		_map[connected_socket] = connection;
 
-		std::cout << "A new client is on the server !" << std::endl;
+		std::cout << "A new TCP connection arrived !" << std::endl;
 	}
 	else {
-		std::cout << "Too many clients, impossible to connect" << std::endl;
+		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
 		close(connected_socket);
 	}
 }
 
-/*
-Je dois ajouter:
-- classe Client et iterer dessus (ou hashmap?)
-- classe Request et input directement dans le message
-- mettre a jour status code
-- addClient and removeClient functions
-Je veux une liste de clients dans le serveur et une liste 
-*/
-void	Server::process_clients() {
-	
-	// if a connected socket receives data, THEN we should do stuff with it
+void	Server::process_connection() {
 
 	char			buff[BUFF_SIZE];	
 	int				bytes_received = 0;
 	int				read_header_status;
 
 	std::vector<pollfd>::iterator it = _fds.begin();
-	++it;
+	++it;//On ne surveille pas listening
 
 	while (it != _fds.end()) {
 
 		if (it->revents & POLLIN) {
 
 			// TCP DATA READ
-			Client	*client = _map[it->fd];
-			client->start_new_message();
+			TCPConnection	*connection = _map[it->fd];//_map : associe une cle [fd] a un connection tcp [value]
+			connection->start_new_message();
 
+			//TCP : Recuperation de la data avant transfert dans Request
 			do {
-				client->read_data(buff, &bytes_received);
-				read_header_status = client->header_complete(buff, bytes_received);
+				connection->read_data(buff, &bytes_received);
+				read_header_status = connection->header_complete(buff, bytes_received);
 			}
 			while (!read_header_status);
 
@@ -191,24 +182,43 @@ void	Server::process_clients() {
 				// TCP ERROR ON READING HEADER
 
 				if (bytes_received == 0)
-					std::cout << "client " << std::distance(_fds.begin(), it) << " disconnected" << std::endl;
+					std::cout << "connection " << std::distance(_fds.begin(), it) << " is over" << std::endl;
 				else if (bytes_received < 0 && buff[0])
-					std::cout << "client " << std::distance(_fds.begin(), it) << " data transfer failed" << std::endl;
+					std::cout << "connection " << std::distance(_fds.begin(), it) << " data transfer failed" << std::endl;
 
 				close(it->fd);
 				it = _fds.erase(it);
 			}
 
 			else {
+				// header_complete == 2, on doit apporter une reponse
 				// CREATE REQUEST FROM HEADER
-				Request	request = Request(client->get_current_message(), client->get_status_code());
+				Request	request = Request(connection->get_current_message(), connection->get_status_code());
 				std::cout << "After reading header: ";
 				std::cout << request;
+				if ((request.getMethod() == "PUT" || request.getMethod() == "POST") && !request.getStatusCode())
+				{
+					if (request.getHeaders().find("TRANSFER-ENCODING") != request.getHeaders().end() 
+						&& request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
+							// gere transfer-encoding
+						}
+					else if (request.getHeaders().find("CONTENT-LENGTH") != request.getHeaders().end()) {
+						// checker si valeur content-length existe
+						// que se passe t il si content-length > qte de donnees envoyes ?
+						// peut etre egal a 0 ?
+						// gerer content-length : https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
+						//Droit de mettre n'importe quoi ? 
+					}
+					else {
+						request.setStatusCode(411);
+					}
+				}
 				
-				// HANDLE POST BODY
-					
-
-				++it; // OR DECIDE TO KEEP-ALIVE CONNECTION OR NOT FROM RESPONSE
+				Response response(request);
+				// SEND RESPONSE
+				//Si dans les headers on a pas de keep alive, ou une erreur qui necessite fin de connexion,
+				//on doit fermer aussi la connection ?
+				++it; // Ici on ferme pas la connexion
 			}
 			
 		}
@@ -217,12 +227,8 @@ void	Server::process_clients() {
 	}
 }
 
-void	Server::process_message(struct pollfd client_fd, std::string message) {
-	
 	//Request	request(message);	// 
 
-	(void)client_fd;
-	(void)message;
 		/*
 	What are the steps ?
 
@@ -237,7 +243,6 @@ void	Server::process_message(struct pollfd client_fd, std::string message) {
 	If error occured at any point, send corresponding error response and return
 	*/
 
-}
 
 	//send(client_fd.fd, buff, bytes_received + 1, 0); // (or write())
 

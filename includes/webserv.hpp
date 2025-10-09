@@ -2,7 +2,7 @@
 # define WEBSERV_HPP
 
 # define MAX_QUEUE 3
-# define MAX_CLIENTS 10
+# define MAX_CONNECTIONS 10
 # define BUFF_SIZE 4096
 # define REQUEST_MAX_TIME 5
 # define CHUNK_MAX_TIME 5
@@ -25,7 +25,7 @@
 
 #include "./Exceptions.hpp"
 #include "./Request.hpp"
-#include "./Client.hpp"
+#include "./TCPConnection.hpp"
 #include "./Server.hpp"
 
 // ADRI

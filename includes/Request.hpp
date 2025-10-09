@@ -8,7 +8,7 @@ class	Request {
 	private:
 	//Status_code
 		int		_status_code;
-		void	setStatusCode(const int & st);
+		
 
 	// start-line
 		std::string	_method;
@@ -28,6 +28,7 @@ class	Request {
 		Request(const std::string &	message, const int & s_c);
 		~Request();
 
+		void								setStatusCode(const int & st);
 		int									getStatusCode() const;
 		std::string							getMethod() const;
 		std::string							getRequestTarget() const;

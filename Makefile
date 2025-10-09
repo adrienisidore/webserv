@@ -21,7 +21,7 @@ SRC = src/main.cpp \
 	  src/serverReply.cpp \
 	  src/Request.cpp \
 	  src/Response.cpp \
-	  src/Client.cpp
+	  src/TCPConnection.cpp
 
 OBJ = objets/
 
