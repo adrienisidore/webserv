@@ -9,7 +9,6 @@ class	Request {
 	private:
 	//Status_code
 		int		_status_code;
-		
 
 	// start-line
 		std::string	_method;
@@ -21,9 +20,8 @@ class	Request {
 		std::map<std::string, std::string>	_headers;
 		void								setHeaders(const std::string & message);
 
-	// Body
-		std::string	_body;
-		void		addBody(const std::string & message);
+	std::string		getParentDirectory(const std::string &path) const;
+	void			checkAccessAndPermissions();
 
 	public:
 		Request(const std::string &	message, const int & s_c);
