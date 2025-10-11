@@ -187,11 +187,10 @@ void	Server::monitor_connections() {
 				close(it->fd);
 				it = _pollfds.erase(it);
 			}
-
 			else {
 				// header_complete == 2, on doit apporter une reponse
 				// CREATE REQUEST FROM HEADER
-				Request	request = Request(connection->get_current_message(), connection->get_status_code());
+				Request	request = Request(connection->get_current_header(), connection->get_status_code());
 				std::cout << "After reading header: ";
 				std::cout << request;
 				if ((request.getMethod() == "PUT" || request.getMethod() == "POST") && !request.getStatusCode())
