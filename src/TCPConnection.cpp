@@ -20,12 +20,22 @@ void	TCPConnection::start_new_body() {
 	_body_start_time = time(NULL);
 }
 
+void	TCPConnection::append_to_header(char *buff) {
+	_current_header.append(buff);
+}
+
 void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 
 	memset(buff, 0, BUFF_SIZE);
 	*bytes_received = recv(_tcp_socket, buff, BUFF_SIZE, 0);
 	_last_tcp_chunk_time = time(NULL);
-	_current_header.append(buff);
+}
+
+void	TCPConnection::parse_http_chunk(char buff[BUFF_SIZE], int bytes) {
+
+	if (bytes == 0 || (bytes < 0 && buff[0]))
+		return ;
+	
 }
 
 // besoin d'une nouvelle fonction ? pas sur
@@ -36,11 +46,6 @@ void	TCPConnection::read_data(char buff[BUFF_SIZE], int *bytes_received) {
 //
 // What are the differences between chunked and the rest ?
 // -> For content-length, we put everything into a string
-
-void	TCPConnection::read_data_chunked(char buff[BUFF_SIZE], int *bytes_received) {
-	memset(buff, 0, BUFF_SIZE);
-	// ...
-}
 
 std::string	TCPConnection::get_current_header() const {
 	
@@ -84,6 +89,32 @@ int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)
 	}
 
 	return 0; // on continue a lire
+}
+
+int	TCPConnection::body_length_complete(char buff[BUFF_SIZE], int bytes, int bytes_written, unsigned long len, unsigned long max_len) {
+
+	time_t	now = time(NULL);
+
+	// client souhaite partir ou data transfer failed : on deconnecte le client
+	if (bytes == 0 || bytes_written == 0) {
+		return 1;
+	}
+
+	if ((bytes < 0 && buff[0]) || bytes_written < 0) {
+		return 1;
+	}
+
+	//le client prend trop de temps, ou envoie trop de donnees : on renvoie une reponse
+	if (now - _header_start_time > REQUEST_MAX_TIME || now - _last_tcp_chunk_time > CHUNK_MAX_TIME) {
+		_status_code = 408 ;
+		return 2;
+	}
+
+	if (len > max_len || len > BODY_MAX_SIZE) {
+		_status_code = 431;
+		return 2;
+	}
+	return 0;
 }
 	/*
 	

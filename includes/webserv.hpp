@@ -6,7 +6,8 @@
 # define BUFF_SIZE 4096
 # define REQUEST_MAX_TIME 5
 # define CHUNK_MAX_TIME 5
-# define HEADER_MAX_SIZE 100
+# define HEADER_MAX_SIZE 10000 // at least BUFF_SIZE because of the do while
+# define BODY_MAX_SIZE 1000000
 
 //checker les librairies que j'utilise pas
 # include <iostream>//std::cout, std::cerr.
@@ -22,6 +23,7 @@
 # include <signal.h>
 # include <vector>
 # include <map>
+# include <stdlib.h>
 
 #include "./Exceptions.hpp"
 #include "./Request.hpp"

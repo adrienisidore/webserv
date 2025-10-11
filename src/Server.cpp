@@ -152,6 +152,22 @@ void	Server::create_tcp_socket() {
 	}
 }
 
+std::string	get_time_stamp() {
+
+	time_t	t = time(NULL);
+	tm *now = localtime(&t);
+	std::ostringstream oss;
+
+	oss << (now->tm_year + 1900)
+		<< (now->tm_mon + 1)
+		<< now->tm_mday << "_"
+		<< now->tm_hour
+		<< now->tm_min
+		<< now->tm_sec;
+
+	return oss.str();
+}
+
 void	Server::monitor_connections() {
 
 	char			buff[BUFF_SIZE];	
@@ -172,6 +188,7 @@ void	Server::monitor_connections() {
 			//TCP : Recuperation de la data avant transfert dans Request
 			do {
 				connection->read_data(buff, &bytes_received);
+				connection->append_to_header(buff);
 				read_header_status = connection->header_complete(buff, bytes_received);
 			}
 			while (!read_header_status);
@@ -193,18 +210,77 @@ void	Server::monitor_connections() {
 				Request	request = Request(connection->get_current_header(), connection->get_status_code());
 				std::cout << "After reading header: ";
 				std::cout << request;
+
+
+				// DON'T FORGET THE POTENTIAL REMAINDER
 				if ((request.getMethod() == "PUT" || request.getMethod() == "POST") && !request.getStatusCode())
 				{
+					std::string name;
+					int			read_body_status;
+					int			bytes_written;
+
+					if (request.getHeaders().find("NAME") != request.getHeaders().end())
+						name = request.getHeaders()["NAME"] + get_time_stamp();
+					else
+						name = get_time_stamp(); 
+
+					int fd_write = open(("./ressources/" + name).c_str(), O_APPEND, O_CREAT); // POST ou PUT ?
+
+					if (fd_write == -1)
+						request.setStatusCode(403);	// should also break from this
+
+					// TRANSFER-ENCODING: CHUNKED
 					if (request.getHeaders().find("TRANSFER-ENCODING") != request.getHeaders().end() 
 						&& request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-							connection->read_data_chunked(buff, &bytes_received);
-						}
-					else if (request.getHeaders().find("CONTENT-LENGTH") != request.getHeaders().end()) {
+						
+
+						// WITHOUT CGI FOR NOW
+						do {
+							std::string	http_chunk = "";
+							int			one_http_chunk_complete = 1;
+							int			all_http_chunks_complete = 1;	// for 1 TCP chunk...
+
+							do {
+								connection->read_data(buff, &bytes_received);
+								if (bytes_received > 0 || (bytes_received < 0 && !buff[0])) {
+									do {
+										one_http_chunk_complete = connection->parse_http_chunk(buff, bytes_received, &http_chunk);
+									}
+									while (!one_http_chunk_complete);
+									bytes_written = write(fd_write, http_chunk.c_str(), http_chunk.size());
+									http_chunk = "";
+								// + remaining...
+								}
+								all_http_chunks_complete = connection->
+							}
+							while (!all_http_chunks_complete)
+
+							read_body_status = 
+						} while (read_body_status);
+					}
+
+					// CONTENT-LENGTH SPECIFIED
+					else if (request.getHeaders().find("CONTENT-LENGTH") != request.getHeaders().end()
+						&& is_valid_length(request.getHeaders()["CONTENT-LENGTH"])) {
+			
 						// checker si valeur content-length existe
 						// que se passe t il si content-length > qte de donnees envoyes ?
 						// peut etre eal a 0 ?
 						// gerer content-length : https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
-						//Droit de mettre n'importe quoi dans le body ?
+						unsigned long	max_body_len = atol(request.getHeaders()["CONTENT-LENGTH"].c_str());	// forbidden ?
+						unsigned long	curr_body_len = 0;
+
+						do {
+							connection->read_data(buff, &bytes_received);
+							curr_body_len += bytes_received;
+							if (curr_body_len <= max_body_len && (bytes_received > 0 || (bytes_received < 0 && !buff[0]))) {
+								bytes_written = write(fd_write, buff, BUFF_SIZE);
+							}
+							else if (bytes_received > 0 || (bytes_received < 0 && !buff[0])) {
+								bytes_written = write(fd_write, buff, curr_body_len - max_body_len);
+							}
+							read_body_status = connection->body_length_complete(buff, bytes_received, bytes_written, curr_body_len, max_body_len);
+						} while (!read_body_status);
 					}
 					else {
 						request.setStatusCode(411);
@@ -224,7 +300,6 @@ void	Server::monitor_connections() {
 			++it;
 	}
 }
-
 	//Request	request(message);	// 
 
 		/*
