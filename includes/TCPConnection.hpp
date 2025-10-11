@@ -8,9 +8,10 @@ class	TCPConnection {
 
 private:
 	int			_tcp_socket; // one connection of one client, using TCP
-	time_t		_request_start_time;//at what time the connection arrives
+	time_t		_header_start_time;//at what time the connection arrives
+	time_t		_body_start_time; // at what time the body arrives
 	time_t		_last_tcp_chunk_time;//at what time the last chunk arrives
-	std::string	_current_message; // track the bytes received after each chunk
+	std::string	_current_header; // track the header's bytes received after each TCP chunk
 	int			_status_code; //if sth wrong happens during the data transfer
 	std::string	_remainder; // first bytes of the body, if yhey've been send with last headers' bytes
 
@@ -19,11 +20,13 @@ public:
 	~TCPConnection();
 
 	void	start_new_message();
+	void	start_new_body();
 	void	read_data(char buff[BUFF_SIZE], int *bytes_received);
+	void	read_data_chunked(char buff[BUFF_SIZE], int *bytes_received);
 	int		header_complete(char buff[BUFF_SIZE], int bytes);
 
 	int		get_status_code() const;
-	std::string	get_current_message() const;
+	std::string	get_current_header() const;
 
 };
 
