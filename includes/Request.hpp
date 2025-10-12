@@ -5,6 +5,7 @@
 
 //Create abstract class HTTPDataTransfer : has a code, methods ...
 
+
 //what a client sent, using TCP
 class	Request {
 
