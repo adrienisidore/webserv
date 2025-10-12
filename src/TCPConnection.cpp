@@ -9,7 +9,7 @@ Request	*TCPConnection::start_new_request() {
 	
 	_header_start_time = time(NULL);
 	_last_tcp_chunk_time = 0;
-	_request_status = READING_HEADER;
+	_status = READING_HEADER;
 	_request.reset();
 	return &_request;
 }
@@ -20,20 +20,21 @@ void	TCPConnection::read_header() {
 
 	if (now - _header_start_time > REQUEST_MAX_TIME || 
 			(_last_tcp_chunk_time && (now - _last_tcp_chunk_time > CHUNK_MAX_TIME))) {
-		_request_status = READ_TIMEOUT;	// status code 408
+		_status = READ_TIMEOUT;	// status code 408
 		return ;
 	}
 
+	// READ FROM RECV
 	memset(_buff, 0, BUFF_SIZE);
 	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
 	_last_tcp_chunk_time = time(NULL);
 
 	if (_bytes_received == 0) {
-		_request_status = CLIENT_DISCONNECTED;	// there is one more case right ?
+		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
 		return;
 	}
 	else if (_bytes_received < 0 && _buff[0]) {
-		_request_status = READ_ERROR; // what is this error ?
+		_status = READ_ERROR; // what is this error ?
 		return;
 	}
 
