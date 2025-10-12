@@ -1,10 +1,25 @@
 #include "webserv.hpp"
 
+Request::Request(void) {
+	reset();
+}
+
 Request::Request(const std::string & message, const int & s_c): _status_code(s_c) {
 
 	setStartLine(message);
 	setHeaders(message);
 	// addBody(message);//setBody hors du constructeur
+}
+
+void	Request::reset() {
+	_status_code = 0;
+	_current_header.clear();
+	_method.clear();
+	_request_target.clear();
+	_protocol.clear();
+	_headers.clear();
+	_remainder.clear();
+	_body.clear();
 }
 
 void	Request::setStatusCode(const int & st) {

@@ -3,13 +3,17 @@
 
 #include "./webserv.hpp"
 
+//Create abstract class HTTPDataTransfer : has a code, methods ...
+
 //what a client sent, using TCP
 class	Request {
 
 	private:
 	//Status_code
-		int		_status_code;
+		int		_code;
 		
+	// raw header
+		std::string	_current_header; // track the header each TCP chunk, each time recv is called
 
 	// start-line
 		std::string	_method;
@@ -22,13 +26,16 @@ class	Request {
 		void								setHeaders(const std::string & message);
 
 	// Body
+		std::string	_remainder; // first bytes of the body, if they've been send with last headers' bytes
 		std::string	_body;
 		void		addBody(const std::string & message);
 
 	public:
+		Request();
 		Request(const std::string &	message, const int & s_c);
 		~Request();
 
+		void								reset();
 		void								setStatusCode(const int & st);
 		int									getStatusCode() const;
 		std::string							getMethod() const;

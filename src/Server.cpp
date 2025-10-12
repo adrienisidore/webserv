@@ -168,6 +168,43 @@ std::string	get_time_stamp() {
 	return oss.str();
 }
 
+// There is something off with this function.
+// Je trouve ca bizarre que la TCPConnection aie un header et un status code. tout cela devrait etre dans la requete
+// => TCPConnection et Server::monitor_connections devraient s'occuper uniquement du protocole TCP.
+// Oui mais il faut etre capable d'interrompre ce protocole si quelque chose tourne mal...
+
+void	Server::monitor_connections() {
+
+	std::vector<pollfd>::iterator	it = _pollfds.begin();
+	++it;
+	
+	while (it != _pollfds.end()) {
+		if (it->revents & POLLIN) {	// what if chunk size > 4096? --> wait for next turn
+
+			TCPConnection	*connection = _map[it->fd];
+
+			//La requete precedente a etre geree
+			if (connection->get_status() == END)
+				connection->start_new_request();
+			//Header en cours de transfert
+			if (connection->get_status() == READING_HEADER)
+				connection->read_header();
+			//Header envoye, pas de body qui suit
+			if (connection->get_status() == READ_COMPLETE) {
+				// GET -> send response
+			}
+			else if (read_status == READ_TOO_LARGE || read_status == READ_TIMEOUT || ) {
+				// handle errors, send response
+				// we could also check the request status code
+			}
+			else if (POST ou PUT) {
+				// continue reading the body ?
+			}
+		}
+	}	
+
+}
+
 void	Server::monitor_connections() {
 
 	char			buff[BUFF_SIZE];	
@@ -183,7 +220,6 @@ void	Server::monitor_connections() {
 
 			// TCP DATA READ
 			TCPConnection	*connection = _map[it->fd];//_map : many clients can call at the same time, with map we know who's sending data
-			connection->start_new_message();
 
 			//TCP : Recuperation de la data avant transfert dans Request
 			do {

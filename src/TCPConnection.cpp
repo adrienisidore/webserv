@@ -1,17 +1,48 @@
 #include "webserv.hpp"
 
-TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket), _status_code(0) {
-
-	_remainder = "";
-}
+TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket) {}
 
 TCPConnection::~TCPConnection() {
 }
 
-void	TCPConnection::start_new_message() {
+Request	*TCPConnection::start_new_request() {
 	
-	_current_header.clear();
 	_header_start_time = time(NULL);
+	_last_tcp_chunk_time = 0;
+	_request_status = READING_HEADER;
+	_request.reset();
+	return &_request;
+}
+
+void	TCPConnection::read_header() {
+
+	time_t	now = time(NULL);
+
+	if (now - _header_start_time > REQUEST_MAX_TIME || 
+			(_last_tcp_chunk_time && (now - _last_tcp_chunk_time > CHUNK_MAX_TIME))) {
+		_request_status = READ_TIMEOUT;	// status code 408
+		return ;
+	}
+
+	memset(_buff, 0, BUFF_SIZE);
+	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
+	_last_tcp_chunk_time = time(NULL);
+
+	if (_bytes_received == 0) {
+		_request_status = CLIENT_DISCONNECTED;	// there is one more case right ?
+		return;
+	}
+	else if (_bytes_received < 0 && _buff[0]) {
+		_request_status = READ_ERROR; // what is this error ?
+		return;
+	}
+
+	_request.append_to_header(buff);
+
+	if (_request.get_.size() > HEADER_MAX_SIZE) {
+		_status_code = 431;
+		return 2;
+	}
 }
 
 void	TCPConnection::start_new_body() {
@@ -47,14 +78,9 @@ void	TCPConnection::parse_http_chunk(char buff[BUFF_SIZE], int bytes) {
 // What are the differences between chunked and the rest ?
 // -> For content-length, we put everything into a string
 
-std::string	TCPConnection::get_current_header() const {
+int	TCPConnection::get_status() const {
 	
-	return _current_header;
-}
-
-int	TCPConnection::get_status_code() const {
-	
-	return _status_code;
+	return _request_status;
 }
 
 int	TCPConnection::header_complete(char buff[BUFF_SIZE], int bytes)

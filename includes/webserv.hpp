@@ -9,6 +9,12 @@
 # define HEADER_MAX_SIZE 10000 // at least BUFF_SIZE because of the do while
 # define BODY_MAX_SIZE 1000000
 
+enum {READING_HEADER, 
+	READ_COMPLETE, 
+	READ_TOO_LARGE, 
+	READ_TIMEOUT, 
+	END};
+
 //checker les librairies que j'utilise pas
 # include <iostream>//std::cout, std::cerr.
 # include <sys/types.h>//socklen_t et les socket types et autres...
