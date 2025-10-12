@@ -31,18 +31,19 @@ enum {READING_HEADER,
 # include <map>
 # include <stdlib.h>
 
-#include "./Exceptions.hpp"
-#include "./Request.hpp"
-#include "./TCPConnection.hpp"
-#include "./Server.hpp"
+# include "./Exceptions.hpp"
+# include "./Request.hpp"
+# include "./TCPConnection.hpp"
+# include "./Server.hpp"
 
 // ADRI
-#include "./Response.hpp"
-#include <sys/stat.h>   // pour struct stat et stat()
-#include <fcntl.h>      // pour open()
-#include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
-#include <sstream> // ostream : INTERDIT
+# include "./Response.hpp"
+# include <sys/stat.h>   // pour struct stat et stat()
+# include <fcntl.h>      // pour open()
+# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
+# include <sstream> // ostream : INTERDIT
 
+# include "AHTTPtransfer.hpp"
 
 void serverReply(int clientSocket, const char *filename);
 

@@ -3,8 +3,6 @@
 
 #include "./webserv.hpp"
 
-//Create abstract class HTTPDataTransfer : has a code, methods ...
-
 //what a client sent, using TCP
 class	Request {
 
@@ -28,7 +26,7 @@ class	Request {
 	// Body
 		std::string	_remainder; // first bytes of the body, if they've been send with last headers' bytes
 		std::string	_body;//useless for now
-		void		addBody(const std::string & message);//useless for now
+		// void		addBody(const std::string & message);//useless for now
 
 		std::string		getParentDirectory(const std::string &path) const;
 		void			checkAccessAndPermissions();
