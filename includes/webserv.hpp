@@ -11,8 +11,13 @@
 
 enum {READING_HEADER, 
 	READ_COMPLETE, 
-	READ_TOO_LARGE, 
+	HEADER_TOO_LARGE, 
+	REQUEST_TOO_LARGE,
 	READ_TIMEOUT, 
+	READ_ERROR,	// keskece?
+	CLIENT_DISCONNECTED,
+	READING_BODY,
+	BODY_TOO_LARGE,
 	END};
 
 //checker les librairies que j'utilise pas

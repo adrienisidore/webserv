@@ -21,13 +21,18 @@ public:
 	~TCPConnection();
 
 	Request	*start_new_request();
+	Request	getRequest() const;
+
 	void	start_new_body();
 	void	read_header();
-	void	read_data(char buff[BUFF_SIZE], int *bytes_received);
+	void	read_body();
 	int		header_complete(char buff[BUFF_SIZE], int bytes);
 	int		body_length_complete(char buff[BUFF_SIZE], int bytes, int bytes_written, unsigned long len, unsigned long max_len);
 	void	append_to_header(char *buff);
 	int		get_status() const;
+	void	set_status(int status);
+
+	int		getTCPSocket() const;
 
 };
 

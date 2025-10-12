@@ -4,12 +4,14 @@ Request::Request(void) {
 	reset();
 }
 
+/*
 Request::Request(const std::string & message, const int & s_c): _code(s_c) {
 
 	setStartLine(message);
 	setHeaders(message);
 	// addBody(message);//setBody hors du constructeur
 }
+*/
 
 void	Request::reset() {
 	_code = 0;
@@ -22,17 +24,28 @@ void	Request::reset() {
 	_body.clear();
 }
 
+void	Request::append_to_header(char *buff) {
+
+	_current_header.append(buff);
+}
+
 void	Request::setStatusCode(const int & st) {
 	_code = st;
 }
 
+void	Request::parse_header() {
+	setStartLine();
+	setHeaders();
+}
+
 //400 Bad Request : on recupere la start line : La 1ere ligne ne respecte pas la syntaxe <METHOD> <PATH> HTTP/<VERSION>\r\n (trop d'espaces, trop de mots, caracteres interdits). Ou carrement pas de 1er mot
-void	Request::setStartLine(const std::string & message) {
+void	Request::setStartLine() {
 
 	if (_code) return ;
 	// if (message.find("\r\n\r\n") == std::string::npos) return (setStatusCode(400)); // pas de fin de headers, donc requete mal specifiee
 
 	// Recuperation de la 1ere ligne
+	const std::string &message = _current_header;
 	size_t pos = message.find("\r\n");
 	std::string start_line;
 	if (pos != std::string::npos)
@@ -56,9 +69,10 @@ void	Request::setStartLine(const std::string & message) {
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE") return (setStatusCode(501));
 }
 
-void	Request::setHeaders(const std::string & message) {
+void	Request::setHeaders() {
 
 	if (_code) return ;
+	const std::string &message = _current_header;
 	std::istringstream stream(message);//format compatible pour getline
 	std::string line;//buffer remplit par getline
 
@@ -120,6 +134,15 @@ std::string		Request::getParentDirectory(const std::string &path) const {
         return path.substr(0, pos);
 }
 
+std::string		Request::getCurrentHeader() const {
+
+	return _current_header;
+}
+
+void	Request::setRemainder(std::string remainder) {
+	
+	_remainder = remainder;
+}
 
 void	Request::checkAccessAndPermissions() {
 

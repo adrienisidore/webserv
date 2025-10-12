@@ -19,11 +19,9 @@ class	Request {
 		std::string	_method;
 		std::string	_request_target;
 		std::string	_protocol;
-		void		setStartLine(const std::string & message);
 
 	// Headers
 		std::map<std::string, std::string>	_headers;
-		void								setHeaders(const std::string & message);
 
 	// Body
 		std::string	_remainder; // first bytes of the body, if they've been send with last headers' bytes
@@ -38,14 +36,22 @@ class	Request {
 		Request(const std::string &	message, const int & s_c);
 		~Request();
 
+		void		parse_header();
+		void		setStartLine();
+		void		setHeaders();
+
 		void								reset();
 		void								setStatusCode(const int & st);
 		int									getStatusCode() const;
 		std::string							getMethod() const;
 		std::string							getRequestTarget() const;
 		std::string							getProtocol() const;
+		std::string							getCurrentHeader() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		std::string							getBody() const;
+
+		void								setRemainder(std::string str);
+		void								append_to_header(char *buff);
 
 };
 

@@ -186,25 +186,43 @@ void	Server::monitor_connections() {
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
 				connection->start_new_request();
+
 			//Header en cours de transfert
 			if (connection->get_status() == READING_HEADER)
 				connection->read_header();
+
 			//Header envoye, pas de body qui suit
 			if (connection->get_status() == READ_COMPLETE) {
 				// GET -> send response
+				// maintenir la connection ou pas ?
+				if (connection->getRequest().getStatusCode() >= 400) 
+					std::cout << "Client sent unvalid GET request" << std::endl;
+				else
+					std::cout << "Client sent valid GET request" << std::endl;
+				send(connection->getTCPSocket(), connection->getRequest().getCurrentHeader().c_str(),connection->getRequest().getCurrentHeader().size(), 0);
+				connection->set_status(END);
 			}
-			else if (read_status == READ_TOO_LARGE || read_status == READ_TIMEOUT || ) {
+			// Erreur dans le header
+			// !! TIMEOUT -> thread independant
+			else if (connection->get_status() == HEADER_TOO_LARGE || connection->get_status() == READ_TIMEOUT || connection->get_status() == READ_ERROR) {
 				// handle errors, send response
 				// we could also check the request status code
+				continue;
 			}
-			else if (POST ou PUT) {
-				// continue reading the body ?
+			// Client deconnecte
+			else if (connection->get_status() == CLIENT_DISCONNECTED) {
+				// disconnect clien	
+			}
+
+			if (connection->get_status() == READING_BODY) {
+				connection->read_body();
 			}
 		}
 	}	
 
 }
 
+/*
 void	Server::monitor_connections() {
 
 	char			buff[BUFF_SIZE];	
@@ -336,6 +354,7 @@ void	Server::monitor_connections() {
 			++it;
 	}
 }
+						   */
 	//Request	request(message);	// 
 
 		/*
