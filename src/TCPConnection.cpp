@@ -1,6 +1,12 @@
 #include "webserv.hpp"
 
-TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket) {}
+TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket) {
+	_status = END;
+	_header_start_time = 0;
+	_last_tcp_chunk_time = 0;
+	_body_start_time = 0;
+	_end_of_request_time = 0;
+}
 
 TCPConnection::~TCPConnection() {
 }
@@ -8,21 +14,13 @@ TCPConnection::~TCPConnection() {
 Request	*TCPConnection::start_new_request() {
 	
 	_header_start_time = time(NULL);
-	_last_tcp_chunk_time = 0;
+	_body_start_time = 0;
 	_status = READING_HEADER;
 	_request.reset();
 	return &_request;
 }
 
 void	TCPConnection::read_header() {
-
-	time_t	now = time(NULL);
-
-	if (now - _header_start_time > REQUEST_MAX_TIME || 
-			(_last_tcp_chunk_time && (now - _last_tcp_chunk_time > CHUNK_MAX_TIME))) {
-		_status = READ_TIMEOUT;	// status code 408
-		return ;
-	}
 
 	// READ FROM RECV
 	memset(_buff, 0, BUFF_SIZE);
@@ -33,14 +31,15 @@ void	TCPConnection::read_header() {
 		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
 		return;
 	}
-	else if (_bytes_received < 0 && _buff[0]) {
+	else if (_bytes_received < 0) {
 		_status = READ_ERROR; // what is this error ?
 		return;
 	}
 
 	// APPEND TO REQUEST CURRENT HEADER
-	_request.append_to_header(_buff);
+	_request.append_to_header(_buff, _bytes_received);
 
+	std::cout << "Header: " << _request.getCurrentHeader() << std::endl;
 	if (_request.getCurrentHeader().size() > HEADER_MAX_SIZE) {
 		_status = HEADER_TOO_LARGE; //_code = 431;
 		return;
@@ -82,6 +81,18 @@ Request	TCPConnection::getRequest() const {
 
 int		TCPConnection::getTCPSocket() const {
 	return _tcp_socket;
+}
+
+time_t	TCPConnection::getHeaderTime() const {
+	return _header_start_time;
+}
+
+time_t	TCPConnection::getBodyTime() const {
+	return _body_start_time;
+}
+
+time_t	TCPConnection::getLastChunkTime() const {
+	return _last_tcp_chunk_time;
 }
 
 // besoin d'une nouvelle fonction ? pas sur

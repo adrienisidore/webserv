@@ -40,7 +40,7 @@ void	Server::run() {
 
 	while (_is_running) {
 
-		if (poll(&_pollfds[0], _pollfds.size(), -1) == -1) {
+		if (poll(&_pollfds[0], _pollfds.size(), calculate_next_timeout()) == -1) {
 			int	saved_er = errno;
 			if (saved_er == EINTR)
 				return;
@@ -52,8 +52,100 @@ void	Server::run() {
 			create_tcp_socket();
 
 		monitor_connections();
+		check_timeouts();
 	}
 	std::cout << "end of loop" << std::endl;
+}
+
+int		Server::calculate_next_timeout() {
+
+	int	now = time(NULL);
+
+	if (_map.empty())
+		return (100);
+
+	int	next_timeout = NO_REQUEST_MAX_TIME;
+
+	for (std::map<int, TCPConnection *>::iterator it = _map.begin(); it != _map.end(); ++it) {
+		TCPConnection	*conn = it->second;
+
+		int	remaining;
+
+		if (conn->getEndOfRequestTime()) {
+			remaining = NO_REQUEST_MAX_TIME - (now - conn->getEndOfRequestTime());
+			if (remaining > 0 && remaining < next_timeout)
+				next_timeout = remaining;
+		}
+
+		if (conn->getHeaderTime()) {
+			remaining = HEADER_MAX_TIME - (now - conn->getHeaderTime());
+			if (remaining > 0 && remaining < next_timeout)
+				next_timeout = remaining;
+		}
+
+		if (conn->getBodyTime()) {
+			remaining = BODY_MAX_TIME - (now - conn->getBodyTime());
+			if (remaining > 0 && remaining < next_timeout)
+				next_timeout = remaining;
+		}
+
+		if (conn->getLastChunkTime()) {
+			remaining = BETWEEN_CHUNK_MAX_TIME- (now - conn->getLastChunkTime());
+			if (remaining > 0 && remaining < next_timeout)
+				next_timeout = remaining;
+		}
+	}
+
+	if (next_timeout <= 0)
+		return 1;
+
+	std::cout << "next timeout" << next_timeout << std::endl;
+	return next_timeout * 1000;
+}
+
+void	Server::check_timeouts() {
+	
+	time_t	now = time(NULL);
+	int		timeout = 0;
+
+	std::vector<pollfd>::iterator	it = _pollfds.begin();
+	++it;
+	while (it != _pollfds.end()) {
+		TCPConnection	*conn = _map[it->fd];
+
+		timeout = 0;
+
+		if (conn->getEndOfRequestTime() && (now - conn->getEndOfRequestTime() > HEADER_MAX_TIME))
+			timeout = 1;
+
+		else if (conn->getHeaderTime() && (now - conn->getHeaderTime() > HEADER_MAX_TIME))
+			timeout = 1;
+
+		else if (conn->getBodyTime() && (now - conn->getBodyTime() > BODY_MAX_TIME))
+			timeout = 1;
+
+		else if (conn->getLastChunkTime() && (now - conn->getLastChunkTime() > CHUNK_MAX_TIME))
+			timeout = 1;
+
+		if (timeout) {
+			std::cout << "TIMEOUT !" << std::endl;
+			it = close_tcp_connection(it);
+		}
+
+		else {
+			std::cout << "no TIMEOUT " << std::endl;
+			++it;
+		}
+	}
+}
+
+std::vector<pollfd>::iterator	Server::close_tcp_connection(std::vector<pollfd>::iterator it) {
+
+	std::cout << "Closing connection" << std::endl;
+	close(it->fd);
+	delete _map[it->fd];	// Warning: it creates the element if doesn't exist yet
+	_map.erase(it->fd);
+	return _pollfds.erase(it);
 }
 
 void	Server::create_server_socket() {
@@ -183,6 +275,8 @@ void	Server::monitor_connections() {
 
 			TCPConnection	*connection = _map[it->fd];
 
+			connection->set_last_tcp_chunk_time(time(NULL));
+
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
 				connection->start_new_request();
@@ -191,35 +285,81 @@ void	Server::monitor_connections() {
 			if (connection->get_status() == READING_HEADER)
 				connection->read_header();
 
-			//Header envoye, pas de body qui suit
+			if (connection->get_status() == READING_BODY)
+				connection->read_body();
+
 			if (connection->get_status() == READ_COMPLETE) {
-				// GET -> send response
-				// maintenir la connection ou pas ?
 				if (connection->getRequest().getStatusCode() >= 400) 
-					std::cout << "Client sent unvalid GET request" << std::endl;
+					std::cout << "Client sent invalid request" << std::endl;
 				else
-					std::cout << "Client sent valid GET request" << std::endl;
-				send(connection->getTCPSocket(), connection->getRequest().getCurrentHeader().c_str(),connection->getRequest().getCurrentHeader().size(), 0);
+					std::cout << "Client sent valid request" << std::endl;
+
+				// decide what to respond
+				simple_reply(connection->getTCPSocket(), "ressources/ServerInterface.html");
 				connection->set_status(END);
+				connection->set_end_of_request_time(time(NULL));
+				++it;
 			}
+
 			// Erreur dans le header
 			// !! TIMEOUT -> thread independant
-			else if (connection->get_status() == HEADER_TOO_LARGE || connection->get_status() == READ_TIMEOUT || connection->get_status() == READ_ERROR) {
-				// handle errors, send response
-				// we could also check the request status code
-				continue;
+			else if (connection->get_status() == HEADER_TOO_LARGE || 
+					connection->get_status() == READ_ERROR ||
+					connection->get_status() == CLIENT_DISCONNECTED) {
+				std::cout << "Closing connection due to error/disconnect" << std::endl;
+				// DELETE the TCP connecion
+				it = close_tcp_connection(it);
 			}
-			// Client deconnecte
-			else if (connection->get_status() == CLIENT_DISCONNECTED) {
-				// disconnect clien	
-			}
-
-			if (connection->get_status() == READING_BODY) {
-				connection->read_body();
-			}
+			else
+				++it;
 		}
+		else
+			++it;
 	}	
+}
 
+void Server::simple_reply(int clientSocket, const char *filename)
+{
+    struct stat fileStat;
+    if (stat(filename, &fileStat) == -1) return;//Envoyer code d'erreur serveur
+    int fileSize = fileStat.st_size;
+
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1)  {
+		return;//Il faudra envoyer le bon code d'erreur 4xxFIN/5xx si problème
+	}
+
+    // Charger fichier
+    char *fileContent = new char[fileSize];
+    read(fd, fileContent, fileSize);
+    close(fd);
+
+    // Construire réponse complète (headers + body)
+    // const char *header =
+    //     "HTTP/1.1 200 OK\r\n"
+    //     "Content-Type: text/html\r\n"
+    //     "Connection: keep-alive\r\n\r\n";
+    
+    std::ostringstream string_fileSize;
+    string_fileSize << fileSize;
+    std::string header = 
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html\r\n"
+        "Content-Length: " + string_fileSize.str() + "\r\n"
+        "Connection: keep-alive\r\n\r\n";
+
+
+    int responseSize = strlen(header.c_str()) + fileSize;//Fonction interdite
+    char *response = new char[responseSize];
+    memcpy(response, header.c_str(), strlen(header.c_str()));//Fonction interdite
+    memcpy(response + strlen(header.c_str()), fileContent, fileSize);//Fonction interdite
+
+    std::cout << "Server's response: " << response << std::endl;
+
+    send(clientSocket, response, responseSize, 0);
+
+    delete[] fileContent;
+    delete[] response;
 }
 
 /*

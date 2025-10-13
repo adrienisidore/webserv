@@ -24,9 +24,9 @@ void	Request::reset() {
 	_body.clear();
 }
 
-void	Request::append_to_header(char *buff) {
+void	Request::append_to_header(char buff[BUFF_SIZE], int bytes) {
 
-	_current_header.append(buff);
+	_current_header.append(buff, (size_t)bytes);
 }
 
 void	Request::setStatusCode(const int & st) {

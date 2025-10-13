@@ -4,10 +4,14 @@
 # define MAX_QUEUE 3
 # define MAX_CONNECTIONS 10
 # define BUFF_SIZE 4096
-# define REQUEST_MAX_TIME 5
-# define CHUNK_MAX_TIME 5
-# define HEADER_MAX_SIZE 10000 // at least BUFF_SIZE because of the do while
+# define HEADER_MAX_SIZE 100000 // at least BUFF_SIZE because of the do while
 # define BODY_MAX_SIZE 1000000
+
+# define BETWEEN_CHUNK_MAX_TIME 10	// max time between TCP chunks WHEN A REQUEST 
+# define HEADER_MAX_TIME 10	// max time for the header to be sent
+# define BODY_MAX_TIME 10 // max time for the body to be sent
+
+# define NO_REQUEST_MAX_TIME 20 // max time between request
 
 enum {READING_HEADER, 
 	READ_COMPLETE, 

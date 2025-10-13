@@ -51,7 +51,7 @@ class	Request {
 		std::string							getBody() const;
 
 		void								setRemainder(std::string str);
-		void								append_to_header(char *buff);
+		void								append_to_header(char buff[BUFF_SIZE], int bytes);
 
 };
 

@@ -19,6 +19,7 @@ private:
 	void		bind_server_socket();// bind listening socket with an IP/Port
 
 	void		create_tcp_socket();// create a tcp socket, wrapp it in a pollfd and add it to the track list
+	std::vector<pollfd>::iterator	close_tcp_connection(std::vector<pollfd>::iterator);
 	
 	void		monitor_connections();//monitor the tcp_socket (client connected)
 
@@ -27,6 +28,9 @@ private:
 
 	pollfd		pollfd_wrapper(int fd);
 	
+	void		check_timeouts();
+	int			calculate_next_timeout();
+
 public:
 
 	Server(std::string port);
@@ -34,12 +38,12 @@ public:
 
 	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
-	void	send_data();// prend en param la TCPConnection et la Response a envoyer
+	void	simple_reply(int clientSocket, const char *filename);
 };
 
 // should I create my own exception class ?
 // potentially multiple constructors depending on the specified protocol ?
 //
-// stat pour fonction qui telecharge un contenu sur le serveur (POST)
+// stat pour fonction qui telecharge un conftenu sur le serveur (POST)
 
 #endif
