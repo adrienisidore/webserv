@@ -28,7 +28,7 @@ class	Request : public HTTPcontent {
 		Request(const std::string &	message, const int & code);
 		~Request();
 
-		void								reset();
+		void								reset();//public ?
 		void								setCode(const int & code);
 
 };
