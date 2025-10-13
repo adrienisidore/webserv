@@ -43,7 +43,7 @@ enum {READING_HEADER,
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
 
-# include "AHTTPtransfer.hpp"
+# include "HTTPcontent.hpp"
 
 void serverReply(int clientSocket, const char *filename);
 

@@ -3,7 +3,7 @@
 
 #include "webserv.hpp"
 
-class Response
+class Response : public HTTPcontent
 {
     public:
         Response(const Request request);//On créé une réponse adaptée, et on envoie la donnée dans "Body"
