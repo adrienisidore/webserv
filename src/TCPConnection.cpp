@@ -150,12 +150,12 @@ void	TCPConnection::read_body() {
 
 	if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
 		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-		write_body_chunked();
+		write_body_chunked(fd_write);
 	}
 
 	else if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()
 		&& is_valid_length(_request.getHeaders()["CONTENT-LENGTH"])) {
-		write_body_length();
+		write_body_length(fd_write);
 	}
 	
 	else 
@@ -164,12 +164,13 @@ void	TCPConnection::read_body() {
 	return;
 }
 
-void	TCPConnection::write_body_chunked() {
+void	TCPConnection::write_body_chunked(int fd) {
 
 }
 
-void	TCPConnection::write_body_length() {
+void	TCPConnection::write_body_length(int fd) {
 
+	unsigned long len = std::atoul(_request.getHeaders()["CONTENT-LENGTH"].c_str());
 }
 
 int	TCPConnection::get_status() const {
