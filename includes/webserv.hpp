@@ -10,7 +10,6 @@
 # define BETWEEN_CHUNK_MAX_TIME 10	// max time between TCP chunks WHEN A REQUEST 
 # define HEADER_MAX_TIME 10	// max time for the header to be sent
 # define BODY_MAX_TIME 10 // max time for the body to be sent
-
 # define NO_REQUEST_MAX_TIME 20 // max time between request
 
 enum {READING_HEADER, 
@@ -22,6 +21,8 @@ enum {READING_HEADER,
 	CLIENT_DISCONNECTED,
 	READING_BODY,
 	BODY_TOO_LARGE,
+	FORBIDDEN_REQUEST,
+	LENGTH_REQUIRED,
 	END};
 
 //checker les librairies que j'utilise pas

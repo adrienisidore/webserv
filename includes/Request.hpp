@@ -24,7 +24,6 @@ class	Request {
 		std::map<std::string, std::string>	_headers;
 
 	// Body
-		std::string	_remainder; // first bytes of the body, if they've been send with last headers' bytes
 		std::string	_body;//useless for now
 		void		addBody(const std::string & message);//useless for now
 
@@ -39,6 +38,7 @@ class	Request {
 		void		parse_header();
 		void		setStartLine();
 		void		setHeaders();
+		void		append_to_header(char buff[BUFF_SIZE], int bytes);
 
 		void								reset();
 		void								setStatusCode(const int & st);
@@ -49,9 +49,7 @@ class	Request {
 		std::string							getCurrentHeader() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		std::string							getBody() const;
-
-		void								setRemainder(std::string str);
-		void								append_to_header(char buff[BUFF_SIZE], int bytes);
+		std::string							getRemainder() const;
 
 };
 

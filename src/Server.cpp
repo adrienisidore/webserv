@@ -124,7 +124,7 @@ void	Server::check_timeouts() {
 		else if (conn->getBodyTime() && (now - conn->getBodyTime() > BODY_MAX_TIME))
 			timeout = 1;
 
-		else if (conn->getLastChunkTime() && (now - conn->getLastChunkTime() > CHUNK_MAX_TIME))
+		else if (conn->getLastChunkTime() && (now - conn->getLastChunkTime() > BETWEEN_CHUNK_MAX_TIME))
 			timeout = 1;
 
 		if (timeout) {
@@ -244,21 +244,6 @@ void	Server::create_tcp_socket() {
 	}
 }
 
-std::string	get_time_stamp() {
-
-	time_t	t = time(NULL);
-	tm *now = localtime(&t);
-	std::ostringstream oss;
-
-	oss << (now->tm_year + 1900)
-		<< (now->tm_mon + 1)
-		<< now->tm_mday << "_"
-		<< now->tm_hour
-		<< now->tm_min
-		<< now->tm_sec;
-
-	return oss.str();
-}
 
 // There is something off with this function.
 // Je trouve ca bizarre que la TCPConnection aie un header et un status code. tout cela devrait etre dans la requete
@@ -275,8 +260,6 @@ void	Server::monitor_connections() {
 
 			TCPConnection	*connection = _map[it->fd];
 
-			connection->set_last_tcp_chunk_time(time(NULL));
-
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
 				connection->start_new_request();
@@ -289,15 +272,11 @@ void	Server::monitor_connections() {
 				connection->read_body();
 
 			if (connection->get_status() == READ_COMPLETE) {
-				if (connection->getRequest().getStatusCode() >= 400) 
-					std::cout << "Client sent invalid request" << std::endl;
-				else
-					std::cout << "Client sent valid request" << std::endl;
+
+				connection->end_request();
 
 				// decide what to respond
 				simple_reply(connection->getTCPSocket(), "ressources/ServerInterface.html");
-				connection->set_status(END);
-				connection->set_end_of_request_time(time(NULL));
 				++it;
 			}
 
@@ -305,7 +284,9 @@ void	Server::monitor_connections() {
 			// !! TIMEOUT -> thread independant
 			else if (connection->get_status() == HEADER_TOO_LARGE || 
 					connection->get_status() == READ_ERROR ||
-					connection->get_status() == CLIENT_DISCONNECTED) {
+					connection->get_status() == CLIENT_DISCONNECTED ||
+					connection->get_status() == FORBIDDEN_REQUEST ||
+					connection->get_status() == LENGTH_REQUIRED) {
 				std::cout << "Closing connection due to error/disconnect" << std::endl;
 				// DELETE the TCP connecion
 				it = close_tcp_connection(it);
@@ -361,7 +342,6 @@ void Server::simple_reply(int clientSocket, const char *filename)
     delete[] fileContent;
     delete[] response;
 }
-
 /*
 void	Server::monitor_connections() {
 

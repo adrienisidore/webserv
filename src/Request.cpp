@@ -20,7 +20,6 @@ void	Request::reset() {
 	_request_target.clear();
 	_protocol.clear();
 	_headers.clear();
-	_remainder.clear();
 	_body.clear();
 }
 
@@ -137,11 +136,6 @@ std::string		Request::getParentDirectory(const std::string &path) const {
 std::string		Request::getCurrentHeader() const {
 
 	return _current_header;
-}
-
-void	Request::setRemainder(std::string remainder) {
-	
-	_remainder = remainder;
 }
 
 void	Request::checkAccessAndPermissions() {

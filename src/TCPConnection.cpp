@@ -1,11 +1,15 @@
 #include "webserv.hpp"
 
 TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket) {
+	end_request();
+}
+
+void	TCPConnection::end_request() {
 	_status = END;
 	_header_start_time = 0;
 	_last_tcp_chunk_time = 0;
 	_body_start_time = 0;
-	_end_of_request_time = 0;
+	_end_of_request_time = time(NULL);
 }
 
 TCPConnection::~TCPConnection() {
@@ -14,6 +18,7 @@ TCPConnection::~TCPConnection() {
 Request	*TCPConnection::start_new_request() {
 	
 	_header_start_time = time(NULL);
+	_end_of_request_time = 0;
 	_body_start_time = 0;
 	_status = READING_HEADER;
 	_request.reset();
@@ -49,10 +54,13 @@ void	TCPConnection::read_header() {
 	size_t header_end = _request.getCurrentHeader().find("\r\n\r\n");
 
 	if (header_end != std::string::npos) {
+
 		_request.parse_header();
 		
-		if (_request.getMethod() == "POST") {
-			_request.setRemainder(_request.getCurrentHeader().substr(header_end));
+		if (_request.getMethod() == "POST") { // OU PUT
+			_body_start_time = time(NULL);
+			_header_start_time = 0;
+			_body_buff = _request.getCurrentHeader().substr(header_end);
 			_status = READING_BODY;
 		}
 		else
@@ -60,10 +68,108 @@ void	TCPConnection::read_header() {
 	}
 }
 
+std::string	get_time_stamp() {
+
+	time_t	t = time(NULL);
+	tm *now = localtime(&t);
+	std::ostringstream oss;
+
+	oss << (now->tm_year + 1900)
+		<< (now->tm_mon + 1)
+		<< now->tm_mday << "_"
+		<< now->tm_hour
+		<< now->tm_min
+		<< now->tm_sec;
+
+	return oss.str();
+}
+
+bool is_valid_length(const std::string& content_length) {
+
+	if (content_length.empty())
+        return false;
+    
+    for (size_t i = 0; i < content_length.length(); i++) {
+        if (!std::isdigit(static_cast<unsigned char>(content_length[i])))
+            return false;
+    }
+    
+    if (content_length.length() > 1 && content_length[0] == '0')
+        return false;
+    
+    char* endptr;
+    errno = 0;
+    unsigned long length = std::strtoul(content_length.c_str(), &endptr, 10);
+    
+    if (errno == ERANGE || *endptr != '\0')
+        return false;
+    
+    if (length > BODY_MAX_SIZE)
+        return false;
+    
+    return true;
+}
+
 void	TCPConnection::read_body() {
 
-	// TO IMPLEMENT
+	std::string	filename;
+	int			fd_write;
+
+	// THE ACTUAL READING
+	
+	memset(_buff, 0, BUFF_SIZE);
+	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
+	_last_tcp_chunk_time = time(NULL);
+
+	if (_bytes_received == 0) {
+		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
+		return;
+	}
+	else if (_bytes_received < 0) {
+		_status = READ_ERROR; // what is this error ?
+		return;
+	}
+
+	// INITIALISE WRITING PART
+
+	if (_request.getHeaders().find("NAME") != _request.getHeaders().end())
+		filename = _request.getHeaders()["NAME"];
+	else
+		filename = get_time_stamp(); 
+
+	fd_write = open(("./ressources/" + filename).c_str(), O_WRONLY, O_CREAT); // POST ou PUT ?
+	
+	if (fd_write == -1) {
+		_status = FORBIDDEN_REQUEST;	
+		return;
+	}
+
+	// WRITE TO FILE
+
+	_body_buff.append(_buff);
+
+	if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
+		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
+		write_body_chunked();
+	}
+
+	else if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()
+		&& is_valid_length(_request.getHeaders()["CONTENT-LENGTH"])) {
+		write_body_length();
+	}
+	
+	else 
+		_status = LENGTH_REQUIRED;
+
 	return;
+}
+
+void	TCPConnection::write_body_chunked() {
+
+}
+
+void	TCPConnection::write_body_length() {
+
 }
 
 int	TCPConnection::get_status() const {
@@ -93,6 +199,10 @@ time_t	TCPConnection::getBodyTime() const {
 
 time_t	TCPConnection::getLastChunkTime() const {
 	return _last_tcp_chunk_time;
+}
+
+time_t	TCPConnection::getEndOfRequestTime() const {
+		return _end_of_request_time;
 }
 
 // besoin d'une nouvelle fonction ? pas sur
