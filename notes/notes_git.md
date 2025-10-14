@@ -12,6 +12,7 @@ git pull origin main    # pull everyting from the main branch. 'origin' is conve
 2. Create / switch to your feature branch
 
 ```bash
+# DON'T FORGET TO PUSH YOUR BRANCH TO HAVE AN ACCESS ANYWHERE
 git checkout -b feature_branch  # -b creates the branch if it doesn't exist yet
 ```
 

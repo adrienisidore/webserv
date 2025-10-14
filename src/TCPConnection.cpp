@@ -37,7 +37,8 @@ void	TCPConnection::read_header() {
 		return;
 	}
 	else if (_bytes_received < 0) {
-		_status = READ_ERROR; // what is this error ?
+		_status = ERROR;
+		_request.setCode(500); // A checker
 		return;
 	}
 
@@ -46,7 +47,8 @@ void	TCPConnection::read_header() {
 
 	std::cout << "Header: " << _request.getCurrentHeader() << std::endl;
 	if (_request.getCurrentHeader().size() > HEADER_MAX_SIZE) {
-		_status = HEADER_TOO_LARGE; //_code = 431;
+		_status = ERROR;
+		_request.setCode(431);
 		return;
 	}
 
@@ -56,8 +58,11 @@ void	TCPConnection::read_header() {
 	if (header_end != std::string::npos) {
 
 		_request.parse_header();
-		
-		if (_request.getMethod() == "POST") { // OU PUT
+		if (_request.getCode()) {
+			_status = ERROR;
+			return;
+		}
+		else if (_request.getMethod() == "POST") { // OU PUT
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
 			_body_buff = _request.getCurrentHeader().substr(header_end);
@@ -126,7 +131,8 @@ void	TCPConnection::read_body() {
 		return;
 	}
 	else if (_bytes_received < 0) {
-		_status = READ_ERROR; // what is this error ?
+		_status = ERROR;
+		_request.setCode(500); // A checker
 		return;
 	}
 
@@ -140,7 +146,8 @@ void	TCPConnection::read_body() {
 	fd_write = open(("./ressources/" + filename).c_str(), O_WRONLY, O_CREAT); // POST ou PUT ?
 	
 	if (fd_write == -1) {
-		_status = FORBIDDEN_REQUEST;	
+		_status = ERROR;
+		_request.setCode(403);
 		return;
 	}
 
@@ -158,19 +165,23 @@ void	TCPConnection::read_body() {
 		write_body_length(fd_write);
 	}
 	
-	else 
-		_status = LENGTH_REQUIRED;
-
+	else {
+		_status = ERROR;
+		_request.setCode(411);
+		return;
+	}
 	return;
 }
 
 void	TCPConnection::write_body_chunked(int fd) {
-
+(void)fd;
 }
 
 void	TCPConnection::write_body_length(int fd) {
 
-	unsigned long len = std::atoul(_request.getHeaders()["CONTENT-LENGTH"].c_str());
+	(void)fd;
+	unsigned long len = std::atol(_request.getHeaders()["CONTENT-LENGTH"].c_str()); // forbidden
+	(void)len;
 }
 
 int	TCPConnection::get_status() const {

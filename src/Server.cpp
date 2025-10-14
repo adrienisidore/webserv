@@ -282,11 +282,8 @@ void	Server::monitor_connections() {
 
 			// Erreur dans le header
 			// !! TIMEOUT -> thread independant
-			else if (connection->get_status() == HEADER_TOO_LARGE || 
-					connection->get_status() == READ_ERROR ||
-					connection->get_status() == CLIENT_DISCONNECTED ||
-					connection->get_status() == FORBIDDEN_REQUEST ||
-					connection->get_status() == LENGTH_REQUIRED) {
+			else if (connection->get_status() == ERROR ||
+					connection->get_status() == CLIENT_DISCONNECTED) {
 				std::cout << "Closing connection due to error/disconnect" << std::endl;
 				// DELETE the TCP connecion
 				it = close_tcp_connection(it);
@@ -299,6 +296,7 @@ void	Server::monitor_connections() {
 	}	
 }
 
+//ATTENTION : envoyer petit a petit (ajouter le header specifiant la taille des chunk envoyes)
 void Server::simple_reply(int clientSocket, const char *filename)
 {
     struct stat fileStat;

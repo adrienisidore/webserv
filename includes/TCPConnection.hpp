@@ -39,8 +39,8 @@ public:
 
 	int		getTCPSocket() const;
 
-	void	write_body_chunked();
-	void	write_body_length();
+	void	write_body_chunked(int);
+	void	write_body_length(int);
 
 	time_t	getEndOfRequestTime() const;  
 	time_t	getHeaderTime() const;

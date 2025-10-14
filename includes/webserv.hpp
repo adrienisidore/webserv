@@ -12,17 +12,11 @@
 # define BODY_MAX_TIME 10 // max time for the body to be sent
 # define NO_REQUEST_MAX_TIME 20 // max time between request
 
-enum {READING_HEADER, 
-	READ_COMPLETE, 
-	HEADER_TOO_LARGE, 
-	REQUEST_TOO_LARGE,
-	READ_TIMEOUT, 
-	READ_ERROR,	// keskece?
-	CLIENT_DISCONNECTED,
+enum {READING_HEADER,
 	READING_BODY,
-	BODY_TOO_LARGE,
-	FORBIDDEN_REQUEST,
-	LENGTH_REQUIRED,
+	READ_COMPLETE, 
+	CLIENT_DISCONNECTED,
+	ERROR,
 	END};
 
 //checker les librairies que j'utilise pas
@@ -41,19 +35,18 @@ enum {READING_HEADER,
 # include <map>
 # include <stdlib.h>
 
-#include "./Exceptions.hpp"
-#include "./Request.hpp"
-#include "./TCPConnection.hpp"
-#include "./Server.hpp"
+# include "HTTPcontent.hpp"
+# include "./Exceptions.hpp"
+# include "./Request.hpp"
+# include "./TCPConnection.hpp"
+# include "./Server.hpp"
 
 // ADRI
-#include "./Response.hpp"
-#include <sys/stat.h>   // pour struct stat et stat()
-#include <fcntl.h>      // pour open()
-#include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
-#include <sstream> // ostream : INTERDIT
+# include "./Response.hpp"
+# include <sys/stat.h>   // pour struct stat et stat()
+# include <fcntl.h>      // pour open()
+# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
+# include <sstream> // ostream : INTERDIT
 
-
-void serverReply(int clientSocket, const char *filename);
 
 #endif
