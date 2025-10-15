@@ -15,7 +15,6 @@ private:
 	time_t		_last_tcp_chunk_time;//at what time the last chunk arrives
 	
 	char		_buff[BUFF_SIZE];
-	std::string	_body_buff;	
 	int			_bytes_received;
 	int			_status; //statut de la livraison de la donnee
 	Request		_request;	// current request
@@ -27,15 +26,19 @@ public:
 	Request	*start_new_request();
 	Request	getRequest() const;
 
+	void	check_body_headers();
 	void	start_new_body();
 	void	read_header();
 	void	read_body();
+	void	read_body_chunked();
 	int		header_complete(char buff[BUFF_SIZE], int bytes);
 	int		body_length_complete(char buff[BUFF_SIZE], int bytes, int bytes_written, unsigned long len, unsigned long max_len);
 	void	append_to_header(char *buff);
 	int		get_status() const;
 	void	set_status(int status);
 	void	end_request();
+
+	bool 	is_valid_length(const std::string& content_length);
 
 	int		getTCPSocket() const;
 

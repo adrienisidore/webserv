@@ -14,10 +14,16 @@
 
 enum {READING_HEADER,
 	READING_BODY,
+	WAIT_FOR_BODY,
 	READ_COMPLETE, 
 	CLIENT_DISCONNECTED,
 	ERROR,
 	END};
+
+enum {
+	CONTENT_LENGTH,
+	CHUNKED
+};
 
 //checker les librairies que j'utilise pas
 # include <iostream>//std::cout, std::cerr.
@@ -47,6 +53,8 @@ enum {READING_HEADER,
 # include <fcntl.h>      // pour open()
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
+
+# include <cmath>//Interdit
 
 
 #endif

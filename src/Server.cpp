@@ -268,6 +268,9 @@ void	Server::monitor_connections() {
 			if (connection->get_status() == READING_HEADER)
 				connection->read_header();
 
+			if (connection->get_status() == WAIT_FOR_BODY)
+				connection->check_body_headers();
+
 			if (connection->get_status() == READING_BODY)
 				connection->read_body();
 
@@ -280,8 +283,6 @@ void	Server::monitor_connections() {
 				++it;
 			}
 
-			// Erreur dans le header
-			// !! TIMEOUT -> thread independant
 			else if (connection->get_status() == ERROR ||
 					connection->get_status() == CLIENT_DISCONNECTED) {
 				std::cout << "Closing connection due to error/disconnect" << std::endl;
@@ -312,12 +313,6 @@ void Server::simple_reply(int clientSocket, const char *filename)
     char *fileContent = new char[fileSize];
     read(fd, fileContent, fileSize);
     close(fd);
-
-    // Construire réponse complète (headers + body)
-    // const char *header =
-    //     "HTTP/1.1 200 OK\r\n"
-    //     "Content-Type: text/html\r\n"
-    //     "Connection: keep-alive\r\n\r\n";
     
     std::ostringstream string_fileSize;
     string_fileSize << fileSize;
@@ -327,11 +322,11 @@ void Server::simple_reply(int clientSocket, const char *filename)
         "Content-Length: " + string_fileSize.str() + "\r\n"
         "Connection: keep-alive\r\n\r\n";
 
-
     int responseSize = strlen(header.c_str()) + fileSize;//Fonction interdite
     char *response = new char[responseSize];
     memcpy(response, header.c_str(), strlen(header.c_str()));//Fonction interdite
     memcpy(response + strlen(header.c_str()), fileContent, fileSize);//Fonction interdite
+	response[responseSize] = '\0';
 
     std::cout << "Server's response: " << response << std::endl;
 

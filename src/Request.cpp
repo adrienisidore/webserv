@@ -17,10 +17,92 @@ void	Request::append_to_header(char buff[BUFF_SIZE], int bytes) {
 	_current_header.append(buff, (size_t)bytes);
 }
 
+void	Request::setCurrentBody(std::string str) {
+	_current_body = str;
+}
+
+std::string	Request::getCurrentBody() const {
+	return _current_body;
+}
+
+int		Request::getBodyProtocol() const {
+	return _body_protocol;
+}
+
+void	Request::setBodyProtocol(int protocol) {
+	_body_protocol = protocol;
+}
+
+unsigned long	Request::getContentLength() const {
+	return _content_length;
+}
+
+void	Request::setContentLength(unsigned long len) {
+	_content_length = len;
+}
+
+void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {
+
+	_current_body.append(buff, (size_t)bytes);
+}
+
 void	Request::parse_header() {
 	setStartLine();
 	setHeaders();
 	checkPermissions();
+}
+
+void	Request::unchunk_body() {
+
+	std::string	unchunked_body;
+
+	std::istringstream stream(_current_body);
+	std::string line;
+	std::string line_without;//line without '\r'
+
+	int		i = 0;
+	size_t	line_len;
+	size_t	backr;
+	double	real_len;
+	char	*end;
+	//Remplissage de la map contenant les headers
+	while (std::getline(stream, line))
+	{
+		//\r : pas de headers ou c'est fini
+		if (line == "0\r")
+			break ;// Verifier ensuite que la prochaine ligne est \r
+
+		backr = line.find('\r');
+		if (backr == std::string::npos)
+			return setCode(400); // Verifier le code d'erreur
+		line_without = line.substr(0, backr);
+		
+		if (i % 2 == 0) {
+			//verifier que toute la string a ete convertit, ou pas un nb a virgule
+			//floor : fonction interdite I guess, supprimer librairie math
+			real_len = std::strtod(line_without.c_str(), &end);
+			if (*end != '\0' || std::floor(real_len) != real_len)
+				return setCode(400);
+		}
+		else {
+			//Checker que line_len == real_len
+			line_len = line_without.size();
+			if (line_len != real_len)
+				return setCode(400);
+			//Si tout va bien unchuncked_body.append(line_without); (doit etre init ?)
+			unchunked_body.append(line_without);
+		}
+
+		i++;
+	}
+
+	//Checker que la dernier ligne est bien "\r" sinon error 400
+	if(std::getline(stream, line))
+		return setCode(400);
+	if (line != "\r")
+		return setCode(400);	
+
+	_current_body = unchunked_body;
 }
 
 //400 Bad Request : on recupere la start line : La 1ere ligne ne respecte pas la syntaxe <METHOD> <PATH> HTTP/<VERSION>\r\n (trop d'espaces, trop de mots, caracteres interdits). Ou carrement pas de 1er mot

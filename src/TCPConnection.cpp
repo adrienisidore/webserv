@@ -65,8 +65,8 @@ void	TCPConnection::read_header() {
 		else if (_request.getMethod() == "POST") { // OU PUT
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
-			_body_buff = _request.getCurrentHeader().substr(header_end);
-			_status = READING_BODY;
+			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end));
+			_status = WAIT_FOR_BODY;
 		}
 		else
 			_status = READ_COMPLETE;
@@ -89,38 +89,62 @@ std::string	get_time_stamp() {
 	return oss.str();
 }
 
-bool is_valid_length(const std::string& content_length) {
+bool TCPConnection::is_valid_length(const std::string& content_length) {
 
 	if (content_length.empty())
-        return false;
-    
-    for (size_t i = 0; i < content_length.length(); i++) {
-        if (!std::isdigit(static_cast<unsigned char>(content_length[i])))
-            return false;
-    }
-    
-    if (content_length.length() > 1 && content_length[0] == '0')
-        return false;
-    
-    char* endptr;
-    errno = 0;
-    unsigned long length = std::strtoul(content_length.c_str(), &endptr, 10);
-    
-    if (errno == ERANGE || *endptr != '\0')
-        return false;
-    
-    if (length > BODY_MAX_SIZE)
-        return false;
-    
+		return false;
+	
+	for (size_t i = 0; i < content_length.length(); i++) {
+		if (!std::isdigit(static_cast<unsigned char>(content_length[i])))
+			return false;
+	}
+	
+	if (content_length.length() > 1 && content_length[0] == '0')
+		return false;
+	
+	char* endptr;
+	errno = 0;
+	unsigned long length = std::strtoul(content_length.c_str(), &endptr, 10);
+	
+	if (errno == ERANGE || *endptr != '\0')
+		return false;
+	
+	if (length > BODY_MAX_SIZE)
+		return false;
+
+	_request.setContentLength(length);
     return true;
+}
+
+void	TCPConnection::check_body_headers() {
+
+	if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()) {
+		if (!is_valid_length(_request.getHeaders()["CONTENT-LENGTH"])) {
+			_status = ERROR;
+			_request.setCode(413);
+			return;
+		}
+		else
+			_request.setBodyProtocol(CONTENT_LENGTH);
+	}
+
+	else if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
+		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
+		_request.setBodyProtocol(CHUNKED);
+	}
+
+	else {
+		_status = ERROR;
+		_request.setCode(411);
+		return;
+	}
+
+	_status = READING_BODY;
 }
 
 void	TCPConnection::read_body() {
 
-	std::string	filename;
-	int			fd_write;
-
-	// THE ACTUAL READING
+	// READ FROM RECV
 	
 	memset(_buff, 0, BUFF_SIZE);
 	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
@@ -135,54 +159,54 @@ void	TCPConnection::read_body() {
 		_request.setCode(500); // A checker
 		return;
 	}
-
-	// INITIALISE WRITING PART
-
-	if (_request.getHeaders().find("NAME") != _request.getHeaders().end())
-		filename = _request.getHeaders()["NAME"];
-	else
-		filename = get_time_stamp(); 
-
-	fd_write = open(("./ressources/" + filename).c_str(), O_WRONLY, O_CREAT); // POST ou PUT ?
 	
-	if (fd_write == -1) {
+	// APPEND TO REQUEST CURRENT BODY
+
+	_request.append_to_body(_buff, BUFF_SIZE);		// THE READING
+
+	std::cout << "Body: " << _request.getCurrentBody() << std::endl;
+	if (_request.getCurrentBody().size() > BODY_MAX_SIZE) {
 		_status = ERROR;
-		_request.setCode(403);
+		_request.setCode(413);
 		return;
 	}
-
-	// WRITE TO FILE
-
-	_body_buff.append(_buff);
-
-	if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
-		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-		write_body_chunked(fd_write);
-	}
-
-	else if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()
-		&& is_valid_length(_request.getHeaders()["CONTENT-LENGTH"])) {
-		write_body_length(fd_write);
-	}
 	
-	else {
-		_status = ERROR;
-		_request.setCode(411);
-		return;
+	// CHECK IF END OF BODY
+	if (_request.getBodyProtocol() == CHUNKED) {
+
+		size_t header_end = _request.getCurrentBody().find("0\r\n\r\n");
+		if (header_end != std::string::npos) {
+
+			_request.unchunk_body();
+
+			if (_request.getCode()) {
+				_status = ERROR;
+				return;
+			}
+			else {
+				_status = READ_COMPLETE;
+				return;
+			}
+		}
+	}
+	else if (_request.getBodyProtocol() == CONTENT_LENGTH) {
+
+		int diff = _request.getCurrentBody().size() - _request.getContentLength();
+		if (diff == 0) {
+			_status = READ_COMPLETE;
+			return;
+		}
+		else if (diff > 0) {
+			_status = ERROR;
+			_request.setCode(400);
+			return;
+		}
 	}
 	return;
 }
 
-void	TCPConnection::write_body_chunked(int fd) {
-(void)fd;
-}
+// NOT VALID BECAUSE REMAINDER CONTAINTS \r\n\r\\n
 
-void	TCPConnection::write_body_length(int fd) {
-
-	(void)fd;
-	unsigned long len = std::atol(_request.getHeaders()["CONTENT-LENGTH"].c_str()); // forbidden
-	(void)len;
-}
 
 int	TCPConnection::get_status() const {
 	
