@@ -1,14 +1,8 @@
-[ ] securiser requests
-[ ] GET request from index.html
-    -> Basic Server class
-    -> use stat structure
-[ ] POST request to modify index.html (or create new page)
-[ ] 404 error page
-[ ] try to use select() instead of poll()
+ADRI
+EBAUCHE DE CGI A PART DU CODE
 
 GASTON
 
-[ ] validation injection request
-[ ] nouvelle class Client ou autre pour non-blocking
-[ ] refaire condition de lecture de chunk (2 timeouts)
-[ ] diviser en plusieurs fichiers
+3) Parsing fichier Config
+1) reply() simple pour tester les cas d'erreurs (a integrer dans TCPConnection)
+2) ARBITRER DANS QUEL CAS ON GARDE LA CONNEXION OUVERTE

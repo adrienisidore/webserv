@@ -9,11 +9,11 @@ class HTTPcontent {
 
 	protected:
 
-		int		_code;
+		int					_code;
 
 	// start-line
-		std::string	_method;
-		std::string	_target;//_request_target
+		std::string			_method;
+		std::string			_target;//_request_target
 		const std::string	_protocol;
 
 	// Headers

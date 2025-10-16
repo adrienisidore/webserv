@@ -17,34 +17,26 @@ private:
 	char		_buff[BUFF_SIZE];
 	int			_bytes_received;
 	int			_status; //statut de la livraison de la donnee
-	Request		_request;	// current request
+	Request		_request;	// current request, initialized by initialize_transfer()
 
 public:
 	TCPConnection(int tcp_socket);
 	~TCPConnection();
 
-	Request	*start_new_request();
-	Request	getRequest() const;
-
-	void	check_body_headers();
-	void	start_new_body();
+	void 	initialize_transfer();//One request per TCPConnection
+	
+	void	check_body_headers();//if POST : check the headers and update the encoding process of the body
+	void 	use_recv();
 	void	read_header();
 	void	read_body();
-	void	read_body_chunked();
-	int		header_complete(char buff[BUFF_SIZE], int bytes);
-	int		body_length_complete(char buff[BUFF_SIZE], int bytes, int bytes_written, unsigned long len, unsigned long max_len);
-	void	append_to_header(char *buff);
-	int		get_status() const;
 	void	set_status(int status);
-	void	end_request();
+	void	end_transfer();
 
 	bool 	is_valid_length(const std::string& content_length);
 
+	Request	getRequest() const;
+	int		get_status() const;
 	int		getTCPSocket() const;
-
-	void	write_body_chunked(int);
-	void	write_body_length(int);
-
 	time_t	getEndOfRequestTime() const;  
 	time_t	getHeaderTime() const;
 	time_t	getBodyTime() const;

@@ -18,7 +18,7 @@ private:
 	void		create_server_socket();// create a listening socket for the server
 	void		bind_server_socket();// bind listening socket with an IP/Port
 
-	void		create_tcp_socket();// create a tcp socket, wrapp it in a pollfd and add it to the track list
+	void		create_tcp_socket();// create a tcp socket, wrapp it in a pollfd and add it to the track list : _pollfds
 	std::vector<pollfd>::iterator	close_tcp_connection(std::vector<pollfd>::iterator);
 	
 	void		monitor_connections();//monitor the tcp_socket (client connected)

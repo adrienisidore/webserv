@@ -54,7 +54,6 @@ void	Server::run() {
 		monitor_connections();
 		check_timeouts();
 	}
-	std::cout << "end of loop" << std::endl;
 }
 
 int		Server::calculate_next_timeout() {
@@ -99,7 +98,6 @@ int		Server::calculate_next_timeout() {
 	if (next_timeout <= 0)
 		return 1;
 
-	std::cout << "next timeout" << next_timeout << std::endl;
 	return next_timeout * 1000;
 }
 
@@ -133,7 +131,6 @@ void	Server::check_timeouts() {
 		}
 
 		else {
-			std::cout << "no TIMEOUT " << std::endl;
 			++it;
 		}
 	}
@@ -244,12 +241,6 @@ void	Server::create_tcp_socket() {
 	}
 }
 
-
-// There is something off with this function.
-// Je trouve ca bizarre que la TCPConnection aie un header et un status code. tout cela devrait etre dans la requete
-// => TCPConnection et Server::monitor_connections devraient s'occuper uniquement du protocole TCP.
-// Oui mais il faut etre capable d'interrompre ce protocole si quelque chose tourne mal...
-
 void	Server::monitor_connections() {
 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
@@ -262,7 +253,7 @@ void	Server::monitor_connections() {
 
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
-				connection->start_new_request();
+				connection->initialize_transfer();
 
 			//Header en cours de transfert
 			if (connection->get_status() == READING_HEADER)
@@ -276,16 +267,15 @@ void	Server::monitor_connections() {
 
 			if (connection->get_status() == READ_COMPLETE) {
 
-				connection->end_request();
+				connection->end_transfer();
 
 				// decide what to respond
 				simple_reply(connection->getTCPSocket(), "ressources/ServerInterface.html");
 				++it;
 			}
-
+			//Doit-on fermer la connexion si une erreur arrive ?
 			else if (connection->get_status() == ERROR ||
 					connection->get_status() == CLIENT_DISCONNECTED) {
-				std::cout << "Closing connection due to error/disconnect" << std::endl;
 				// DELETE the TCP connecion
 				it = close_tcp_connection(it);
 			}
@@ -335,139 +325,7 @@ void Server::simple_reply(int clientSocket, const char *filename)
     delete[] fileContent;
     delete[] response;
 }
-/*
-void	Server::monitor_connections() {
 
-	char			buff[BUFF_SIZE];	
-	int				bytes_received = 0;
-	int				read_header_status;
-
-	std::vector<pollfd>::iterator it = _pollfds.begin();
-	++it;//On ne surveille pas listening
-
-	while (it != _pollfds.end()) {
-
-		if (it->revents & POLLIN) {
-
-			// TCP DATA READ
-			TCPConnection	*connection = _map[it->fd];//_map : many clients can call at the same time, with map we know who's sending data
-
-			//TCP : Recuperation de la data avant transfert dans Request
-			do {
-				connection->read_data(buff, &bytes_received);
-				connection->append_to_header(buff);
-				read_header_status = connection->header_complete(buff, bytes_received);
-			}
-			while (!read_header_status);
-
-			if (read_header_status == 1) {
-				// TCP ERROR ON READING HEADER
-
-				if (bytes_received == 0)
-					std::cout << "connection " << std::distance(_pollfds.begin(), it) << " is over" << std::endl;
-				else if (bytes_received < 0 && buff[0])
-					std::cout << "connection " << std::distance(_pollfds.begin(), it) << " data transfer failed" << std::endl;
-
-				close(it->fd);
-				it = _pollfds.erase(it);
-			}
-			else {
-				// header_complete == 2, on doit apporter une reponse
-				// CREATE REQUEST FROM HEADER
-				Request	request = Request(connection->get_current_header(), connection->get_status_code());
-				std::cout << "After reading header: ";
-				std::cout << request;
-
-
-				// DON'T FORGET THE POTENTIAL REMAINDER
-				if ((request.getMethod() == "PUT" || request.getMethod() == "POST") && !request.getStatusCode())
-				{
-					std::string name;
-					int			read_body_status;
-					int			bytes_written;
-
-					if (request.getHeaders().find("NAME") != request.getHeaders().end())
-						name = request.getHeaders()["NAME"] + get_time_stamp();
-					else
-						name = get_time_stamp(); 
-
-					int fd_write = open(("./ressources/" + name).c_str(), O_APPEND, O_CREAT); // POST ou PUT ?
-
-					if (fd_write == -1)
-						request.setStatusCode(403);	// should also break from this
-
-					// TRANSFER-ENCODING: CHUNKED
-					if (request.getHeaders().find("TRANSFER-ENCODING") != request.getHeaders().end() 
-						&& request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-						
-
-						// WITHOUT CGI FOR NOW
-						do {
-							std::string	http_chunk = "";
-							int			one_http_chunk_complete = 1;
-							int			all_http_chunks_complete = 1;	// for 1 TCP chunk...
-
-							do {
-								connection->read_data(buff, &bytes_received);
-								if (bytes_received > 0 || (bytes_received < 0 && !buff[0])) {
-									do {
-										one_http_chunk_complete = connection->parse_http_chunk(buff, bytes_received, &http_chunk);
-									}
-									while (!one_http_chunk_complete);
-									bytes_written = write(fd_write, http_chunk.c_str(), http_chunk.size());
-									http_chunk = "";
-								// + remaining...
-								}
-								all_http_chunks_complete = connection->
-							}
-							while (!all_http_chunks_complete)
-
-							read_body_status = 
-						} while (read_body_status);
-					}
-
-					// CONTENT-LENGTH SPECIFIED
-					else if (request.getHeaders().find("CONTENT-LENGTH") != request.getHeaders().end()
-						&& is_valid_length(request.getHeaders()["CONTENT-LENGTH"])) {
-			
-						// checker si valeur content-length existe
-						// que se passe t il si content-length > qte de donnees envoyes ?
-						// peut etre eal a 0 ?
-						// gerer content-length : https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Length
-						unsigned long	max_body_len = atol(request.getHeaders()["CONTENT-LENGTH"].c_str());	// forbidden ?
-						unsigned long	curr_body_len = 0;
-
-						do {
-							connection->read_data(buff, &bytes_received);
-							curr_body_len += bytes_received;
-							if (curr_body_len <= max_body_len && (bytes_received > 0 || (bytes_received < 0 && !buff[0]))) {
-								bytes_written = write(fd_write, buff, BUFF_SIZE);
-							}
-							else if (bytes_received > 0 || (bytes_received < 0 && !buff[0])) {
-								bytes_written = write(fd_write, buff, curr_body_len - max_body_len);
-							}
-							read_body_status = connection->body_length_complete(buff, bytes_received, bytes_written, curr_body_len, max_body_len);
-						} while (!read_body_status);
-					}
-					else {
-						request.setStatusCode(411);
-					}
-				}
-				// ADD BODY TO REQUEST
-				
-				// Response response(request);
-				// SEND RESPONSE
-				//Si dans les headers on a pas de keep alive, ou une erreur qui necessite fin de connexion,
-				//on doit fermer aussi la connection ?
-				++it; // Ici on ferme pas la connexion
-			}
-			
-		}
-		else
-			++it;
-	}
-}
-						   */
 	//Request	request(message);	// 
 
 		/*

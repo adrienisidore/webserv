@@ -2,7 +2,7 @@
 
 // Request::Request(void): HTTPcontent(void) {
 Request::Request(void): HTTPcontent() {
-	reset();
+	// reset();//redondant ?
 	_current_header.clear();
 }
 
@@ -250,10 +250,6 @@ void	Request::checkPermissions() {
 	}
 	else if (_method == "DELETE" && access(parentDir(_target).c_str(), W_OK | X_OK) != 0)
 		return (setCode(403));//On a acces au repertoire parent pour faire des modifications
-
-
-	//Checker taille du fichier ?
-
 }
 
 
