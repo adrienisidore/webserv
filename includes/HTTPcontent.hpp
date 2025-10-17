@@ -13,11 +13,11 @@ class HTTPcontent {
 
 	// start-line
 		std::string			_method;
-		std::string			_target;//_request_target
+		std::string			_target;
 		const std::string	_protocol;
 
 	// Headers
-		std::map<std::string, std::string>	_headers;//ne se transfert pas avec <<
+		std::map<std::string, std::string>	_headers;
 
 		HTTPcontent();
 		HTTPcontent(const int & code);

@@ -49,6 +49,13 @@ void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {
 void	Request::parse_header() {
 	setStartLine();
 	setHeaders();
+
+
+	//Renommer la variable _target en _URI
+	//setTarget() : modifie la _target selon les Headers.
+
+
+
 	checkPermissions();
 }
 

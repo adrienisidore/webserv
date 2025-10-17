@@ -67,11 +67,14 @@ int main() {
     int outpipe[2];  // pour lire la sortie du CGI
 
     if (pipe(inpipe) < 0 || pipe(outpipe) < 0) {
-        perror("pipe");
+        // perror("pipe");
+		//thorw une Exception, ne pas exite SINON LEAKS
         exit(EXIT_FAILURE);
     }
 
     // Environnement CGI
+	//Voir tableau : https://www.alimnaqvi.com/blog/webserv
+	//build_env() : donc CGI doit forcement etre dans Response (qui a chope la request dans son constructeur)
     std::vector<std::string> env_strings;
     env_strings.push_back("REQUEST_METHOD=POST");
     env_strings.push_back("SCRIPT_NAME=./test.cgi");
@@ -96,7 +99,8 @@ int main() {
 
     pid = fork();
     if (pid < 0) {
-        perror("fork");
+        // perror("fork");
+		//thorw une Exception, ne pas exite SINON LEAKS
         exit(EXIT_FAILURE);
     }
 
@@ -133,7 +137,8 @@ int main() {
         }
         close(outpipe[0]);
 
-        waitpid(pid, &status, 0);
+        waitpid(pid, &status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
+		//Je crois qu'il faut faire surveiller inpipe et outpipe par poll()
         std::cout << "\n[CGI terminé avec code " << WEXITSTATUS(status) << "]\n";
     }
 
