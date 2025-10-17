@@ -63,8 +63,8 @@
 int main() {
     pid_t pid;
     int status;
-    int inpipe[2];   // pour envoyer au CGI (stdin)
-    int outpipe[2];  // pour lire du CGI (stdout)
+    int inpipe[2];   // pour envoyer au CGI
+    int outpipe[2];  // pour lire la sortie du CGI
 
     if (pipe(inpipe) < 0 || pipe(outpipe) < 0) {
         perror("pipe");
@@ -101,8 +101,10 @@ int main() {
     }
 
     if (pid == 0) {
-        // Enfant : redirige pipes vers stdin/stdout
+        // Enfant :
+		//le STDIN de l'enfant devient inpipe[0]
         dup2(inpipe[0], STDIN_FILENO);
+		//la sortie du terminal (STDOUT) de l'enfant devient outpipe[1]
         dup2(outpipe[1], STDOUT_FILENO);
         close(inpipe[1]);
         close(outpipe[0]);
@@ -118,10 +120,11 @@ int main() {
 
         // Simule un corps POST
         const char *post_data = "name=adrien";
+		// Parent : ecrit dans inpipe
         write(inpipe[1], post_data, 11);
         close(inpipe[1]);
 
-        // Lit la sortie du CGI
+        // Lit la sortie du CGI (outpipe) : ce qu'on envoie au client
         char buffer[1024];
         ssize_t n;
         while ((n = read(outpipe[0], buffer, sizeof(buffer) - 1)) > 0) {
