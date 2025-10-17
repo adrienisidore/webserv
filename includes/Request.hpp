@@ -26,6 +26,8 @@ class	Request : public HTTPcontent {
 		
 		void			parse_header();
 		void			unchunk_body();
+		
+		bool			is_valid_path(std::string path);
 
 		void			copyFrom(const HTTPcontent& other);
 

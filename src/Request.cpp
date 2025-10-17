@@ -49,7 +49,7 @@ void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {
 void	Request::parse_header() {
 	setStartLine();
 	setHeaders();
-	checkPermissions();
+	//checkPermissions();
 }
 
 void	Request::unchunk_body() {
@@ -199,7 +199,19 @@ std::string		Request::getCurrentHeader() const {
 	return _current_header;
 }
 
-//Faut il remettre errno a 0 apres ?
+// A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs
+
+bool	Request::is_valid_path(std::string filename) {
+
+	if (filename.empty() ||
+		filename.find("%") != std::string::npos ||
+		filename.find("..") != std::string::npos ||
+		filename.find("~") != std::string::npos ||
+		filename.find("#") != std::string::npos)
+		return false;
+	return true;
+}
+
 void	Request::checkPermissions() {
 
 	if (_code) return;
@@ -207,15 +219,23 @@ void	Request::checkPermissions() {
 	struct stat target_properties;
 
 	// stat() : Récupération des métadonnées du fichier/répertoire, échoue si la ressource n'existe pas ou n'est pas accessible.
-	if (stat(_target.c_str(), &target_properties) == -1) {
+	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")
+		setCode(405);
 
-		if (errno == ENOENT && (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
+	else if (!is_valid_path(_target))
+		setCode(400);
+
+	else if (stat(_target.c_str(), &target_properties) == -1) {
+
+		int er = errno;
+
+		if (er == ENOENT && (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
 		    setCode(404);// ========== ENOENT ========== La ressource (fichier ou dossier) n’existe pas.
-		else if (errno == EACCES)
+		else if (er == EACCES)
 			setCode(403);// ========== EACCES ========== Accès aux metadonnees refusé
-		else if (errno == ENOTDIR || errno == ELOOP)
+		else if (er == ENOTDIR || er == ELOOP)
 			setCode(404);// ========== ENOTDIR / ELOOP ========== Le chemin contient un composant qui n’est pas un répertoire 
-		else if (errno == ENAMETOOLONG)
+		else if (er == ENAMETOOLONG)
 			setCode(414);// ========== ENAMETOOLONG ========== Un des éléments du chemin, ou le chemin complet, dépasse la longueur maximale.
 		else
 			setCode(500);// ========== Cas restants ========== Erreurs internes au serveur (memoire, ...)

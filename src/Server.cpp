@@ -265,18 +265,28 @@ void	Server::monitor_connections() {
 			if (connection->get_status() == READING_BODY)
 				connection->read_body();
 
+			// La requet est syntaxiquement complete
 			if (connection->get_status() == READ_COMPLETE) {
 
 				connection->end_transfer();
 
-				// decide what to respond
-				simple_reply(connection->getTCPSocket(), "ressources/ServerInterface.html");
+				// conn->_response(request);
+				// OU
+
+				// if (condition pour keep-alive)
+				// it = close_tcp_connection(it);
+				
 				++it;
 			}
 			//Doit-on fermer la connexion si une erreur arrive ?
-			else if (connection->get_status() == ERROR ||
+			if (connection->get_status() == ERROR ||
 					connection->get_status() == CLIENT_DISCONNECTED) {
+
+				// conn->_respponse(request)
+
 				// DELETE the TCP connecion
+
+				// if (condition pour keep-alive)
 				it = close_tcp_connection(it);
 			}
 			else

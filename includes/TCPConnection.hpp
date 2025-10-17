@@ -29,9 +29,9 @@ public:
 	void 	use_recv();
 	void	read_header();
 	void	read_body();
-	void	set_status(int status);
 	void	end_transfer();
 
+	void	set_error(int error_code);
 	bool 	is_valid_length(const std::string& content_length);
 
 	Request	getRequest() const;
