@@ -6,7 +6,7 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/10/13 11:57:39 by aisidore         ###   ########.fr        #
+#    Updated: 2025/10/19 17:02:45 by aisidore         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,10 @@ SRC = src/main.cpp \
 	  src/Request.cpp \
 	  src/Response.cpp \
 	  src/TCPConnection.cpp \
-	  src/HTTPcontent.cpp
+	  src/HTTPcontent.cpp \
+	  src/LocationConfig.cpp \
+	  src/ServerConfig.cpp \
+	  src/GlobalConfig.cpp
 
 OBJ = objets/
 

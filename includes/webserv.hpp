@@ -56,5 +56,8 @@ enum {
 
 # include <cmath>//Interdit
 
+# include "./GlobalConfig.hpp"
+# include "./ServerConfig.hpp"
+# include "./LocationConfig.hpp"
 
 #endif

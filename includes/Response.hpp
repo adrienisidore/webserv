@@ -12,7 +12,6 @@
 //         //Ici on formalise notre instance pour permettre une réponse au client (code d'erreur etc...)
 
 //     private:
-// 		Request	request;
 
 // };
 

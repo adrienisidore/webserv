@@ -28,7 +28,6 @@ class HTTPcontent {
 		void								setCode(const int & code);
 		void 								reset();
 
-
 		virtual void						copyFrom(const HTTPcontent& other) = 0;
 		int									getCode() const;//getStatusCode
 		std::string							getMethod() const;

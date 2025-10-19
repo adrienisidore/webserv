@@ -1,5 +1,7 @@
 ADRI
 EBAUCHE DE CGI A PART DU CODE
+- introduire build
+- introduire checkPermissions() (et parentDir()) dqns Response
 
 GASTON
 
