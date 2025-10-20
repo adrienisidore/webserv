@@ -211,9 +211,54 @@ Accept-Language: en                     # request header fields (at least 1)
 **signal** : define a function to manage the "sig" signal.
 
 
+## Config file
+
+Pourquoi besoin d'une global config ?
+Root et Error Page ne sont pas ils propres a chaque serveur ?
 
 
 
+## Example config file 
+
+
+server {
+
+    listen 8002;								-> port
+	server_name localhost;						-> for hostname-based routing
+    host 127.0.0.1;								-> IP
+    root docs/fusion_web/;						-> root directory for serving files
+    # client_max_body_size 3000000;				-> max body size
+	index index.html;							-> default page when directory is requested
+    error_page 404 error_pages/404.html;		-> default error page when not found 
+
+
+    location / {								-> when 
+        allow_methods  DELETE POST GET;
+        autoindex off;
+    }
+
+    location /tours/bonjour {
+        autoindex on;
+        index tours1.html;
+        allow_methods GET POST PUT HEAD;
+    }
+
+	location /red {
+		return /tours;
+	}
+
+    location /cgi-bin {
+        root ./;
+        allow_methods GET POST DELETE;
+        index time.py;
+        cgi_path /usr/bin/python3 /bin/bash;
+        cgi_ext .py .sh;
+    }
+}
+
+server {
+...
+}
 
 
 

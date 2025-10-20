@@ -1,10 +1,37 @@
+LUNDI {
+
 ADRI
-EBAUCHE DE CGI A PART DU CODE
-- introduire build
-- introduire checkPermissions() (et parentDir()) dqns Response
+
+[ ] finaliser recuperation fichier conf (boucle while)
+
 
 GASTON
 
-3) Parsing fichier Config
-1) reply() simple pour tester les cas d'erreurs (a integrer dans TCPConnection)
-2) ARBITRER DANS QUEL CAS ON GARDE LA CONNEXION OUVERTE
+[ ] crerr classe server_monitor
+[ ] 1er Parsing fichier Config
+
+}
+
+MARDI {
+
+ADRI
+
+[ ] integrer les directives dans le code (location -> HTTPcontent, server, )
+
+
+GASTON
+
+[ ] 2e parsing fichier config -> creer le fichier temporaire 
+
+
+=> [ ] Integrer tout dans main()
+
+}
+
+MERCREDI {
+
+[ ] finaliser CGI
+
+==> [ ] Faire tourner webserv
+
+}
