@@ -53,11 +53,14 @@ enum {
 # include <fcntl.h>      // pour open()
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
+# include <fstream>
 
 # include <cmath>//Interdit
 
 # include "./GlobalConfig.hpp"
 # include "./ServerConfig.hpp"
 # include "./LocationConfig.hpp"
+
+# include "./autoconfig.hpp"
 
 #endif

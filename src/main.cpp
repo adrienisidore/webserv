@@ -160,100 +160,42 @@
 
 
 
-// --- Helper : indentation lisible ---
-static void printIndent(int depth) {
-	for (int i = 0; i < depth; ++i)
-		std::cout << "    ";
-}
 
-// --- LOCATION CONFIG ---
-void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
-	printIndent(depth);
-	std::cout << "location " << path << " {" << std::endl;
-
-	const std::map<std::string, std::string> &directives = loc.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(depth + 1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	printIndent(depth);
-	std::cout << "}" << std::endl;
-}
-
-// --- SERVER CONFIG ---
-void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
-	printIndent(depth);
-	std::cout << "server (" << key << ") {" << std::endl;
-
-	const std::map<std::string, std::string> &directives = server.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(depth + 1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	// Locations
-	const std::map<std::string, LocationConfig> &locs = server.getLocations();
-	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
-		 it != locs.end(); ++it)
-		printLocationConfig(it->first, it->second, depth + 1);
-
-	printIndent(depth);
-	std::cout << "}" << std::endl;
-}
-
-// --- GLOBAL CONFIG ---
-void printGlobalConfig(GlobalConfig &global) {
-
-	const std::map<std::string, std::string> &directives = global.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	std::map<std::string, ServerConfig> &servers = global.accessServers();
-	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
-		 it != servers.end(); ++it)
-		printServerConfig(it->first, it->second, 1);
-}
 
 
 int main() {
 	//ATTENTION ORDRE IMPORTANT :
-    GlobalConfig global;
-    global.setDirective("root", "html");
-    global.setDirective("autoindex", "off");
+    AutoConfig("nginx_test2.conf");
 
-    // --- Serveur ---
-    ServerConfig server;
-    server.setDirective("listen", "127.0.0.1:8080");
-    server.setDirective("index", "index.html");
+	// GlobalConfig global;
+	// global.setDirective("root", "html");
+	// global.setDirective("autoindex", "off");
 
-    // Ajouter le serveur au global pour hériter des directives globales
-    global.addServer("webserv1/127.0.0.1:8080", server);
+	// // --- Serveur ---
+	// ServerConfig server;
+	// server.setDirective("listen", "127.0.0.1:8080");
+	// server.setDirective("index", "index.html");
 
-    // --- Location ---
-    LocationConfig loc;
-    loc.setDirective("autoindex", "on");
-    loc.setDirective("cgi_handler", ".php /usr/bin/php-cgi");
+	// // Ajouter le serveur au global pour hériter des directives globales
+	// global.addServer("webserv1/127.0.0.1:8080", server);
 
-    // Ajouter la location au serveur après que le serveur ait hérité du global
-    global.accessServers().at("webserv1/127.0.0.1:8080").addLocation("/images", loc);
+	// // --- Location ---
+	// LocationConfig loc;
+	// loc.setDirective("autoindex", "on");
+	// loc.setDirective("cgi_handler", ".php /usr/bin/php-cgi");
 
-    // --- Serveur 2 ---
-    ServerConfig server2;
-    server2.setDirective("listen", "127.0.0.1:8080");
-    server2.setDirective("index", "index2.html");
+	// // Ajouter la location au serveur après que le serveur ait hérité du global
+	// global.accessServers().at("webserv1/127.0.0.1:8080").addLocation("/images", loc);
 
-    // Ajouter le serveur au global pour hériter des directives globales
-    global.addServer("webserv2/127.0.0.1:8080", server2);
+	// // --- Serveur 2 ---
+	// ServerConfig server2;
+	// server2.setDirective("listen", "127.0.0.1:8080");
+	// server2.setDirective("index", "index2.html");
 
-    // Afficher la config complète
-    printGlobalConfig(global);
+	// // Ajouter le serveur au global pour hériter des directives globales
+	// global.addServer("webserv2/127.0.0.1:8080", server2);
 
+	// Afficher la config complète
 	return 0;
 
 }

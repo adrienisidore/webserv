@@ -2,7 +2,7 @@ LUNDI {
 
 ADRI
 
-[ ] finaliser recuperation fichier conf (boucle while)
+[x] finaliser recuperation fichier conf (boucle while)
 
 
 GASTON
