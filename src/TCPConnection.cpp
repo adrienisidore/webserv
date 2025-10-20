@@ -28,11 +28,8 @@ void	TCPConnection::initialize_transfer() {
 void	TCPConnection::check_body_headers() {
 
 	if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()) {
-		if (!is_valid_length(_request.getHeaders()["CONTENT-LENGTH"])) {
-			_status = ERROR;
-			_request.setCode(413);
-			return;
-		}
+		if (!is_valid_length(_request.getHeaders()["CONTENT-LENGTH"]))
+			return set_error(413);
 		else
 			_request.setBodyProtocol(CONTENT_LENGTH);
 	}
@@ -42,11 +39,8 @@ void	TCPConnection::check_body_headers() {
 		_request.setBodyProtocol(CHUNKED);
 	}
 
-	else {
-		_status = ERROR;
-		_request.setCode(411);
-		return;
-	}
+	else
+		return set_error(411);
 
 	_status = READING_BODY;
 }
@@ -61,11 +55,8 @@ void TCPConnection::use_recv() {
 		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
 		return;
 	}
-	else if (_bytes_received < 0) {
-		_status = ERROR;
-		_request.setCode(500); // A checker
-		return;
-	}
+	else if (_bytes_received < 0)
+		return set_error(500);
 }
 
 void	TCPConnection::read_header() {
@@ -76,11 +67,8 @@ void	TCPConnection::read_header() {
 	_request.append_to_header(_buff, _bytes_received);
 
 	// std::cout << "Header: " << _request.getCurrentHeader() << std::endl;
-	if (_request.getCurrentHeader().size() > HEADER_MAX_SIZE) {
-		_status = ERROR;
-		_request.setCode(431);
-		return;
-	}
+	if (_request.getCurrentHeader().size() > HEADER_MAX_SIZE)
+		return set_error(431);
 
 	// CHECK IF END OF HEADER
 	size_t header_end = _request.getCurrentHeader().find("\r\n\r\n");
@@ -92,7 +80,7 @@ void	TCPConnection::read_header() {
 			_status = ERROR;
 			return;
 		}
-		else if (_request.getMethod() == "POST") { // OU PUT
+		else if (_request.getMethod() == "POST") {
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
 			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end));
@@ -115,11 +103,8 @@ void	TCPConnection::read_body() {
 	_request.append_to_body(_buff, BUFF_SIZE);		// THE READING
 
 	// std::cout << "Body: " << _request.getCurrentBody() << std::endl;
-	if (_request.getCurrentBody().size() > BODY_MAX_SIZE) {
-		_status = ERROR;
-		_request.setCode(413);
-		return;
-	}
+	if (_request.getCurrentBody().size() > BODY_MAX_SIZE)
+			return set_error(413);
 	
 	// CHECK IF END OF BODY
 	if (_request.getBodyProtocol() == CHUNKED) {
@@ -146,12 +131,16 @@ void	TCPConnection::read_body() {
 			_status = READ_COMPLETE;
 			return;
 		}
-		else if (diff > 0) {
-			_status = ERROR;
-			_request.setCode(400);
-			return;
-		}
+		else if (diff > 0)
+			return set_error(400);
 	}
+	return;
+}
+
+void	TCPConnection::set_error(int error_code) {
+
+	_status = ERROR;
+	_request.setCode(error_code);
 	return;
 }
 
@@ -199,8 +188,6 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 }
 
 int	TCPConnection::get_status() const {return _status;}
-
-void	TCPConnection::set_status(int status) {_status = status;}
 
 Request	TCPConnection::getRequest() const {return _request;}
 
