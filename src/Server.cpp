@@ -1,7 +1,5 @@
 #include "webserv.hpp"
 
-Server	*Server::_instance = NULL;
-
 Server::Server(std::string port)
 : _listening(-1), _port(port), _is_running(false), _ressources_path("./ressources")
 {

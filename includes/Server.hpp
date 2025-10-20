@@ -31,7 +31,7 @@ public:
 
 	Server(std::string port);
 	~Server();
-
+	
 	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
 	void	simple_reply(int clientSocket, const char *filename);

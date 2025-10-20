@@ -9,6 +9,7 @@ private:
 
 	static ServerMonitor*	_instance;
 	std::vector<Server>		_servers;		
+	bool					_is_running;
 
 public:
 

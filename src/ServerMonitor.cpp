@@ -22,8 +22,8 @@ void	ServerMonitor::handle_sigint(int sig) {
 
 	(void)sig;
 	///Evite d'inclure le this
-	if (ServerMonitor::_instance) {
-		ServerMonitor::_instance->_is_running = false;
+	for (std::vector<Server>::iterator it = _instance->_servers.begin(); it != _instance->_servers.end(); ++it) {
+		it->stop();
 	}
 }
 

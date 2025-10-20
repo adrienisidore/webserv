@@ -1,32 +1,32 @@
 #include "webserv.hpp"
 
- int	main(int ac, char **av) {
+//  int	main(int ac, char **av) {
 
- 	try {
-	   // 0 - CHECK ARGUMENTS
-	   //
-	   // 1 - PARSING CONFIG FILE
-	   // 1.1 - SYNTAXIC PARSING 
-	   //
-	   //
- 		ServerMonitor	ServerMonitor();
-		// add servers to Server Monitor and run them
-		for (std::vector<Server>::iterator it = Server)
- 	}
- 	catch (SocketException &er) {
- 		std::cerr << "Error Socket: " << er.what() << std::endl;
- 	}
- 	catch (ConnectionException &er) {
- 		std::cerr << "Error Connection: " << er.what() << std::endl;
- 	}
- 	catch (HttpException &er) {
- 		std::cerr << "Error Http: " << er.what() << std::endl;
- 	}
- 	catch (std::exception &er) {
- 		std::cerr << "Error: " << er.what() << std::endl;
- 	}
- 	return (0);
- }
+//  	try {
+// 	   // 0 - CHECK ARGUMENTS
+// 	   //
+// 	   // 1 - PARSING CONFIG FILE
+// 	   // 1.1 - SYNTAXIC PARSING 
+// 	   //
+// 	   //
+//  		ServerMonitor	ServerMonitor();
+// 		// add servers to Server Monitor and run them
+// 		for (std::vector<Server>::iterator it = Server)
+//  	}
+//  	catch (SocketException &er) {
+//  		std::cerr << "Error Socket: " << er.what() << std::endl;
+//  	}
+//  	catch (ConnectionException &er) {
+//  		std::cerr << "Error Connection: " << er.what() << std::endl;
+//  	}
+//  	catch (HttpException &er) {
+//  		std::cerr << "Error Http: " << er.what() << std::endl;
+//  	}
+//  	catch (std::exception &er) {
+//  		std::cerr << "Error: " << er.what() << std::endl;
+//  	}
+//  	return (0);
+//  }
 
 /*
 TIMEOUT : que se passe t il si CGI dure plus longtemps que le TIMETOUT ?
@@ -169,7 +169,7 @@ Creer une classe CGI avec inpipe, outpipe
 
 
 
-/*
+
 int main() {
 	//ATTENTION ORDRE IMPORTANT :
     AutoConfig("nginx_test2.conf");
@@ -206,4 +206,4 @@ int main() {
 	return 0;
 
 }
-*/
+
