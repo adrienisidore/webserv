@@ -41,12 +41,17 @@ enum {
 # include <map>
 # include <stdlib.h>
 
+# include "./GlobalConfig.hpp"
+# include "./ServerConfig.hpp"
+# include "./LocationConfig.hpp"
 # include "HTTPcontent.hpp"
-# include "./Exceptions.hpp"
 # include "./Request.hpp"
 # include "./TCPConnection.hpp"
-# include "./Server.hpp"
 # include "./ServerMonitor.hpp"
+
+
+# include "./autoconfig.hpp"
+# include "./Exceptions.hpp"
 
 // ADRI
 # include "./Response.hpp"
@@ -58,10 +63,7 @@ enum {
 
 # include <cmath>//Interdit
 
-# include "./GlobalConfig.hpp"
-# include "./ServerConfig.hpp"
-# include "./LocationConfig.hpp"
-
-# include "./autoconfig.hpp"
+// Parsing
+void	check_args(int ac, char **av);
 
 #endif

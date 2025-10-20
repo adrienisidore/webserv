@@ -32,8 +32,8 @@ public:
 	void addServer(const std::string &key, const ServerConfig &server);
 
 	std::string									getDirective(const std::string &key) const;
-	const std::map<std::string, std::string>	&getDirectives() const;
-
+	const std::map<std::string, std::string> &	getDirectives() const;
+	const std::map<std::string, ServerConfig> &	getServers() const;
 
 	//to get and modify the servers
 	std::map<std::string, ServerConfig> &accessServers();

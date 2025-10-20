@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-TCPConnection::TCPConnection(int tcp_socket): _tcp_socket(tcp_socket) {
+TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
 	end_transfer();
 }
 

@@ -18,6 +18,6 @@ void	AutoConfig_setDirective(T & config_element, const std::string & line) {
 	config_element.setDirective(name, value);
 }
 
-void	AutoConfig(const std::string & filename);
+GlobalConfig AutoConfig(const std::string & filename);
 
 #endif

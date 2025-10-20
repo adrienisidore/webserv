@@ -1,32 +1,30 @@
 #include "webserv.hpp"
 
-//  int	main(int ac, char **av) {
+ int	main(int ac, char **av) {
 
-//  	try {
-// 	   // 0 - CHECK ARGUMENTS
-// 	   //
-// 	   // 1 - PARSING CONFIG FILE
-// 	   // 1.1 - SYNTAXIC PARSING 
-// 	   //
-// 	   //
-//  		ServerMonitor	ServerMonitor();
-// 		// add servers to Server Monitor and run them
-// 		for (std::vector<Server>::iterator it = Server)
-//  	}
-//  	catch (SocketException &er) {
-//  		std::cerr << "Error Socket: " << er.what() << std::endl;
-//  	}
-//  	catch (ConnectionException &er) {
-//  		std::cerr << "Error Connection: " << er.what() << std::endl;
-//  	}
-//  	catch (HttpException &er) {
-//  		std::cerr << "Error Http: " << er.what() << std::endl;
-//  	}
-//  	catch (std::exception &er) {
-//  		std::cerr << "Error: " << er.what() << std::endl;
-//  	}
-//  	return (0);
-//  }
+ 	try {
+		check_args(ac, av);
+		// syntaxic_parsing_config_file(av[1]);
+		// temp_config_file = semantic_parsing(av[1]);
+
+ 		ServerMonitor	ServerMonitor("nginx_test2.conf");
+		ServerMonitor.run();
+		// add servers to Server Monitor and run them
+ 	}
+ 	catch (SocketException &er) {
+ 		std::cerr << "Error Socket: " << er.what() << std::endl;
+ 	}
+ 	catch (ConnectionException &er) {
+ 		std::cerr << "Error Connection: " << er.what() << std::endl;
+ 	}
+ 	catch (HttpException &er) {
+ 		std::cerr << "Error Http: " << er.what() << std::endl;
+ 	}
+ 	catch (std::exception &er) {
+ 		std::cerr << "Error: " << er.what() << std::endl;
+ 	}
+ 	return (0);
+ }
 
 /*
 TIMEOUT : que se passe t il si CGI dure plus longtemps que le TIMETOUT ?
@@ -170,40 +168,40 @@ Creer une classe CGI avec inpipe, outpipe
 
 
 
-int main() {
-	//ATTENTION ORDRE IMPORTANT :
-    AutoConfig("nginx_test2.conf");
+// int main() {
+// 	//ATTENTION ORDRE IMPORTANT :
+//     AutoConfig("nginx_test2.conf");
 
-	// GlobalConfig global;
-	// global.setDirective("root", "html");
-	// global.setDirective("autoindex", "off");
+// 	// GlobalConfig global;
+// 	// global.setDirective("root", "html");
+// 	// global.setDirective("autoindex", "off");
 
-	// // --- Serveur ---
-	// ServerConfig server;
-	// server.setDirective("listen", "127.0.0.1:8080");
-	// server.setDirective("index", "index.html");
+// 	// // --- Serveur ---
+// 	// ServerConfig server;
+// 	// server.setDirective("listen", "127.0.0.1:8080");
+// 	// server.setDirective("index", "index.html");
 
-	// // Ajouter le serveur au global pour hériter des directives globales
-	// global.addServer("webserv1/127.0.0.1:8080", server);
+// 	// // Ajouter le serveur au global pour hériter des directives globales
+// 	// global.addServer("webserv1/127.0.0.1:8080", server);
 
-	// // --- Location ---
-	// LocationConfig loc;
-	// loc.setDirective("autoindex", "on");
-	// loc.setDirective("cgi_handler", ".php /usr/bin/php-cgi");
+// 	// // --- Location ---
+// 	// LocationConfig loc;
+// 	// loc.setDirective("autoindex", "on");
+// 	// loc.setDirective("cgi_handler", ".php /usr/bin/php-cgi");
 
-	// // Ajouter la location au serveur après que le serveur ait hérité du global
-	// global.accessServers().at("webserv1/127.0.0.1:8080").addLocation("/images", loc);
+// 	// // Ajouter la location au serveur après que le serveur ait hérité du global
+// 	// global.accessServers().at("webserv1/127.0.0.1:8080").addLocation("/images", loc);
 
-	// // --- Serveur 2 ---
-	// ServerConfig server2;
-	// server2.setDirective("listen", "127.0.0.1:8080");
-	// server2.setDirective("index", "index2.html");
+// 	// // --- Serveur 2 ---
+// 	// ServerConfig server2;
+// 	// server2.setDirective("listen", "127.0.0.1:8080");
+// 	// server2.setDirective("index", "index2.html");
 
-	// // Ajouter le serveur au global pour hériter des directives globales
-	// global.addServer("webserv2/127.0.0.1:8080", server2);
+// 	// // Ajouter le serveur au global pour hériter des directives globales
+// 	// global.addServer("webserv2/127.0.0.1:8080", server2);
 
-	// Afficher la config complète
-	return 0;
+// 	// Afficher la config complète
+// 	return 0;
 
-}
+// }
 

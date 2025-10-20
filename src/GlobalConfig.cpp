@@ -29,4 +29,6 @@ const std::map<std::string, std::string> & GlobalConfig::getDirectives() const {
 
 std::map<std::string, ServerConfig> & GlobalConfig::accessServers() { return servers; }
 
+const std::map<std::string, ServerConfig> &	GlobalConfig::getServers() const {return servers;}
+
 GlobalConfig::~GlobalConfig() {}

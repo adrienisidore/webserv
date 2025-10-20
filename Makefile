@@ -17,15 +17,16 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++98
 INCLUDES = -I./includes/
 
 SRC = src/main.cpp \
-      src/Server.cpp \
 	  src/Request.cpp \
+	  src/ServerMonitor.cpp \
 	  src/Response.cpp \
 	  src/TCPConnection.cpp \
 	  src/HTTPcontent.cpp \
 	  src/LocationConfig.cpp \
 	  src/ServerConfig.cpp \
 	  src/GlobalConfig.cpp \
-	  src/autoconfig.cpp
+	  src/autoconfig.cpp \
+	  src/parsing.cpp \
 
 OBJ = objets/
 

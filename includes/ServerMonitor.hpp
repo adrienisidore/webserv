@@ -1,5 +1,5 @@
-#ifndef SERVER_MONITOR_HPP
-# define SERVER_MONITOR_HPP
+#ifndef SERVERMONITOR_HPP
+# define SERVERMONITOR_HPP
 
 #include "./webserv.hpp"
 
@@ -7,25 +7,39 @@ class	ServerMonitor {
 
 private:
 
-	static ServerMonitor*	_instance;
-	std::vector<Server>		_servers;		
-	bool					_is_running;
+	static ServerMonitor*			_instance;
+	static GlobalConfig				_global_config;
+	bool							_is_running;
+	std::vector<pollfd>				_pollfds; //all sockets we monitor, wrapped up for poll()
+	std::map<int, TCPConnection *>	_map_connections;// map all client sockets to their corresponding TCP connection
+	std::map<int, ServerConfig>		_map_server_configs; // map all listening sockets to their corresponding server configs 
+
+	void							create_all_listening_sockets();
+	void							bind_listening_socket(int listening);
+	void							add_new_client_socket(int listening);
+	pollfd							pollfd_wrapper(int fd);
+	
+	std::vector<pollfd>::iterator	close_tcp_connection(std::vector<pollfd>::iterator);
+	void							monitor_connections();//monitor the tcp_socket (client connected)
+
+
+	static void						handle_sigint(int sig);//static pour etre accessible par signal
+	void							set_signals_default();
+
+	int								calculate_next_timeout();
+	void							check_timeouts();
 
 public:
 
-	static void	handle_sigint(int sig);//static pour etre accessible par signal
-	void		set_signals_default();
-	void		add_server(Server server);
-
-	std::vector<Server>	&getServers();
-
-	ServerMonitor();
+	ServerMonitor(const std::string & filename);
 	~ServerMonitor();
+
+	void	run();// monitor the listening socket and launch monitor_connections
+	void	stop();
 
 };
 
 // on pourra utilser run() et stop() a partir de l'instance de chaque serveur
-//
 
 
 #endif

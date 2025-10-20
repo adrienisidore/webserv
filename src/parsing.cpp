@@ -9,8 +9,8 @@ void	check_args(int ac, char **av) {
 
 	config_file_name = av[1];
 
-	size_t index = config_file_name.rfind(".conf");
-	if (index == std::string::npos || index + 4 < config_file_name.size())
+	size_t index = config_file_name.find(".conf");
+	if (index == std::string::npos) // dangerous
 		throw (std::invalid_argument("invalid config file format"));
 
 	if (access(av[1], R_OK) != 0)
@@ -21,28 +21,29 @@ void	check_args(int ac, char **av) {
 		throw std::invalid_argument("impossible to read config file");
 }
 
-void	syntaxic_parsing_config_file(char *filename) {
+// void	syntaxic_parsing_config_file(char *filename) {
 
-    std::ifstream file(filename);
-    std::string line;
+//     std::ifstream file(filename);
+//     std::string line;
     
-    if (!file.is_open()) {
-        std::cerr << "Error opening file" << std::endl;
-        return 1;
-    }
+//     if (!file.is_open()) {
+//         std::cerr << "Error opening file" << std::endl;
+//         return 1;
+//     }
     
-    while (std::getline(file, line)) {
-        std::cout << line << std::endl;
-    }
+//     while (std::getline(file, line)) {
+//         std::cout << line << std::endl;
+//     }
     
-    file.close();
-    return 0;
-}
-bool	syntaxic_parsing_context(int fd, int level) {
+//     file.close();
+//     return 0;
+// }
 
-	// VERIFIER DIRECTIVES
+// bool	syntaxic_parsing_context(int fd, int level) {
 
-}
+// 	// VERIFIER DIRECTIVES
+
+// }
 
 // idee: parsing recursif
 // -> keep track of open_brackets
