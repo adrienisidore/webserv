@@ -46,6 +46,7 @@ enum {
 # include "./Request.hpp"
 # include "./TCPConnection.hpp"
 # include "./Server.hpp"
+# include "./ServerMonitor.hpp"
 
 // ADRI
 # include "./Response.hpp"

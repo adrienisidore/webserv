@@ -7,7 +7,6 @@ class	Server {
 
 private:
 
-	static Server*			_instance;
 	int						_listening;
 	std::string				_port;
 	bool					_is_running;
@@ -22,9 +21,6 @@ private:
 	std::vector<pollfd>::iterator	close_tcp_connection(std::vector<pollfd>::iterator);
 	
 	void		monitor_connections();//monitor the tcp_socket (client connected)
-
-	static void	handle_sigint(int sig);//static pour etre accessible par signal
-	void		set_signals_default();
 
 	pollfd		pollfd_wrapper(int fd);
 	
