@@ -46,6 +46,7 @@ enum {
 # include "./Request.hpp"
 # include "./TCPConnection.hpp"
 # include "./Server.hpp"
+# include "./ServerMonitor.hpp"
 
 // ADRI
 # include "./Response.hpp"
@@ -53,6 +54,7 @@ enum {
 # include <fcntl.h>      // pour open()
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
+# include <fstream>
 
 # include <cmath>//Interdit
 

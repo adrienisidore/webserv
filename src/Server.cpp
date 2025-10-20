@@ -5,8 +5,6 @@ Server	*Server::_instance = NULL;
 Server::Server(std::string port)
 : _listening(-1), _port(port), _is_running(false), _ressources_path("./ressources")
 {
-	_instance = this;
-	set_signals_default();
 	create_server_socket();
 	bind_server_socket();
 }
@@ -354,20 +352,4 @@ void Server::simple_reply(int clientSocket, const char *filename)
 
 
 	//send(client_fd.fd, buff, bytes_received + 1, 0); // (or write())
-
-void	Server::handle_sigint(int sig) {
-
-	(void)sig;
-	///Evite d'inclure le this
-	if (Server::_instance) {
-		Server::_instance->_is_running = false;
-	}
-}
-
-//Gestion Ctrl + C
-void	Server::set_signals_default() {
-
-	Server::_instance = this;
-	signal(SIGINT, handle_sigint);
-}
 
