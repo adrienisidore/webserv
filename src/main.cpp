@@ -59,7 +59,7 @@
 //     std::vector<std::string> env_strings;
 //     env_strings.push_back("REQUEST_METHOD=POST");
 //     env_strings.push_back("SCRIPT_NAME=./test.cgi");
-//     env_strings.push_back("QUERY_STRING=");
+//     env_strings.push_back("QUERY_STRING=fgdiughddfiuh");
 //     env_strings.push_back("CONTENT_LENGTH=11");
 //     env_strings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
 //     env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
@@ -242,6 +242,14 @@ int main() {
 
     // Ajouter la location au serveur après que le serveur ait hérité du global
     global.accessServers().at("webserv1/127.0.0.1:8080").addLocation("/images", loc);
+
+    // --- Serveur 2 ---
+    ServerConfig server2;
+    server2.setDirective("listen", "127.0.0.1:8080");
+    server2.setDirective("index", "index2.html");
+
+    // Ajouter le serveur au global pour hériter des directives globales
+    global.addServer("webserv2/127.0.0.1:8080", server2);
 
     // Afficher la config complète
     printGlobalConfig(global);
