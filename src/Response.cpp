@@ -1,3 +1,121 @@
 #include "webserv.hpp"
 
 //405: Methode interdite pour la ressource
+
+Response::Response(const Request & request): HTTPcontent(), _request(request) {
+	//copyFrom ne recupere pas _headers ni _current_body (present uniquement dans Request)
+	//contenant tout le body de la requete (si c'est un POST).
+	//Si c'est GET alors le body sera vide (tant mieux) si c'est POST alors utile pour la suite
+
+	//Ne devrait-on pas tout recuperer de _request puis faire _request. reset() ? et donc retirer const dans le constructeur
+	this->copyFrom(request);
+}
+
+void	Response::copyFrom(const HTTPcontent& other) {
+        _code = other.getCode();
+        _method = other.getMethod();
+        _URI = other.getURI();
+}
+
+Response::~Response() {}
+
+
+std::string		Response::parentDir(const std::string &path) const {
+
+    std::string::size_type pos = path.rfind('/');
+    if (pos == std::string::npos) 
+        return "."; // pas de / → répertoire courant
+    else if (pos == 0)
+        return "/"; // le parent de /fichier est /
+    else
+        return path.substr(0, pos);
+}
+
+//1) A l'aide de _global_config, _headers, _URI ET de la methode : https://www.alimnaqvi.com/blog/webserv
+void			Response::buildPath() {
+
+	//On gere HEAD ?? Pour les siege de curl
+	if (this->getMethod() == "GET")
+	{
+		//On regarde si ServerId correspond a un server dans GlobalConfig ==> sinon setCode()
+		std::string ServerId = _headers[""] + "/" + _headers[""];
+		//On regarde si dans ce server il existe une location == _URI ==> sinon setCode()
+
+		//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
+
+	}
+}
+
+// A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs
+
+bool	Response::is_valid_path(std::string filename) {
+
+	if (filename.empty() ||
+		filename.find("%") != std::string::npos ||
+		filename.find("..") != std::string::npos ||
+		filename.find("~") != std::string::npos ||
+		filename.find("#") != std::string::npos)
+		return false;
+	return true;
+}
+
+//Changer _URI par le vrai path fait par buildPath()
+void	Response::checkPermissions() {
+
+	if (_code) return;
+
+	struct stat URI_properties;
+
+	// stat() : Récupération des métadonnées du fichier/répertoire, échoue si la ressource n'existe pas ou n'est pas accessible.
+	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")
+		setCode(405);
+
+	else if (!is_valid_path(_URI))
+		setCode(400);
+
+	else if (stat(_URI.c_str(), &URI_properties) == -1) {
+
+		int er = errno;
+
+		if (er == ENOENT && (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
+		    setCode(404);// ========== ENOENT ========== La ressource (fichier ou dossier) n’existe pas.
+		else if (er == EACCES)
+			setCode(403);// ========== EACCES ========== Accès aux metadonnees refusé
+		else if (er == ENOTDIR || er == ELOOP)
+			setCode(404);// ========== ENOTDIR / ELOOP ========== Le chemin contient un composant qui n’est pas un répertoire 
+		else if (er == ENAMETOOLONG)
+			setCode(414);// ========== ENAMETOOLONG ========== Un des éléments du chemin, ou le chemin complet, dépasse la longueur maximale.
+		else
+			setCode(500);// ========== Cas restants ========== Erreurs internes au serveur (memoire, ...)
+
+		// ========== ENOENT ==========
+		// - Pertinent pour : GET, HEAD, DELETE → on ne peut pas lire/supprimer ce qui n’existe pas → 404
+		// - Pour PUT/POST : ce n’est *pas une erreur*, car ces méthodes peuvent créer la ressource.
+		// ========== EACCES ==========
+		// - A cause d'un répertoire du chemin (ex : /upload/ a des droits 000) : le droit x (execution) n'est pas present sur au moins un des repertoire du chemin
+		// → 403 Forbidden pour toutes les méthodes.
+		// ========== ENOTDIR / ELOOP ==========
+		// Exemple : /dossier/fichier.txt/truc.json → fichier.txt n’est pas un répertoire.
+		// Ou bien : boucle de liens symboliques (ELOOP).
+		// → Le chemin est invalide → 404 Not Found.
+		// ========== ENAMETOOLONG ==========
+		// → Mauvaise requête → 414 URI Too Long.
+	}
+	if (_code) return;
+	// ========= Si on arrive ici =========
+	// stat() a réussi → SOIT la ressource existe et on a acces a ses metadonnees, soit elle n'existe pas mais on va pouvoir la creer.
+	// Il reste à vérifier :
+	//  - Pour GET/HEAD → droit de lecture sur la ressource
+	//  - Pour PUT/POST → droit d’écriture sur la ressource ou le répertoire parent
+	//  - Pour DELETE → droit d’écriture sur le répertoire parent
+
+    if ((_method == "GET" || _method == "HEAD") && access(_URI.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
+	else if (_method == "PUT" || _method == "POST") {
+		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
+		if ((access(_URI.c_str(), F_OK) == 0 && access(_URI.c_str(), W_OK) != 0)
+			|| (access(_URI.c_str(), F_OK) != 0 && access(parentDir(_URI).c_str(), W_OK | X_OK) != 0))
+			return (setCode(403));
+	}
+	else if (_method == "DELETE" && access(parentDir(_URI).c_str(), W_OK | X_OK) != 0)
+		return (setCode(403));//On a acces au repertoire parent pour faire des modifications
+}

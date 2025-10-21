@@ -14,11 +14,8 @@ class	Request : public HTTPcontent {
 		int				_body_protocol; // is content_length precised, or is it a chunked body
 		unsigned long	_content_length;
 
-		void		setStartLine();
-		void		setHeaders();
-
-		std::string		parentDir(const std::string &path) const;
-		void			checkPermissions();
+		void			setStartLine();
+		void			setHeaders();
 
 	public:
 		Request();
@@ -26,8 +23,6 @@ class	Request : public HTTPcontent {
 		
 		void			parse_header();
 		void			unchunk_body();
-		
-		bool			is_valid_path(std::string path);
 
 		void			copyFrom(const HTTPcontent& other);
 

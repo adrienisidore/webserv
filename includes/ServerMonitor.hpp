@@ -11,7 +11,7 @@ private:
 	static GlobalConfig				_global_config;
 	bool							_is_running;
 	std::vector<pollfd>				_pollfds; //all sockets we monitor, wrapped up for poll()
-	std::map<int, TCPConnection *>	_map_connections;// map all client sockets to their corresponding TCP connection
+	std::map<int, TCPConnection *>	_map_connections;// map all tcp_sockets to their corresponding TCP connection
 	std::map<int, ServerConfig>		_map_server_configs; // map all listening sockets to their corresponding server configs 
 
 	void							create_all_listening_sockets();

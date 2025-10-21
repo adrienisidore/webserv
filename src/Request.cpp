@@ -9,54 +9,30 @@ Request::Request(void): HTTPcontent() {
 void	Request::copyFrom(const HTTPcontent& other) {
         _code = other.getCode();
         _method = other.getMethod();
-        _target = other.getTarget();
+        _URI = other.getURI();
 }
 
-void	Request::append_to_header(char buff[BUFF_SIZE], int bytes) {
+void	Request::append_to_header(char buff[BUFF_SIZE], int bytes) {_current_header.append(buff, (size_t)bytes);}
 
-	_current_header.append(buff, (size_t)bytes);
-}
+void	Request::setCurrentBody(std::string str) {_current_body = str;}
 
-void	Request::setCurrentBody(std::string str) {
-	_current_body = str;
-}
+std::string	Request::getCurrentBody() const {return _current_body;}
 
-std::string	Request::getCurrentBody() const {
-	return _current_body;
-}
+int		Request::getBodyProtocol() const {return _body_protocol;}
 
-int		Request::getBodyProtocol() const {
-	return _body_protocol;
-}
+std::string		Request::getCurrentHeader() const {return _current_header;}
 
-void	Request::setBodyProtocol(int protocol) {
-	_body_protocol = protocol;
-}
+void	Request::setBodyProtocol(int protocol) {_body_protocol = protocol;}
 
-unsigned long	Request::getContentLength() const {
-	return _content_length;
-}
+unsigned long	Request::getContentLength() const {return _content_length;}
 
-void	Request::setContentLength(unsigned long len) {
-	_content_length = len;
-}
+void	Request::setContentLength(unsigned long len) {_content_length = len;}
 
-void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {
-
-	_current_body.append(buff, (size_t)bytes);
-}
+void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {_current_body.append(buff, (size_t)bytes);}
 
 void	Request::parse_header() {
 	setStartLine();
 	setHeaders();
-
-
-	//Renommer la variable _target en _URI
-	//setTarget() : modifie la _target selon les Headers.
-
-
-
-	//checkPermissions();
 }
 
 void	Request::unchunk_body() {
@@ -135,13 +111,16 @@ void	Request::setStartLine() {
 
 	//Remplissage des attributs
 	_method = start_line.substr(0, first_space);
-	_target = start_line.substr(first_space + 1, second_space - first_space - 1);
+	_URI = start_line.substr(first_space + 1, second_space - first_space - 1);
 
 	//Verification de la methode et du protocole : verifier logique (adri) du empty
 	if (_method.empty() || _protocol != start_line.substr(second_space + 1)) return (setCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
 		return (setCode(501));
+
+	//Si la location existe alors son identifiant correspond a _URI
+	
 }
 
 void	Request::setHeaders() {
@@ -190,101 +169,11 @@ void	Request::setHeaders() {
 	// std::cout << "inside setHeaders() 2 -> after filling the header's map :" << getCode() << std::endl;
 }
 
-std::string		Request::parentDir(const std::string &path) const {
-
-    std::string::size_type pos = path.rfind('/');
-    if (pos == std::string::npos) 
-        return "."; // pas de / → répertoire courant
-    else if (pos == 0)
-        return "/"; // le parent de /fichier est /
-    else
-        return path.substr(0, pos);
-}
-
-std::string		Request::getCurrentHeader() const {
-
-	return _current_header;
-}
-
-// A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs
-
-bool	Request::is_valid_path(std::string filename) {
-
-	if (filename.empty() ||
-		filename.find("%") != std::string::npos ||
-		filename.find("..") != std::string::npos ||
-		filename.find("~") != std::string::npos ||
-		filename.find("#") != std::string::npos)
-		return false;
-	return true;
-}
-
-void	Request::checkPermissions() {
-
-	if (_code) return;
-
-	struct stat target_properties;
-
-	// stat() : Récupération des métadonnées du fichier/répertoire, échoue si la ressource n'existe pas ou n'est pas accessible.
-	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")
-		setCode(405);
-
-	else if (!is_valid_path(_target))
-		setCode(400);
-
-	else if (stat(_target.c_str(), &target_properties) == -1) {
-
-		int er = errno;
-
-		if (er == ENOENT && (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
-		    setCode(404);// ========== ENOENT ========== La ressource (fichier ou dossier) n’existe pas.
-		else if (er == EACCES)
-			setCode(403);// ========== EACCES ========== Accès aux metadonnees refusé
-		else if (er == ENOTDIR || er == ELOOP)
-			setCode(404);// ========== ENOTDIR / ELOOP ========== Le chemin contient un composant qui n’est pas un répertoire 
-		else if (er == ENAMETOOLONG)
-			setCode(414);// ========== ENAMETOOLONG ========== Un des éléments du chemin, ou le chemin complet, dépasse la longueur maximale.
-		else
-			setCode(500);// ========== Cas restants ========== Erreurs internes au serveur (memoire, ...)
-
-		// ========== ENOENT ==========
-		// - Pertinent pour : GET, HEAD, DELETE → on ne peut pas lire/supprimer ce qui n’existe pas → 404
-		// - Pour PUT/POST : ce n’est *pas une erreur*, car ces méthodes peuvent créer la ressource.
-		// ========== EACCES ==========
-		// - A cause d'un répertoire du chemin (ex : /upload/ a des droits 000) : le droit x (execution) n'est pas present sur au moins un des repertoire du chemin
-		// → 403 Forbidden pour toutes les méthodes.
-		// ========== ENOTDIR / ELOOP ==========
-		// Exemple : /dossier/fichier.txt/truc.json → fichier.txt n’est pas un répertoire.
-		// Ou bien : boucle de liens symboliques (ELOOP).
-		// → Le chemin est invalide → 404 Not Found.
-		// ========== ENAMETOOLONG ==========
-		// → Mauvaise requête → 414 URI Too Long.
-	}
-	if (_code) return;
-	// ========= Si on arrive ici =========
-	// stat() a réussi → SOIT la ressource existe et on a acces a ses metadonnees, soit elle n'existe pas mais on va pouvoir la creer.
-	// Il reste à vérifier :
-	//  - Pour GET/HEAD → droit de lecture sur la ressource
-	//  - Pour PUT/POST → droit d’écriture sur la ressource ou le répertoire parent
-	//  - Pour DELETE → droit d’écriture sur le répertoire parent
-
-    if ((_method == "GET" || _method == "HEAD") && access(_target.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
-	else if (_method == "PUT" || _method == "POST") {
-		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
-		if ((access(_target.c_str(), F_OK) == 0 && access(_target.c_str(), W_OK) != 0)
-			|| (access(_target.c_str(), F_OK) != 0 && access(parentDir(_target).c_str(), W_OK | X_OK) != 0))
-			return (setCode(403));
-	}
-	else if (_method == "DELETE" && access(parentDir(_target).c_str(), W_OK | X_OK) != 0)
-		return (setCode(403));//On a acces au repertoire parent pour faire des modifications
-}
-
-
 Request::~Request() {}
 
 std::ostream&	operator<<(std::ostream& os, const Request &request) {
 
-	os << "\nRequest : " << request.getMethod() << " " << request.getTarget() << " " << request.getProtocol() << std::endl;
+	os << "\nRequest : " << request.getMethod() << " " << request.getURI() << " " << request.getProtocol() << std::endl;
 
 	std::map<std::string, std::string> tmp_headers = request.getHeaders();
 	for (std::map<std::string, std::string>::const_iterator it = tmp_headers.begin(); it != tmp_headers.end(); ++it) {

@@ -87,8 +87,10 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 	//	- 127.17.0.1 / docker
 	//	and some other...
 
+	//Verifier si on a besoin de convertir la c_str() avec htons ntohs
 	int	status = getaddrinfo(config.getDirective("host").c_str(), config.getDirective("listen").c_str(), &hints, &res);
 	// /!\ HOST and LISTEN must exist and always have the same value format
+	// ATTENTION il peut y avoir plus de serverConfigs que de listening sockets 
 	if (status) {
 		freeaddrinfo(res);
 		throw SocketException(gai_strerror(status));
@@ -182,6 +184,7 @@ void	ServerMonitor::run() {
 			else
 				throw SocketException(strerror(errno));
 		}
+		// ecouter les listening sockets
 		for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 
 			if (_pollfds[i].revents & POLLIN)

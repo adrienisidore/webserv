@@ -21,6 +21,9 @@ void	check_args(int ac, char **av) {
 		throw std::invalid_argument("impossible to read config file");
 }
 
+//ATTENTION : Ajouter en dur dans le fichier toutes les directives par defaut (par ex. max_body_size ...) AU NIVEAU DES DIRECTIVES GLOBALCONFIG
+
+
 // void	syntaxic_parsing_config_file(char *filename) {
 
 //     std::ifstream file(filename);

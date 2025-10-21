@@ -108,8 +108,8 @@ GlobalConfig AutoConfig(const std::string & filename) {
             AutoConfig_setDirective(currentLocation, line);
         } else if (inServer) {
             AutoConfig_setDirective(currentServer, line);
-            //Verifier que listen contient IP et le Port
-            currentServerId = currentServer.getDirective("server_name") + "/" + currentServer.getDirective("listen");
+			//CHECKER QUE CES DIRECTIVES SONT ABSOLUMENT OBLIGATOIRE
+            currentServerId = currentServer.getDirective("host") + ":" + currentServer.getDirective("listen");
         } else {
             AutoConfig_setDirective(global, line);
         }

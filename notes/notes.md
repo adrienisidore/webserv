@@ -123,7 +123,7 @@ Accept-Language: en                     # request header fields (at least 1)
 - **POST**: submissions or operations that change the server state. Usually can't be represented by URL alone -> non-cacheable-by-default. ex: posting a message, completing a transaction. Seding to "controller" URL.
 **ADRI'S VERSION** : download a ressource.
 
-- **PUT**: like POST but the client specifies the target location on the server.
+- **PUT**: like POST but the client specifies the target location (URI) on the server.
 **ADRI'S VERSION** : modify or replace a ressource at a precise location.
 
 
