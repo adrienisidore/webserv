@@ -31,12 +31,12 @@ void	TCPConnection::check_body_headers() {
 		if (!is_valid_length(_request.getHeaders()["CONTENT-LENGTH"]))
 			return set_error(413);
 		else
-			_request.setBodyProtocol(CONTENT_LENGTH);
+			setBodyProtocol(CONTENT_LENGTH);
 	}
 
 	else if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
 		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
-		_request.setBodyProtocol(CHUNKED);
+		setBodyProtocol(CHUNKED);
 	}
 
 	else
@@ -107,7 +107,7 @@ void	TCPConnection::read_body() {
 			return set_error(413);
 	
 	// CHECK IF END OF BODY
-	if (_request.getBodyProtocol() == CHUNKED) {
+	if (getBodyProtocol() == CHUNKED) {
 
 		size_t header_end = _request.getCurrentBody().find("0\r\n\r\n");
 		if (header_end != std::string::npos) {
@@ -124,7 +124,7 @@ void	TCPConnection::read_body() {
 			}
 		}
 	}
-	else if (_request.getBodyProtocol() == CONTENT_LENGTH) {
+	else if (getBodyProtocol() == CONTENT_LENGTH) {
 
 		int diff = _request.getCurrentBody().size() - _request.getContentLength();
 		if (diff == 0) {
@@ -200,3 +200,7 @@ time_t	TCPConnection::getBodyTime() const {return _body_start_time;}
 time_t	TCPConnection::getLastChunkTime() const {return _last_tcp_chunk_time;}
 
 time_t	TCPConnection::getEndOfRequestTime() const {return _end_of_request_time;}
+
+int		TCPConnection::getBodyProtocol() const {return _body_protocol;}
+
+void	TCPConnection::setBodyProtocol(int protocol) {_body_protocol = protocol;}

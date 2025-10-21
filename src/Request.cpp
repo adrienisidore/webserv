@@ -12,24 +12,6 @@ void	Request::copyFrom(const HTTPcontent& other) {
         _URI = other.getURI();
 }
 
-void	Request::append_to_header(char buff[BUFF_SIZE], int bytes) {_current_header.append(buff, (size_t)bytes);}
-
-void	Request::setCurrentBody(std::string str) {_current_body = str;}
-
-std::string	Request::getCurrentBody() const {return _current_body;}
-
-int		Request::getBodyProtocol() const {return _body_protocol;}
-
-std::string		Request::getCurrentHeader() const {return _current_header;}
-
-void	Request::setBodyProtocol(int protocol) {_body_protocol = protocol;}
-
-unsigned long	Request::getContentLength() const {return _content_length;}
-
-void	Request::setContentLength(unsigned long len) {_content_length = len;}
-
-void	Request::append_to_body(char buff[BUFF_SIZE], int bytes) {_current_body.append(buff, (size_t)bytes);}
-
 void	Request::parse_header() {
 	setStartLine();
 	setHeaders();
