@@ -19,7 +19,9 @@ private:
 	char			_buff[BUFF_SIZE];
 	int				_bytes_received;
 	int				_status; //statut de la livraison de la donnee
+	
 	Request			_request;	// current request, initialized by initialize_transfer()
+	int				_body_protocol; // is content_length precised, or is it a chunked body
 
 public:
 	TCPConnection(int tcp_socket, ServerConfig config);
@@ -43,6 +45,10 @@ public:
 	time_t	getHeaderTime() const;
 	time_t	getBodyTime() const;
 	time_t	getLastChunkTime() const;
+
+	int				getBodyProtocol() const;
+	void			setBodyProtocol(int);
+
 
 };
 

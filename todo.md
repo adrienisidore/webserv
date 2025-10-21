@@ -1,19 +1,3 @@
-LUNDI {
-
-ADRI
-
-[x] finaliser recuperation fichier conf (boucle while)
-
-
-GASTON
-
-
-[x] remplacer serveurs par 1 serverMonitor. -> 1 boucle while
-[x] integrer poll() dans Server_monitor (savoir si 1 listening socket bind a plsr IP ou plsr listening socket)
-[ ] discuter de l'integration des directives de config dans le code (lesquelles ? quel nom ? Si elles n'existent pas ?)
-[ ] 1er Parsing fichier Config
-
-}
 
 MARDI {
 
@@ -24,8 +8,9 @@ ADRI
 
 GASTON
 
-[ ] 2e parsing fichier config -> creer le fichier temporaire 
-
+[ ] bouger les attributs de Request vers TCPConnection
+[ ] 1er Parsing fichier Config
+[ ] 2e Parsing : semantic. Verifier que les variblaes obligatoires et ecrire dans un fichier temporaire (ou stream temporaire)
 
 => [ ] Integrer tout dans main()
 

@@ -12,6 +12,12 @@ class HTTPcontent {
 		int					_code;
 		LocationConfig		_config;//A FINIR
 
+	// lecture
+		std::string			_current_header; // track the header each TCP chunk, each time recv is called
+		std::string			_current_body;
+
+		unsigned long		_content_length; // obligatoire pour response mais facultative pout request
+
 	// start-line
 		std::string			_method;
 		std::string			_URI;
@@ -37,6 +43,15 @@ class HTTPcontent {
 		std::string							getURI() const;
 		std::string							getProtocol() const;
 		std::map<std::string, std::string>	getHeaders() const;
+
+		void								setContentLength(unsigned long);
+		unsigned long						getContentLength() const;
+		void								setCurrentBody(std::string str);
+		std::string							getCurrentBody() const;
+		std::string							getCurrentHeader() const;
+		void								append_to_header(char buff[BUFF_SIZE], int bytes);
+		void								append_to_body(char buff[BUFF_SIZE], int bytes);
+
 
 };
 
