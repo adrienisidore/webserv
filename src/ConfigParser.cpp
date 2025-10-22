@@ -149,12 +149,12 @@ void    ConfigParser::parseLocation(std::string &line) {
 
 void    ConfigParser::parseServer() {
     
-    std::string line = readLine();
+    std::string line;
 
     // Expected format: server name {  or just "server {"
     std::vector<std::string> parts = split(_currentLine, ' ');
     
-    if (parts.empty() || parts[0] != "server" || parts[0] != "server {")
+    if (parts.empty() || parts[0] != "server")
         throw ParsingException("Expected 'server' at line " + toString(_lineNumber));
     
     writeTempLine("server");
@@ -222,7 +222,7 @@ void    ConfigParser::parseGlobal() {
             if (isEmptyOrComment(line))
                 continue;
             
-            if (line.find("server") == 0) {
+            if (line.find("server") != std::string::npos) {
                 _currentLine = line;
                 parseServer();
             } else {

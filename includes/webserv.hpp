@@ -32,6 +32,7 @@ enum {
 # include <sys/socket.h>//socket(), bind(), listen(), accept(), setsockopt()
 # include <netdb.h>//getaddrinfo(), freeaddrinfo(), gai_strerror()
 # include <arpa/inet.h>//ntohs()
+# include <arpa/inet.h> // htons() ?
 # include <string.h>//memset() : NON AUTORISEE DANS LES FONCTIONS DU SUJET
 # include <string>//std::string : FONCTION INTERDITE ?
 # include <poll.h>//poll(), struct pollfd
@@ -69,4 +70,4 @@ enum {
 void	check_args(int ac, char **av);
 std::string parseConfig(const std::string& configFile);
 
-#endif
+# endif

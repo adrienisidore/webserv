@@ -85,10 +85,23 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 	//	- 127.0.0.1 / localhost
 	//	- 192.168.1.100 / eth0
 	//	- 127.17.0.1 / docker
-	//	and some other...
+	//	and some other
 
+	std::string listen_value = config.getDirective("listen");
+	size_t colon_pos = listen_value.find(':');
+	std::string host;
+	std::string port;
+
+	if (colon_pos != std::string::npos)
+	{
+		// Format: "127.0.0.1:8080"
+		host = listen_value.substr(0, colon_pos);
+		port = listen_value.substr(colon_pos + 1);
+	}
+	else
+		throw ParsingException("listn: invalid IP / Port"); // devrait etre inutile si parsing est bien fait
 	//Verifier si on a besoin de convertir la c_str() avec htons ntohs
-	int	status = getaddrinfo(config.getDirective("host").c_str(), config.getDirective("listen").c_str(), &hints, &res);
+	int	status = getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
 	// /!\ HOST and LISTEN must exist and always have the same value format
 	// ATTENTION il peut y avoir plus de serverConfigs que de listening sockets 
 	if (status) {
@@ -134,7 +147,6 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
 		close(tcp_socket);
 	}
-
 }
 
 std::vector<pollfd>::iterator	ServerMonitor::close_tcp_connection(std::vector<pollfd>::iterator it) {
@@ -204,6 +216,14 @@ void	ServerMonitor::monitor_connections() {
 	}
 
 	while (it != _pollfds.end()) {
+		
+		bool	should_close = false;
+
+		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
+			it = close_tcp_connection(it);
+			continue;
+		}
+
 		if (it->revents & POLLIN) {	// what if chunk size > 4096? --> wait for next turn
 
 			TCPConnection	*connection = _map_connections[it->fd];
@@ -233,19 +253,20 @@ void	ServerMonitor::monitor_connections() {
 				// if (condition pour keep-alive)
 				// it = close_tcp_connection(it);
 				
-				++it;
+				//++it;
 			}
 			//Doit-on fermer la connexion si une erreur arrive ?
 			if (connection->get_status() == ERROR ||
 					connection->get_status() == CLIENT_DISCONNECTED) {
-
+						should_close = true;
 				// conn->_respponse(request)
 
 				// DELETE the TCP connecion
 
 				// if (condition pour keep-alive)
-				it = close_tcp_connection(it);
 			}
+			if (should_close)
+				it = close_tcp_connection(it);
 			else
 				++it;
 		}
@@ -253,6 +274,7 @@ void	ServerMonitor::monitor_connections() {
 			++it;
 	}	
 }
+// CA MARCHE PLUS
 
 int		ServerMonitor::calculate_next_timeout() {
 
