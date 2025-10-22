@@ -1,15 +1,16 @@
 #include "webserv.hpp"
 
-// Request::Request(void): HTTPcontent(void) {
-Request::Request(void): HTTPcontent() {
-	// reset();//redondant ?
-	_current_header.clear();
-}
+Request::Request(void): HTTPcontent() {}
 
-void	Request::copyFrom(const HTTPcontent& other) {
-        _code = other.getCode();
-        _method = other.getMethod();
-        _URI = other.getURI();
+//Si changement, penser a changer la version de Response + les prototypes
+void	Request::copyFrom(HTTPcontent& other) {
+		_code = other.getCode();
+		_method = other.getMethod();
+		_URI = other.getURI();
+		_config = other.getConfig();
+		_headers = other.getHeaders();
+		//pertinent de reset other, par securite
+		other.reset();
 }
 
 void	Request::parse_header() {
@@ -100,9 +101,6 @@ void	Request::setStartLine() {
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
 		return (setCode(501));
-
-	//Si la location existe alors son identifiant correspond a _URI
-	
 }
 
 void	Request::setHeaders() {
@@ -143,12 +141,8 @@ void	Request::setHeaders() {
 		_headers[key] = value;
 	}
 
-	// std::cout << "inside setHeaders() 1 -> after filling the header's map :" << getCode() << std::endl;
-
-	//Verifie que HOST est present (obligatoire)
 	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
     if (it == _headers.end() || it->second.empty()) return (setCode(400));
-	// std::cout << "inside setHeaders() 2 -> after filling the header's map :" << getCode() << std::endl;
 }
 
 Request::~Request() {}

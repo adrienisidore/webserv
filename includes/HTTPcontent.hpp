@@ -3,14 +3,14 @@
 
 # include "./webserv.hpp"
 
-//Common elements between a Request and a Response sent through a TCPConnection.
+//Request/Response :
 //All the data that goes from Request to Response
 class HTTPcontent {
 
 	protected:
 
 		int					_code;
-		LocationConfig		_config;//A FINIR
+		LocationConfig		_config;
 
 	// lecture
 		std::string			_current_header; // track the header each TCP chunk, each time recv is called
@@ -34,15 +34,18 @@ class HTTPcontent {
 
 		public:
 
+		void								setLocation(const ServerConfig & servconfig);
+
 		void								setCode(const int & code);
 		void 								reset();
 
-		virtual void						copyFrom(const HTTPcontent& other) = 0;//Doit etre code dans Request et Response
+		virtual void						copyFrom(HTTPcontent& other) = 0;
 		int									getCode() const;
 		std::string							getMethod() const;
 		std::string							getURI() const;
 		std::string							getProtocol() const;
 		std::map<std::string, std::string>	getHeaders() const;
+		LocationConfig						getConfig() const;
 
 		void								setContentLength(unsigned long);
 		unsigned long						getContentLength() const;

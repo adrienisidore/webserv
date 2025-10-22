@@ -227,7 +227,8 @@ void	ServerMonitor::monitor_connections() {
 
 				connection->end_transfer();
 
-				// conn->_response(request);
+				// conn->response();
+				// conn->_response.copyFrom(request);//Apres avoir construit la reponse et l'avoir envoye il faut que TCPConnection reset Response() ?
 				// OU
 
 				// if (condition pour keep-alive)

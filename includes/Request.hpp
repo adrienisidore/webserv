@@ -3,7 +3,7 @@
 
 #include "./webserv.hpp"
 
-//what a client sent, using TCP
+//formalize a proper request
 class	Request : public HTTPcontent {
 
 	private:
@@ -18,7 +18,7 @@ class	Request : public HTTPcontent {
 		void			parse_header();
 		void			unchunk_body();
 
-		void			copyFrom(const HTTPcontent& other);
+		void			copyFrom(HTTPcontent& other);
 ;
 
 

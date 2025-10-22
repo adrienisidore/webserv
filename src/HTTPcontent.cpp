@@ -2,23 +2,24 @@
 
 HTTPcontent::HTTPcontent() : _code(0), _protocol("HTTP/1.1") {}
 
-//Peut etre recoder dans les heritants si besoin
-// void	HTTPcontent::copyFrom(const HTTPcontent& other) {
-//         _code = other.getCode();
-//         _method = other.getMethod();
-//         _URI = other.getURI();
-// }
-
+//Potentiellement useless, uniquement par securite
 void	HTTPcontent::reset() {
 	_code = 0;
 	_method.clear();
 	_URI.clear();
 	_headers.clear();
+	_current_header.clear();
+	_current_body.clear();
+	//a priori Locationconfig n'a pas besoin d'etre nettoye (a checker).
 }
 
-void	HTTPcontent::setCode(const int & code) {
-	_code = code;
+void	HTTPcontent::setLocation(const ServerConfig & servconfig) {
+
+	_config = servconfig.getLocations().at(_URI);
+
 }
+
+void	HTTPcontent::setCode(const int & code) {_code = code;}
 
 std::string	HTTPcontent::getMethod() const {return (_method);}
 
@@ -28,7 +29,9 @@ std::string	HTTPcontent::getProtocol() const {return (_protocol);}
 
 int	HTTPcontent::getCode() const {return (_code);}
 
-std::map<std::string, std::string> HTTPcontent::getHeaders() const {return (_headers);}
+std::map<std::string, std::string>	HTTPcontent::getHeaders() const {return (_headers);}
+
+LocationConfig						HTTPcontent::getConfig() const { return (_config);}
 
 HTTPcontent::~HTTPcontent() {}
 

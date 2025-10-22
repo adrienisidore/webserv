@@ -1,7 +1,7 @@
 #include "webserv.hpp"
 
 TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
-	end_transfer();
+	end_transfer();//A quoi ca sert ?
 }
 
 TCPConnection::~TCPConnection() {}
@@ -76,11 +76,13 @@ void	TCPConnection::read_header() {
 	if (header_end != std::string::npos) {
 
 		_request.parse_header();
+		
 		if (_request.getCode()) {
 			_status = ERROR;
 			return;
 		}
-		else if (_request.getMethod() == "POST") {
+		_request.setLocation(_config);
+		if (_request.getMethod() == "POST") {
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
 			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end));

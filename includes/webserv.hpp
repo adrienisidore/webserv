@@ -41,11 +41,20 @@ enum {
 # include <map>
 # include <stdlib.h>
 
+# include <sys/stat.h>   // pour struct stat et stat()
+# include <fcntl.h>      // pour open()
+# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
+# include <sstream> // ostream : INTERDIT
+# include <fstream>
+
+# include <cmath>//Interdit
+
 # include "./GlobalConfig.hpp"
 # include "./ServerConfig.hpp"
 # include "./LocationConfig.hpp"
 # include "HTTPcontent.hpp"
 # include "./Request.hpp"
+# include "./Response.hpp"
 # include "./TCPConnection.hpp"
 # include "./ServerMonitor.hpp"
 
@@ -54,14 +63,7 @@ enum {
 # include "./Exceptions.hpp"
 
 // ADRI
-# include "./Response.hpp"
-# include <sys/stat.h>   // pour struct stat et stat()
-# include <fcntl.h>      // pour open()
-# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
-# include <sstream> // ostream : INTERDIT
-# include <fstream>
 
-# include <cmath>//Interdit
 
 // Parsing
 void	check_args(int ac, char **av);

@@ -9,7 +9,8 @@ class	TCPConnection {
 private:
 
 	int				_tcp_socket; // one connection of one client, using TCP
-	ServerConfig	_config;
+	ServerConfig	_config;// WARNING : A chaque requete il se peut que le client parle a un nouveau serveur ?
+	//non car une TCPconnection cree par client connecte sur un port
 
 	time_t			_end_of_request_time; // at what time has the last request arrived
 	time_t			_header_start_time;//at what time the connection arrives
@@ -21,6 +22,10 @@ private:
 	int				_status; //statut de la livraison de la donnee
 	
 	Request			_request;	// current request, initialized by initialize_transfer()
+
+	Response		_response; // current response, must be initialized by another function
+
+
 	int				_body_protocol; // is content_length precised, or is it a chunked body
 
 public:
@@ -46,8 +51,8 @@ public:
 	time_t	getBodyTime() const;
 	time_t	getLastChunkTime() const;
 
-	int				getBodyProtocol() const;
-	void			setBodyProtocol(int);
+	int		getBodyProtocol() const;
+	void	setBodyProtocol(int);
 
 
 };

@@ -3,29 +3,26 @@
 
 #include "webserv.hpp"
 
-//Dans HTTPcontent ajouter : _response_headers (ou reutiliser _headers), _body, et _path
-
+//formalize a proper response
 class Response : public HTTPcontent {
     public:
-        Response(const Request & request);
+        Response();
         ~Response();
 
     private:
-		Request			_request;//useless ?
-		void			buildPath();//1) A l'aide de _global_config et _URI ET de la methode : https://www.alimnaqvi.com/blog/webserv
+		void			buildPath();
 
 		void			applyMethod();//2) Fais appel a checkPermissions, si tout est ok ca execute la methode ou le CGI,
-		//en remplissant si necessaire le _body (attribut de HTTPcontent ?)
-		bool			is_valid_path(std::string filename);
-		std::string		parentDir(const std::string &path) const;
-		void			checkPermissions();
-		void			cgi_handler();
+		//en remplissant si necessaire le _body
 
-		void			copyFrom(const HTTPcontent& other);
+		void			checkPermissions();
+		void			cgi_handler();//fait appel a une instance CGI pour remplir son body
+
+		void			copyFrom(HTTPcontent& other);
 
 		//Quand le _body de response est rempli (si GET) alors on construit la reponse
 		void 			buildResponse();//HTTP/1.1 200 OK	\r\n	[headers] Content-length etc...
-		//C'est TCPConnection qui renvoie la response ou c'est response ?
+		//C'est TCPConnection qui renvoie la response
 
 };
 

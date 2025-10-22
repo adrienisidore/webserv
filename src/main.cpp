@@ -61,6 +61,7 @@ Creer une classe CGI avec inpipe, outpipe
 // 	//Voir tableau : https://www.alimnaqvi.com/blog/webserv car certains elements sont obligatoires.
 // 	//Doit-on egalement ajouter l'environnement global ?
 // 	//build_env() : donc CGI doit forcement etre dans Response (qui a chope la request dans son constructeur)
+//	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _) 
 //     std::vector<std::string> env_strings;
 //     env_strings.push_back("REQUEST_METHOD=POST");
 //     env_strings.push_back("SCRIPT_NAME=./test.cgi");
