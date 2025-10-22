@@ -40,10 +40,16 @@ enum {
 # include <vector>
 # include <map>
 # include <stdlib.h>
+# include <sys/stat.h>   // pour struct stat et stat()
+# include <fcntl.h>      // pour open()
+# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
+# include <sstream> // ostream : INTERDIT
+# include <fstream>
 
 # include "./GlobalConfig.hpp"
 # include "./ServerConfig.hpp"
 # include "./LocationConfig.hpp"
+# include "ConfigParser.hpp"
 # include "HTTPcontent.hpp"
 # include "./Request.hpp"
 # include "./TCPConnection.hpp"
@@ -55,15 +61,12 @@ enum {
 
 // ADRI
 # include "./Response.hpp"
-# include <sys/stat.h>   // pour struct stat et stat()
-# include <fcntl.h>      // pour open()
-# include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
-# include <sstream> // ostream : INTERDIT
-# include <fstream>
+
 
 # include <cmath>//Interdit
 
 // Parsing
 void	check_args(int ac, char **av);
+std::string parseConfig(const std::string& configFile);
 
 #endif

@@ -24,6 +24,13 @@ class	HttpException : public std::runtime_error {
 		HttpException(std::string msg): std::runtime_error(msg) {}	
 };
 
+class 	ParsingException : public std::runtime_error {
+	
+	// parsing
+	public: 
+		ParsingException(std::string msg): std::runtime_error(msg) {} 
+};
+
 // we should also deal with error codes
 
 #endif
