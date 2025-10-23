@@ -13,9 +13,7 @@ ServerMonitor::ServerMonitor(const std::string & filename) {
 	// now need to create all the sockets: listening and clients
 }
 
-ServerMonitor::~ServerMonitor() {
-	stop();
-}
+ServerMonitor::~ServerMonitor() {}
 
 
 void	ServerMonitor::handle_sigint(int sig) {
@@ -27,12 +25,15 @@ void	ServerMonitor::handle_sigint(int sig) {
 void	ServerMonitor::stop() {
 	_is_running = false;
 
-	for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
-		close(it->fd);
-	}
 	for (std::map<int, TCPConnection *>::iterator it = _map_connections.begin(); it != _map_connections.end(); ++it) {
-		delete it->second;
+		if (it->second != NULL)
+			delete it->second;
 	}
+	for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
+		if (it->fd >= 0)
+			close(it->fd);
+	}
+
 }
 
 //Gestion Ctrl + C
@@ -167,7 +168,7 @@ pollfd	ServerMonitor::pollfd_wrapper(int fd) {
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
 	new_socket.fd = fd;
-	new_socket.events = POLLIN;
+	new_socket.events = POLLIN; // | POLLOUT
 	new_socket.revents = 0;
 
 	return new_socket;
@@ -204,29 +205,34 @@ void	ServerMonitor::run() {
 
 		}
 		monitor_connections();
+		std::cout << "size of map connections: " << _map_connections.size() << std::endl;
 		check_timeouts();
 	}
 }
 
 void	ServerMonitor::monitor_connections() {
 
+	// Probleme: le timeout n'est plus respecte quand la connection est fermee et donc 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
 	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 		++it;
 	}
 
-	while (it != _pollfds.end()) {
-		
-		bool	should_close = false;
+	while (it != _pollfds.end() && _is_running) {
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			it = close_tcp_connection(it);
 			continue;
 		}
+		
+		TCPConnection	*connection = _map_connections[it->fd];
 
-		if (it->revents & POLLIN) {	// what if chunk size > 4096? --> wait for next turn
-
-			TCPConnection	*connection = _map_connections[it->fd];
+        if (connection->get_status() == ERROR ||
+            connection->get_status() == CLIENT_DISCONNECTED) {
+            it = close_tcp_connection(it);
+            continue;
+        }
+		if (it->revents & POLLIN) {
 			
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
@@ -253,23 +259,32 @@ void	ServerMonitor::monitor_connections() {
 				// if (condition pour keep-alive)
 				// it = close_tcp_connection(it);
 				
-				//++it;
+				++it;
+				//it->revents = POLLOUT;
 			}
 			//Doit-on fermer la connexion si une erreur arrive ?
-			if (connection->get_status() == ERROR ||
+			else if (connection->get_status() == ERROR ||
 					connection->get_status() == CLIENT_DISCONNECTED) {
-						should_close = true;
+						it = close_tcp_connection(it);
 				// conn->_respponse(request)
 
 				// DELETE the TCP connecion
 
 				// if (condition pour keep-alive)
 			}
-			if (should_close)
-				it = close_tcp_connection(it);
 			else
 				++it;
 		}
+		// if (it->revents & POLLOUT) {
+		// 	++it;
+		// 	// if (connection->get_status() == READY_TO_SEND) {
+		// 	// 	connection->send_response();
+		// 	// 	    it->events &= ~POLLOUT;
+		// 	// 		it = close_tcp_connection(it);;
+		// 	// }
+		// 	// else
+		// 	// 	++it;
+		// }
 		else
 			++it;
 	}	
@@ -284,7 +299,6 @@ int		ServerMonitor::calculate_next_timeout() {
 		return (100);
 
 	int	next_timeout = NO_REQUEST_MAX_TIME;
-
 	for (std::map<int, TCPConnection *>::iterator it = _map_connections.begin(); it != _map_connections.end(); ++it) {
 		TCPConnection	*conn = it->second;
 
@@ -314,6 +328,7 @@ int		ServerMonitor::calculate_next_timeout() {
 				next_timeout = remaining;
 		}
 	}
+	//std::cout << "next timeout: " << next_timeout << std::endl;
 
 	if (next_timeout <= 0)
 		return 1;

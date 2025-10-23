@@ -234,14 +234,14 @@ void    ConfigParser::parseGlobal() {
 
 std::string generate_filename() {
 
-    std::string default_filename = "./webserv_config";
+    std::string default_filename = "./webserv_config.tmp";
     int i = 0;
-    if (access((default_filename + ".tmp").c_str(), O_RDONLY) != 0)
-        return default_filename + ".tmp";
+    if (access((default_filename).c_str(), O_RDONLY) != 0)
+        return default_filename;
     while (access((default_filename + ".tmp").c_str(), O_RDONLY) == 0) {
-        default_filename += toString(++i);
+        default_filename = "./webserv_config(" + toString(++i) + ").tmp";
     }
-    return default_filename + ".tmp";
+    return default_filename;
 }
 
 std::string parseConfig(const std::string& configFile) {
