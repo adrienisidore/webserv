@@ -1,71 +1,71 @@
 #include "autoconfig.hpp"
 
 // --- Helper : indentation lisible ---
-// static void printIndent(int depth) {
-// 	for (int i = 0; i < depth; ++i)
-// 		std::cout << "    ";
-// }
+static void printIndent(int depth) {
+	for (int i = 0; i < depth; ++i)
+		std::cout << "    ";
+}
 
 // --- LOCATION CONFIG ---
-// static void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
-// 	printIndent(depth);
-// 	std::cout << "location " << path << " {" << std::endl;
+static void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
+	printIndent(depth);
+	std::cout << "location " << path << " {" << std::endl;
 
-// 	const std::map<std::string, std::string> &directives = loc.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(depth + 1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
+	const std::map<std::string, std::string> &directives = loc.getDirectives();
+	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+		 it != directives.end(); ++it) {
+		printIndent(depth + 1);
+		std::cout << it->first << " " << it->second << ";" << std::endl;
+	}
 
-// 	printIndent(depth);
-// 	std::cout << "}" << std::endl;
-// }
+	printIndent(depth);
+	std::cout << "}" << std::endl;
+}
 
 // --- SERVER CONFIG ---
-// static void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
-// 	printIndent(depth);
-// 	std::cout << "server (" << key << ") {" << std::endl;
+static void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
+	printIndent(depth);
+	std::cout << "server (" << key << ") {" << std::endl;
 
-// 	const std::map<std::string, std::string> &directives = server.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(depth + 1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
+	const std::map<std::string, std::string> &directives = server.getDirectives();
+	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+		 it != directives.end(); ++it) {
+		printIndent(depth + 1);
+		std::cout << it->first << " " << it->second << ";" << std::endl;
+	}
 
-// 	// Locations
-// 	const std::map<std::string, LocationConfig> &locs = server.getLocations();
-// 	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
-// 		 it != locs.end(); ++it)
-// 		printLocationConfig(it->first, it->second, depth + 1);
+	// Locations
+	const std::map<std::string, LocationConfig> &locs = server.getLocations();
+	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
+		 it != locs.end(); ++it)
+		printLocationConfig(it->first, it->second, depth + 1);
 
-// 	printIndent(depth);
-// 	std::cout << "}" << std::endl;
-// }
+	printIndent(depth);
+	std::cout << "}" << std::endl;
+}
 
 // --- GLOBAL CONFIG ---
-// static void printGlobalConfig(GlobalConfig &global) {
+static void printGlobalConfig(GlobalConfig &global) {
 
-// 	const std::map<std::string, std::string> &directives = global.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
+	const std::map<std::string, std::string> &directives = global.getDirectives();
+	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+		 it != directives.end(); ++it) {
+		printIndent(1);
+		std::cout << it->first << " " << it->second << ";" << std::endl;
+	}
 
-// 	std::map<std::string, ServerConfig> &servers = global.accessServers();
-// 	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
-// 		 it != servers.end(); ++it)
-// 		printServerConfig(it->first, it->second, 1);
-// }
+	std::map<std::string, ServerConfig> &servers = global.accessServers();
+	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
+		 it != servers.end(); ++it)
+		printServerConfig(it->first, it->second, 1);
+}
 
 
 GlobalConfig AutoConfig(const std::string & filename) {
     GlobalConfig global;
     std::ifstream reader(filename.c_str());
     if (!reader.is_open())
-        throw std::exception();
+        throw std::runtime_error("Cannot open temporary config file");
 
     std::string line;
     ServerConfig currentServer;
@@ -76,7 +76,7 @@ GlobalConfig AutoConfig(const std::string & filename) {
     std::string currentLocationURI;
 
     while (std::getline(reader, line)) {
-        if (line.empty()) continue; // ignorer les lignes vides
+        if (line.empty() || line[0] == '#') continue; // ignorer les lignes vides et les commentaires
 
         if (line == "server") {
             if (inServer) {
@@ -109,7 +109,7 @@ GlobalConfig AutoConfig(const std::string & filename) {
         } else if (inServer) {
             AutoConfig_setDirective(currentServer, line);
 			//CHECKER QUE CES DIRECTIVES SONT ABSOLUMENT OBLIGATOIRE
-            currentServerId = currentServer.getDirective("host") + ":" + currentServer.getDirective("listen");
+            currentServerId = currentServer.getDirective("listen");
         } else {
             AutoConfig_setDirective(global, line);
         }
@@ -125,6 +125,6 @@ GlobalConfig AutoConfig(const std::string & filename) {
 
     reader.close();
 
+    printGlobalConfig(global);
     return global;
-    // printGlobalConfig(global);
 }

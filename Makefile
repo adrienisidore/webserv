@@ -17,6 +17,7 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++98
 INCLUDES = -I./includes/
 
 SRC = src/main.cpp \
+	  src/ConfigParser.cpp \
 	  src/Request.cpp \
 	  src/ServerMonitor.cpp \
 	  src/Response.cpp \

@@ -63,6 +63,8 @@ void	TCPConnection::read_header() {
 
 	use_recv();
 
+	if (_status == CLIENT_DISCONNECTED || _status == ERROR)
+        return;
 	// APPEND TO REQUEST CURRENT HEADER
 	_request.append_to_header(_buff, _bytes_received);
 

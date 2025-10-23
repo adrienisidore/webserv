@@ -4,10 +4,8 @@
 
  	try {
 		check_args(ac, av);
-		// syntaxic_parsing_config_file(av[1]);
-		// temp_config_file = semantic_parsing(av[1]);
-
- 		ServerMonitor	ServerMonitor("nginx_test2.conf");
+		std::string temp_file = parseConfig(av[1]);
+ 		ServerMonitor	ServerMonitor(temp_file);
 		ServerMonitor.run();
 		// add servers to Server Monitor and run them
  	}
@@ -20,9 +18,13 @@
  	catch (HttpException &er) {
  		std::cerr << "Error Http: " << er.what() << std::endl;
  	}
+	catch (ParsingException &er) {
+		std::cerr << "Error Parsing:" << er.what() << std::endl;
+	}
  	catch (std::exception &er) {
  		std::cerr << "Error: " << er.what() << std::endl;
  	}
+
  	return (0);
  }
 

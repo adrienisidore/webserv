@@ -32,6 +32,7 @@ enum {
 # include <sys/socket.h>//socket(), bind(), listen(), accept(), setsockopt()
 # include <netdb.h>//getaddrinfo(), freeaddrinfo(), gai_strerror()
 # include <arpa/inet.h>//ntohs()
+# include <arpa/inet.h> // htons() ?
 # include <string.h>//memset() : NON AUTORISEE DANS LES FONCTIONS DU SUJET
 # include <string>//std::string : FONCTION INTERDITE ?
 # include <poll.h>//poll(), struct pollfd
@@ -40,18 +41,16 @@ enum {
 # include <vector>
 # include <map>
 # include <stdlib.h>
-
 # include <sys/stat.h>   // pour struct stat et stat()
 # include <fcntl.h>      // pour open()
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
 # include <fstream>
 
-# include <cmath>//Interdit
-
 # include "./GlobalConfig.hpp"
 # include "./ServerConfig.hpp"
 # include "./LocationConfig.hpp"
+# include "ConfigParser.hpp"
 # include "HTTPcontent.hpp"
 # include "./Request.hpp"
 # include "./Response.hpp"
@@ -65,7 +64,16 @@ enum {
 // ADRI
 
 
+# include <cmath>//Interdit
+
+# include "./autoconfig.hpp"
+# include "./Exceptions.hpp"
+
+// ADRI
+
+
 // Parsing
 void	check_args(int ac, char **av);
+std::string parseConfig(const std::string& configFile);
 
-#endif
+# endif

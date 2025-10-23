@@ -20,43 +20,7 @@ void	check_args(int ac, char **av) {
     if (fd == -1)
 		throw std::invalid_argument("impossible to read config file");
 }
-
-//ATTENTION : Ajouter en dur dans le fichier toutes les directives par defaut (par ex. max_body_size ...) AU NIVEAU DES DIRECTIVES GLOBALCONFIG
-
-
-// void	syntaxic_parsing_config_file(char *filename) {
-
-//     std::ifstream file(filename);
-//     std::string line;
-    
-//     if (!file.is_open()) {
-//         std::cerr << "Error opening file" << std::endl;
-//         return 1;
-//     }
-    
-//     while (std::getline(file, line)) {
-//         std::cout << line << std::endl;
-//     }
-    
-//     file.close();
-//     return 0;
-// }
-
-// bool	syntaxic_parsing_context(int fd, int level) {
-
-// 	// VERIFIER DIRECTIVES
-
-// }
-
-// idee: parsing recursif
-// -> keep track of open_brackets
-	// verifier que les brackets sont fermes
-	// verifier que l'ordre et l'emplacement des server et location est respecte
-	// verifier que les directives sont bien situes avant les contextes 
-	// lignes vides ignorees -> EOF a la fin du fichier
-
 /*
-
 ---------------- CONFIG FILE --------------------
 
 http {
