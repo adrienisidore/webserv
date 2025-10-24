@@ -197,16 +197,24 @@ void	ServerMonitor::run() {
 			else
 				throw SocketException(strerror(errno));
 		}
-		// ecouter les listening sockets
-		for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 
-			if (_pollfds[i].revents & POLLIN)
-				add_new_client_socket(_pollfds[i].fd);
-
-		}
+		monitor_listening_sockets();
 		monitor_connections();
+		monitor_cgis();
+
 		std::cout << "size of map connections: " << _map_connections.size() << std::endl;
+		
 		check_timeouts();
+	}
+}
+
+void	ServerMonitor::monitor_listening_sockets() {
+	// ecouter les listening sockets
+	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
+
+		if (_pollfds[i].revents & POLLIN)
+			add_new_client_socket(_pollfds[i].fd);
+
 	}
 }
 
@@ -218,7 +226,7 @@ void	ServerMonitor::monitor_connections() {
 		++it;
 	}
 
-	while (it != _pollfds.end() && _is_running) {
+	while (it != last_socket() && _is_running) {	// ONLY FOR CLIENTFDS, NOT CGIS
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			it = close_tcp_connection(it);
@@ -290,7 +298,29 @@ void	ServerMonitor::monitor_connections() {
 			++it;
 	}	
 }
+
+void	ServerMonitor::monitor_cgis() {
+
+	std::vector<pollfd>::iterator	it = last_socket();
+	++it;
+	while (it != _pollfds.end() && _is_running) {
+		if (it->revents & POLLIN) {		// POLLIN OU AUTRE MACRO?
+			// je recupere le outpipe du cgi
+			// read()
+			// il faut 
+		}
+	}
+}
 // CA MARCHE PLUS
+
+std::vector<pollfd>::iterator	ServerMonitor::last_socket() {
+	std::vector<pollfd>::iterator	it = _pollfds.begin();
+	for (int i = 0; i < _map_connections.size() + _map_server_configs.size(); ++i) {
+		++it;
+	}
+	return it;
+}
+
 
 int		ServerMonitor::calculate_next_timeout() {
 
