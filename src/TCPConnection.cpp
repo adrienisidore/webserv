@@ -59,6 +59,22 @@ void TCPConnection::use_recv() {
 		return set_error(500);
 }
 
+//On reutilise les attributs _buff, _bytes_received ...
+// void TCPConnection::use_recv2() {
+
+// 	memset(_buff, 0, BUFF_SIZE);
+// 	_bytes_received = read(outpipe, _buff, BUFF_SIZE);//outpipe : d'ou vient la data du CGI
+// 	_last_tcp_chunk_time = time(NULL);
+
+// 	// Veut dire que le CGI a finit d'ecrire (checker si c'est ca ou si y'a EOF)
+// 	if (_bytes_received == 0) {
+// 		_status = ;	
+// 		return;
+// 	}
+// 	else if (_bytes_received < 0)
+// 		return set_error(500);
+// }
+
 void	TCPConnection::read_header() {
 
 	use_recv();

@@ -1,7 +1,14 @@
+ADRI
 
-PLUS TARD {
-Adri
-[ ] finir buildPath(), faire applyMethod() et buildResponse(), et creer la classe CGI
+[ ] Finir CGI (buildEnv etc ...) a partir des attribus recuperer HTTPcontent
+
+[ ] Finir de coder la Response
+
+[ ] Voir comment TCPConnection va envoyer la reponse
 
 
-}
+GASTON
+
+[ ] Ecouter les pipes des CGIs et creer une map qui les identifie dans Server_Monitor
+
+[ ] finir le parsing ==> utiliser le resultat d'AutoConfig pour parser

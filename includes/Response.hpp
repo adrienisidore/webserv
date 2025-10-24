@@ -10,23 +10,23 @@ class Response : public HTTPcontent {
         ~Response();
 
     private:
-		void			buildPath();
+		void			buildPath();//Fais appel a checkPermissions, si tout est ok on peut continuer
 
-		void			applyMethod();//2) Fais appel a checkPermissions, si tout est ok ca execute la methode ou le CGI,
-		//en remplissant si necessaire le _body
+		// CGI _cgi;
+		void			launchCGI();//2)  ca execute la methode ou le CGI
+		//en remplissant si necessaire le _body : applyMethod() va a la fois faire un _cgi.copyFrom(*this) puis _cgi.launchExecve();
+		// On cree un getter pour envoyer _outpipe[0] au pollfd : pollfd_wrapper(response._cgi.getOutPipe()) et l'ajouter dans les bonnes map etc
 
 		void			checkPermissions();
-		void			cgi_handler();//fait appel a une instance CGI pour remplir son body
 
 		void			copyFrom(HTTPcontent& other);
 
 		//Quand le _body de response est rempli (si GET) alors on construit la reponse
 		void 			buildResponse();//HTTP/1.1 200 OK	\r\n	[headers] Content-length etc...
 		//C'est TCPConnection qui renvoie la response
-
 };
 
-//PARAGRAPHE UTILE POUR ENVOYER EFFICACEMENT UNE REONSE AVEC poll() :
+//PARAGRAPHE UTILE POUR ENVOYER EFFICACEMENT UNE REPONSE AVEC poll() :
 
 // When poll() says the file descriptor is ready for reading/writing,
 // the generateResponse() function will be called again,
