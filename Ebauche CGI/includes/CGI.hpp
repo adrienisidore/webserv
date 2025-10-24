@@ -18,6 +18,8 @@ class CGI {
 		void	launchExecve();
 		int		getOutPipe() const;
 
+		
+
 	private:
 		// Response * parent_resp;
 		pid_t	_pid;

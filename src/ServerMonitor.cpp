@@ -293,7 +293,7 @@ void	ServerMonitor::monitor_connections() {
 		// 	// }
 		// 	// else
 		// 	// 	++it;
-		// }
+		// }	=> ici renvoyer le CGI
 		else
 			++it;
 	}	

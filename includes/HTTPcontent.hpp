@@ -34,6 +34,8 @@ class HTTPcontent {
 
 		public:
 
+		//AJOUTER un pointeur vers sa TCPConnection : permet a partir du CGI (ou Response ou Request) de savoir a quelle TCPConnection il appartient
+
 		void								setLocation(const ServerConfig & servconfig);
 
 		void								setCode(const int & code);
