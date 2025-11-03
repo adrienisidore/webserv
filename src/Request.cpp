@@ -2,7 +2,7 @@
 
 Request::Request(void): HTTPcontent() {}
 
-//Si changement, penser a changer la version de Response + les prototypes
+//Si changement, penser a changer la version de Response + les prototypes + CGI
 void	Request::copyFrom(HTTPcontent& other) {
 		_code = other.getCode();
 		_method = other.getMethod();

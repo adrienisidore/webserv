@@ -16,23 +16,67 @@ CGI::CGI() {}
 
 CGI::~CGI() {}
 
+// //Si changement, penser a changer la version de Response + les prototypes + CGI
+// void	CGI::copyFrom(HTTPcontent& other) {
+// 		_code = other.getCode();
+// 		_method = other.getMethod();
+// 		_URI = other.getURI();
+// 		_config = other.getConfig();
+// 		_headers = other.getHeaders();
+// 		//pertinent de reset other, par securite
+// 		other.reset();
+// }
+
 void CGI::buildEnv() {
 
 	//Securite (surement useless)
 	_env_strings.clear();
     _envp.clear();
 	//Voir tableau : https://www.alimnaqvi.com/blog/webserv car certains elements sont obligatoires.
-	//Doit-on egalement ajouter l'environnement global ?
-	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _)
 
-    _env_strings.push_back("REQUEST_METHOD=POST");
-    _env_strings.push_back("SCRIPT_NAME=./test.cgi");
-    _env_strings.push_back("QUERY_STRING=TEST1TEST2TEST3");
-    _env_strings.push_back("CONTENT_LENGTH=11");
-    _env_strings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
-    _env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-    _env_strings.push_back("SERVER_NAME=localhost");
-    _env_strings.push_back("SERVER_PORT=8080");
+	//Doit-on egalement ajouter l'environnement global ?
+
+	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _)
+	std::map<std::string, std::string>	cgi_headers;
+	// cgi_headers = headers;
+	cgi_headers["BONJOUR-CAVA"] = "OK";
+	cgi_headers["HELLO-WORLD"] = "YES";
+
+	std::map<std::string, std::string> result;
+
+	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin();
+		it != cgi_headers.end(); ++it) {
+		std::string newKey = "HTTP_";
+		newKey.reserve(it->first.size() + 5);
+		for (std::string::const_iterator c = it->first.begin(); c != it->first.end(); ++c)
+			newKey += (*c == '-') ? '_' : *c;
+		result[newKey] = it->second;
+	}
+
+	cgi_headers = result;
+
+	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin(); it != cgi_headers.end(); ++it)
+		std::cout << it->first << " => " << it->second << std::endl;
+
+	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin();
+		it != cgi_headers.end(); ++it) {
+		_env_strings.push_back(it->first + "=" + it->second);
+	}
+
+	//On inclut egalement un certain nombre de var d'env :
+
+	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	_env_strings.push_back("REQUEST_METHOD=POST");//attribut _methods de HTTPcontent
+	_env_strings.push_back("REQUEST_URI=URI");//attribut _URI de HTTPcontent
+	_env_strings.push_back("SCRIPT_FILENAME/home/.../test.cgi");//Chemin absolu complet vers l'executable cgi
+	_env_strings.push_back("SCRIPT_NAME=./test.cgi");//Chemin relatif vers le CGI
+	_env_strings.push_back("QUERY_STRING=TEST1TEST2TEST3");//la partie apres le "?" de l'URI
+	_env_strings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");//le header content-type fournit des la request
+	_env_strings.push_back("CONTENT_LENGTH=11");//taille du body de la REQUEST (total sieze of unchunked_body si le body etait chunked)
+	_env_strings.push_back("SERVER_NAME=localhost");//le hostname du serveur (LocationConfig) ou le
+	_env_strings.push_back("SERVER_PORT=8080");
+	_env_strings.push_back("REMOTE_ADDR=127.0.0.1");//L'adresse IP du client
 
     for (size_t i = 0; i < _env_strings.size(); ++i)
         _envp.push_back(const_cast<char*>(_env_strings[i].c_str()));
@@ -46,7 +90,6 @@ void CGI::buildArgv() {
     _argv.clear();
 
     _argv_strings.push_back("./test2.cgi"); // Chemin vers exécutable
-	// _argv_strings.push_back("./test.cgi");//Chemin vers l'executable
 
 	//Si j'ai d'autres arguments a donner au programme c'est ICI
 	// *** ICI ***
@@ -72,6 +115,9 @@ void	CGI::launchExecve() {
         exit(EXIT_FAILURE);
     }
 
+
+	//C'est ici que le parent peut recuperer le fd outpipe
+
     _pid = fork();
     if (_pid < 0) {
         // perror("fork");
@@ -90,7 +136,7 @@ void	CGI::launchExecve() {
 
 		//envp : le CGI recoit ces variables d'env pour tourner
         execve(_argv[0], &_argv[0], &_envp[0]);
-		//thorw une Exception, ne pas exit SINON LEAKS
+		//modifier le code d'error (500 probleme serveur ??)
         perror("execve");
         exit(EXIT_FAILURE);
     } else {

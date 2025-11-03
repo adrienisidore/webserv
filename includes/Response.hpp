@@ -9,7 +9,12 @@ class Response : public HTTPcontent {
         Response();
         ~Response();
 
+		//Execute tout le code, remplit le body si necessaire et renvoie l'outpipe si CGI (0 sinon)
+		//A la fin de hub le body de response est pret a etre envoye au client
+		void 			hub();
+
     private:
+		void			checkPermissions();
 		void			buildPath();//Fais appel a checkPermissions, si tout est ok on peut continuer
 
 		// CGI _cgi;
@@ -17,12 +22,10 @@ class Response : public HTTPcontent {
 		//en remplissant si necessaire le _body : applyMethod() va a la fois faire un _cgi.copyFrom(*this) puis _cgi.launchExecve();
 		// On cree un getter pour envoyer _outpipe[0] au pollfd : pollfd_wrapper(response._cgi.getOutPipe()) et l'ajouter dans les bonnes map etc
 
-		void			checkPermissions();
 
 		void			copyFrom(HTTPcontent& other);
 
-		//Quand le _body de response est rempli (si GET) alors on construit la reponse
-		void 			buildResponse();//HTTP/1.1 200 OK	\r\n	[headers] Content-length etc...
+
 		//C'est TCPConnection qui renvoie la response
 };
 

@@ -4,7 +4,7 @@
 
 Response::Response(): HTTPcontent() {}
 
-//Si changement, penser a changer la version de Request + les prototypes
+//Si changement, penser a changer la version de Request + les prototypes + CGI
 void	Response::copyFrom(HTTPcontent& other) {
 		_code = other.getCode();
 		_method = other.getMethod();
@@ -28,7 +28,7 @@ static std::string		parentDir(const std::string &path) {
 		return path.substr(0, pos);
 }
 
-//1) A l'aide de _global_config, _headers, _URI ET de la methode : https://www.alimnaqvi.com/blog/webserv
+//1) https://www.alimnaqvi.com/blog/webserv
 void			Response::buildPath() {
 
 	// Host doit etre formalise en mode "IP:Port" sinon erreur
@@ -65,7 +65,7 @@ void			Response::buildPath() {
 
 	if (this->getMethod() == "DELETE")
 	{
-
+		
 
 	}
 }
