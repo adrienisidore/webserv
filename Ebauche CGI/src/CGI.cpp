@@ -101,12 +101,7 @@ void CGI::buildArgv() {
     _argv.push_back(NULL);
 }
 
-void	CGI::launchExecve() {
-
-	//A chaque fois qu'on lance execve on recupere les nouveaux parametres de la reponse
-	// this->copyFrom(*parent_resp);
-	buildEnv();//LocationConfig en argument + _headers ?
-    buildArgv();//_path en argument ?
+void	CGI::openPipes() {
 
 	//Dans constructeur
     if (pipe(_inpipe) < 0 || pipe(_outpipe) < 0) {
@@ -115,13 +110,19 @@ void	CGI::launchExecve() {
         exit(EXIT_FAILURE);
     }
 
+}
 
-	//C'est ici que le parent peut recuperer le fd outpipe
+void	CGI::launchExecve() {
+
+	// buildEnv();
+    // buildArgv();
+	// openPipes();
 
     _pid = fork();
     if (_pid < 0) {
         // perror("fork");
 		//thorw une Exception, ne pas exit SINON LEAKS
+		//Ou modifier setCode puis return ;
         exit(EXIT_FAILURE);
     }
 
@@ -140,6 +141,9 @@ void	CGI::launchExecve() {
         perror("execve");
         exit(EXIT_FAILURE);
     } else {
+
+
+		// A priori cette partie la c'est le ServerMonitor qui va le gerer
         // Parent
         close(_inpipe[0]);
         close(_outpipe[1]);

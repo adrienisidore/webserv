@@ -22,8 +22,7 @@ class CGI {
 		//On surveille uniquement inpipe
 		int		inpipe[2];   // pour envoyer le _nody a execve depuis stdin (necessaire pour faire les choses proprement)
 		int		outpipe[2];  // pour lire la sortie du CGI
-
-	private:
+		void openPipes();
 
 		std::vector<std::string> _env_strings;
 		std::vector<char*> _envp;
@@ -31,7 +30,6 @@ class CGI {
 
 		// void			copyFrom(HTTPcontent& other);
 
-		
 		std::vector<std::string> _argv_strings;
 		std::vector<char*> _argv;
 		void buildArgv();

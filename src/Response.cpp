@@ -65,7 +65,7 @@ void			Response::buildPath() {
 
 	if (this->getMethod() == "DELETE")
 	{
-		
+
 
 	}
 }
@@ -141,4 +141,24 @@ void	Response::checkPermissions() {
 	}
 	else if (_method == "DELETE" && access(parentDir(_path).c_str(), W_OK | X_OK) != 0)
 		return (setCode(403));//On a acces au repertoire parent pour faire des modifications
+}
+
+int	Response::hub() {
+
+	buildPath();
+	checkPermissions();
+	// Si le code d'erreur est positif alors je remplis _body avec ma page .html et je m'arrete ici
+
+	// Je regarde si la LocationConfig indique que ce path correspond a une cgi
+	//Si oui alors :
+		this->_cgi.copyFrom(*this);
+		this->_cgi->buildEnv();
+		this->_cgi->buildArgv();
+		this->_cgi.openPipes();
+		//Je verifie que tout s'est bien passe, sinon je setcode, je remplis mon body avec la page html et je m'arrete ici
+		// je renseigne _outpipe[0] pour le surveiller avec poll et je m'arrete ici
+		//ServerMonitor va s'occuper de recuperer les infos que renvoie le CGI avec monitor_cgi, et ainsi remplir le _body de response. 
+
+	// Si non alors:
+		// je remplis le body de cette instance avec la page statique necessaire et je m'arrete ici 
 }
