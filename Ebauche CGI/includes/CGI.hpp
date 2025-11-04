@@ -8,31 +8,28 @@
 # include <cstdlib>
 # include <cstdio>
 
-//Dans Response, CGI prend en argument this [Response], et accede a tous les elements
 // class Response : public HTTPcontent {
 class CGI {
 
 	public:
-		CGI();//CGI(Response *parent_resp);
+		CGI();
 		~CGI();
 		void	launchExecve();
-		int		getOutPipe() const;
 
-		
+		pid_t	pid;
+		int		status;
 
-	private:
-		// Response * parent_resp;
-		pid_t	_pid;
-		int		_status;
-		//A priori 1 seul pipe necessaire, car l'instance CGI possede deja les elements
-		int		_inpipe[2];   // pour envoyer au CGI, plutot que de creer inpipe on peut simplement write le _body de CGI dans stdin
-		int		_outpipe[2];  // pour lire la sortie du CGI
+		//On surveille uniquement inpipe
+		int		inpipe[2];   // pour envoyer le _nody a execve depuis stdin (necessaire pour faire les choses proprement)
+		int		outpipe[2];  // pour lire la sortie du CGI
+		void openPipes();
 
 		std::vector<std::string> _env_strings;
 		std::vector<char*> _envp;
 		void buildEnv();
 
-		
+		// void			copyFrom(HTTPcontent& other);
+
 		std::vector<std::string> _argv_strings;
 		std::vector<char*> _argv;
 		void buildArgv();
