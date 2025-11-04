@@ -33,6 +33,7 @@ public:
 	~TCPConnection();
 
 	void 	initialize_transfer();//One request per TCPConnection
+	int		initialize_response();
 	
 	void	check_body_headers();//if POST : check the headers and update the encoding process of the body
 	void 	use_recv();
@@ -44,6 +45,7 @@ public:
 	bool 	is_valid_length(const std::string& content_length);
 
 	Request	getRequest() const;
+	Response getResponse() const;
 	int		get_status() const;
 	int		getTCPSocket() const;
 	time_t	getEndOfRequestTime() const;  

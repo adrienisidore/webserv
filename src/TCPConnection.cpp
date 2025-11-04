@@ -157,6 +157,28 @@ void	TCPConnection::read_body() {
 	return;
 }
 
+int	TCPConnection::initialize_response() {
+
+	int	poll_cgi;
+
+	_response();
+	_response.copyFrom(_request);
+
+	poll_cgi = _response.hub();
+	if (poll_cgi) {
+	
+		// 1 a envoyer / surveiller
+		// lanncer cgi
+		_status = NOT_READY_TO_SEND;
+		_response._cgi.launchExecve();
+		return (poll_cgi);
+	}
+	else {
+		_status = READY_TO_SEND;	// /!\ could be on ERROR
+		return 0;
+	}
+}
+
 void	TCPConnection::set_error(int error_code) {
 
 	_status = ERROR;

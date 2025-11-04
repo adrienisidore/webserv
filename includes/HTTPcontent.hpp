@@ -11,6 +11,7 @@ class HTTPcontent {
 
 		int					_code;
 		LocationConfig		_config;
+		CGI					_cgi;
 
 	// lecture
 		std::string			_current_header; // track the header each TCP chunk, each time recv is called
@@ -48,6 +49,7 @@ class HTTPcontent {
 		std::string							getProtocol() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		LocationConfig						getConfig() const;
+		CGI									getCGI() const;
 
 		void								setContentLength(unsigned long);
 		unsigned long						getContentLength() const;

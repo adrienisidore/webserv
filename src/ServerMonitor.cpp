@@ -33,7 +33,6 @@ void	ServerMonitor::stop() {
 		if (it->fd >= 0)
 			close(it->fd);
 	}
-
 }
 
 //Gestion Ctrl + C
@@ -133,10 +132,9 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 	if (tcp_socket == -1)
 		throw SocketException(strerror(errno));
 
-	if (_pollfds.size() - _global_config.getServers().size() < MAX_CONNECTIONS) { // ! CAN BE SPECIFIED IN CONFIG FILE ?
-
+	if (_map_connections.size() < MAX_CONNECTIONS) { // specified in config file
 		// add the pollfd derived from the socket to the fds list
-		_pollfds.push_back(pollfd_wrapper(tcp_socket));
+		_pollfds.insert(last_socket(), pollfd_wrapper(tcp_socket));
 
 		// create a new tcp with the socket and add it to the map
 		TCPConnection	*connection = new TCPConnection(tcp_socket, config);
@@ -150,6 +148,25 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 	}
 }
 
+void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
+
+
+	sockaddr_in	param;
+	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
+	socklen_t	tcp_size = sizeof(param);
+
+	int	tcp_socket = accept(socket, (sockaddr *)&param, &tcp_size);
+
+	if (tcp_socket == -1)
+		throw SocketException(strerror(errno));
+
+	_pollfds.push_back(pollfd_wrapper(socket));
+	_map_cgis[socket] = cgi;  
+
+	std::cout << "A new CGI has been launched !" << std::endl;
+}
+
+//std::vector<pollfd>::iterator	ServerMonitor::close_cg
 std::vector<pollfd>::iterator	ServerMonitor::close_tcp_connection(std::vector<pollfd>::iterator it) {
 	std::cout << "Closing connection" << std::endl;
 	close(it->fd);
@@ -158,6 +175,12 @@ std::vector<pollfd>::iterator	ServerMonitor::close_tcp_connection(std::vector<po
 	return _pollfds.erase(it);
 }
 
+std::vector<pollfd>::iterator	ServerMonitor::close_cgi_socket(std::vector<pollfd>::iterator it) {
+
+	close(it->fd);
+	_map_cgis.erase(it->fd);
+	return _pollfds.erase(it);
+}
 // configure socket (non-blocking) and wrap it in a pollfd for the tracking_tab
 pollfd	ServerMonitor::pollfd_wrapper(int fd) {
 
@@ -214,13 +237,14 @@ void	ServerMonitor::monitor_listening_sockets() {
 
 		if (_pollfds[i].revents & POLLIN)
 			add_new_client_socket(_pollfds[i].fd);
-
 	}
 }
 
 void	ServerMonitor::monitor_connections() {
+	// ecouter les sockets clients
+	
+	int	poll_cgi;
 
-	// Probleme: le timeout n'est plus respecte quand la connection est fermee et donc 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
 	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 		++it;
@@ -230,6 +254,7 @@ void	ServerMonitor::monitor_connections() {
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			it = close_tcp_connection(it);
+			// SEND ERROR RESPONSE HERE
 			continue;
 		}
 		
@@ -257,43 +282,31 @@ void	ServerMonitor::monitor_connections() {
 				connection->read_body();
 
 			// La requet est syntaxiquement complete
-			if (connection->get_status() == READ_COMPLETE) {
+			if (connection->get_status() == READ_COMPLETE || connection->get_status() == ERROR) {
 
-				connection->end_transfer();
-
-				// conn->response();
-				// conn->_response.copyFrom(request);//Apres avoir construit la reponse et l'avoir envoye il faut que TCPConnection reset Response() ?
-				// OU
-
-				// if (condition pour keep-alive)
-				// it = close_tcp_connection(it);
-				
-				++it;
-				//it->revents = POLLOUT;
+				poll_cgi = connection->initialize_response();
+				it->events = POLLOUT;
+				if (poll_cgi)
+					add_new_cgi_socket(poll_cgi, connection->getResponse().getCGI())
+				// on ERROR -> keep in head that connection should be CLOSED
 			}
-			//Doit-on fermer la connexion si une erreur arrive ?
-			else if (connection->get_status() == ERROR ||
-					connection->get_status() == CLIENT_DISCONNECTED) {
-						it = close_tcp_connection(it);
-				// conn->_respponse(request)
 
-				// DELETE the TCP connecion
+			else if (connection->get_status() == CLIENT_DISCONNECTED)
+				it = close_tcp_connection(it);
+		}
+		if (it->revents & POLLOUT) {
+			if (connection->get_status() == READY_TO_SEND) {
+				
+				connection->send_response();
+				connection->end_transfer();
+				it->events = POLLIN;
 
-				// if (condition pour keep-alive)
+				if (connection->getResponse().getCode())
+					it = close_tcp_connection(it);
 			}
 			else
 				++it;
 		}
-		// if (it->revents & POLLOUT) {
-		// 	++it;
-		// 	// if (connection->get_status() == READY_TO_SEND) {
-		// 	// 	connection->send_response();
-		// 	// 	    it->events &= ~POLLOUT;
-		// 	// 		it = close_tcp_connection(it);;
-		// 	// }
-		// 	// else
-		// 	// 	++it;
-		// }	=> ici renvoyer le CGI
 		else
 			++it;
 	}	
@@ -301,21 +314,40 @@ void	ServerMonitor::monitor_connections() {
 
 void	ServerMonitor::monitor_cgis() {
 
+	char	buff[BUFF_SIZE];
+	int		bytes_received;
+
 	std::vector<pollfd>::iterator	it = last_socket();
 	++it;
 	while (it != _pollfds.end() && _is_running) {
-		if (it->revents & POLLIN) {		// POLLIN OU AUTRE MACRO?
-			// je recupere le outpipe du cgi
-			// read()
-			// il faut 
+
+		CGI	cgi = _map_cgis[it->fd];
+		// check for POLLERR
+		if (it->revents & POLLIN) {
+
+			memset(buff, 0, BUFF_SIZE);
+			bytes_received = recv(it->fd, buff, BUFF_SIZE, 0);
+			cgi.append_to_body(buff, BUFF_SIZE);
+
+			if (bytes_received == 0) {
+				cgi.connection.set_status(READY_TO_SEND);
+				cgi.connection.response.copyFrom(cgi);
+				it = close_cgi_socket(it);
+			}
+
+			else if (bytes_received < 0) {
+				cgi.connection.set_status(ERROR);
+				cgi.connection.set_error(500);
+				// mettre a POLLIN, etc... bonne idee ?
+				it = close_cgi_socket(it);
+			}
 		}
 	}
 }
-// CA MARCHE PLUS
 
 std::vector<pollfd>::iterator	ServerMonitor::last_socket() {
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
-	for (int i = 0; i < _map_connections.size() + _map_server_configs.size(); ++i) {
+	for (size_t i = 0; i < _map_connections.size() + _map_server_configs.size(); ++i) {
 		++it;
 	}
 	return it;
