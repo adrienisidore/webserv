@@ -9,8 +9,6 @@ void	Request::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
-		//pertinent de reset other, par securite
-		other.reset();
 }
 
 void	Request::parse_header() {
@@ -40,7 +38,7 @@ void	Request::unchunk_body() {
 
 		backr = line.find('\r');
 		if (backr == std::string::npos)
-			return setCode(400); // Verifier le code d'erreur
+			setCode(400); return; // Verifier le code d'erreur
 		line_without = line.substr(0, backr);
 		
 		if (i % 2 == 0) {
@@ -48,13 +46,13 @@ void	Request::unchunk_body() {
 			//floor : fonction interdite I guess, supprimer librairie math
 			real_len = std::strtod(line_without.c_str(), &end);
 			if (*end != '\0' || std::floor(real_len) != real_len)
-				return setCode(400);
+				setCode(400); return;
 		}
 		else {
 			//Checker que line_len == real_len
 			line_len = line_without.size();
 			if (line_len != real_len)
-				return setCode(400);
+				setCode(400); return;
 			//Si tout va bien unchuncked_body.append(line_without); (doit etre init ?)
 			unchunked_body.append(line_without);
 		}
@@ -64,9 +62,9 @@ void	Request::unchunk_body() {
 
 	//Checker que la dernier ligne est bien "\r" sinon error 400
 	if(std::getline(stream, line))
-		return setCode(400);
+		setCode(400); return;
 	if (line != "\r")
-		return setCode(400);	
+		setCode(400); return;	
 
 	_current_body = unchunked_body;
 }
@@ -84,13 +82,13 @@ void	Request::setStartLine() {
 	if (pos != std::string::npos)
 		start_line = message.substr(0, pos);
 	else
-		return (setCode(400));
+		setCode(400); return;
 
 	//<METHOD> <RT> [HTTP/1.1] : 2 espaces sont necessaires pour une requete valide.
 	size_t first_space = start_line.find(' ');
 	size_t second_space = start_line.find(' ', first_space + 1);
 	if (first_space == std::string::npos || second_space == std::string::npos)
-		return (setCode(400));
+		setCode(400); return;
 
 	//Remplissage des attributs
 	_method = start_line.substr(0, first_space);
@@ -100,7 +98,7 @@ void	Request::setStartLine() {
 	if (_method.empty() || _protocol != start_line.substr(second_space + 1)) return (setCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
-		return (setCode(501));
+		setCode(501); return;
 }
 
 void	Request::setHeaders() {
@@ -122,7 +120,7 @@ void	Request::setHeaders() {
 		//Si on ne trouve pas de ":" ou pas de \r dans la ligne ou " :" Error 400
 		size_t colonPos = line.find(':');
 		if (colonPos == std::string::npos || line[line.size() - 1] != '\r' || line[colonPos - 1] == ' ' || line[colonPos + 1] != ' ')
-			return (setCode(400));
+			setCode(400); return;
 		//Suppression de \r
 		line.erase(line.size() - 1);
 

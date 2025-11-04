@@ -56,9 +56,9 @@ enum {
 # include "HTTPcontent.hpp"
 # include "./Request.hpp"
 # include "./Response.hpp"
+# include "./CGI.hpp"
 # include "./TCPConnection.hpp"
 # include "./ServerMonitor.hpp"
-
 
 # include "./autoconfig.hpp"
 # include "./Exceptions.hpp"
@@ -71,7 +71,10 @@ enum {
 # include "./autoconfig.hpp"
 # include "./Exceptions.hpp"
 
-// ADRI
+// utile pour CGI (checker si fonctions interdites ou useless)
+# include <sys/wait.h>
+# include <cstdlib>
+# include <cstdio>
 
 
 // Parsing

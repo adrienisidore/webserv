@@ -1,18 +1,25 @@
-ADRI
 
-[ ] Finir CGI (buildEnv etc ...) a partir des attribus recuperer HTTPcontent
+[ ] gerer toutes les erreurs compilation
 
-[ ] Finir de coder la Response
+[ ] finir fonction hub()
+    [ ] gerer les exceptions (delete cgi sockets, ...)
 
-[ ] Voir comment TCPConnection va envoyer la reponse
+[ ] TIMEOUT pour response et CGI
 
+[ ] put status to END after response is sent
 
-GASTON
+[ ] gerer keep-alive
 
-[ ] Ecouter les pipes des CGIs et creer une map qui les identifie dans Server_Monitor -> recuperer le fd au bon moment (reponse)
+[ ] send-response
 
-[ ] finir le parsing ==> utiliser le resultat d'AutoConfig pour parser
+[ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier
 
-[ ] config file attributes
+[ ] intergrer toutes les directives dans le code (a la place des values par defaut)
 
-[ ] .tmp file creation
+[ ] gestion des cookies -> mdp + login dans un fichier
+
+[ ] tests:
+    [ ] leaks avec top ou htop
+    [ ] siege
+    [ ] fichiers lourds
+    [ ] CGI boucle infinie (non bloquant pour autres clienbts + )

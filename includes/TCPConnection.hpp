@@ -2,7 +2,8 @@
 # define TCPCONNECTION_HPP
 
 # include "webserv.hpp"
-
+# include "./Request.hpp"
+# include "./Response.hpp"
 //represent one connection of one client, using TCP
 class	TCPConnection {
 
@@ -21,19 +22,18 @@ private:
 	int				_bytes_received;
 	int				_status; //statut de la livraison de la donnee
 	
-	Request			_request;	// current request, initialized by initialize_transfer()
-
-	Response		_response; // current response, must be initialized by another function
-
-
 	int				_body_protocol; // is content_length precised, or is it a chunked body
 
 public:
+
+	Response		_response; // current response, must be initialized by another function
+	Request			_request;	// current request, initialized by initialize_transfer()
+
 	TCPConnection(int tcp_socket, ServerConfig config);
 	~TCPConnection();
 
 	void 	initialize_transfer();//One request per TCPConnection
-	int		initialize_response();
+	void	initialize_response();
 	
 	void	check_body_headers();//if POST : check the headers and update the encoding process of the body
 	void 	use_recv();
@@ -47,6 +47,7 @@ public:
 	Request	getRequest() const;
 	Response getResponse() const;
 	int		get_status() const;
+	void	setStatus(int);
 	int		getTCPSocket() const;
 	time_t	getEndOfRequestTime() const;  
 	time_t	getHeaderTime() const;
@@ -56,6 +57,7 @@ public:
 	int		getBodyProtocol() const;
 	void	setBodyProtocol(int);
 
+	void	send_response(void);
 
 };
 

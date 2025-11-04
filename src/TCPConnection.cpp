@@ -22,7 +22,10 @@ void	TCPConnection::initialize_transfer() {
 	_end_of_request_time = 0;
 	_body_start_time = 0;
 	_status = READING_HEADER;
-	_request.reset();
+	_request.reset(this);
+	_response.reset(this);
+	_response._cgi.reset(this);
+
 }
 
 void	TCPConnection::check_body_headers() {
@@ -157,25 +160,31 @@ void	TCPConnection::read_body() {
 	return;
 }
 
-int	TCPConnection::initialize_response() {
+void	TCPConnection::initialize_response() {
 
 	int	poll_cgi;
 
-	_response();
 	_response.copyFrom(_request);
 
 	poll_cgi = _response.hub();
-	if (poll_cgi) {
-	
-		// 1 a envoyer / surveiller
-		// lanncer cgi
+	if (poll_cgi > 0) {
+
 		_status = NOT_READY_TO_SEND;
-		_response._cgi.launchExecve();
-		return (poll_cgi);
+		ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
+
+		try {
+			_response._cgi.launchExecve();
+		} 
+		catch (std::exception &er) {
+			///
+		}
 	}
-	else {
+	else if (poll_cgi < 0) {
+		//throw (...); 
+	}
+	else if (poll_cgi == 0){
 		_status = READY_TO_SEND;	// /!\ could be on ERROR
-		return 0;
+		return;
 	}
 }
 
@@ -228,6 +237,44 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 	_request.setContentLength(length);
     return true;
 }
+
+//  send_response();
+void TCPConnection::send_response(void)
+{
+    struct stat fileStat;
+    if (stat("../ressources/ServerInterface.html", &fileStat) == -1) return;//Envoyer code d'erreur serveur
+    int fileSize = fileStat.st_size;
+
+    int fd = open("../ressources/ServerInterface.html", O_RDONLY);
+    if (fd == -1) return;//Il faudra envoyer le bon code d'erreur 4xx/5xx si problème
+
+    // Charger fichier
+    char *fileContent = new char[fileSize];
+    read(fd, fileContent, fileSize);
+    close(fd);
+
+    std::ostringstream string_fileSize;
+    string_fileSize << fileSize;
+    std::string header = 
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html\r\n"
+        "Content-Length: " + string_fileSize.str() + "\r\n"
+        "Connection: keep-alive\r\n\r\n";
+
+    int responseSize = strlen(header.c_str()) + fileSize;//Fonction interdite
+    char *response = new char[responseSize];
+    memcpy(response, header.c_str(), strlen(header.c_str()));//Fonction interdite
+    memcpy(response + strlen(header.c_str()), fileContent, fileSize);//Fonction interdite
+
+    std::cout << "Server's response: " << response << std::endl;
+
+    send(_tcp_socket, response, responseSize, 0);
+
+    delete[] fileContent;
+    delete[] response;
+}
+
+void	TCPConnection::setStatus(int status) {_status = status;}
 
 int	TCPConnection::get_status() const {return _status;}
 

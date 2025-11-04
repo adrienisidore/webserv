@@ -17,15 +17,14 @@ CGI::CGI() {}
 CGI::~CGI() {}
 
 // //Si changement, penser a changer la version de Response + les prototypes + CGI
-// void	CGI::copyFrom(HTTPcontent& other) {
-// 		_code = other.getCode();
-// 		_method = other.getMethod();
-// 		_URI = other.getURI();
-// 		_config = other.getConfig();
-// 		_headers = other.getHeaders();
-// 		//pertinent de reset other, par securite
-// 		other.reset();
-// }
+void	CGI::copyFrom(HTTPcontent& other) {
+		_code = other.getCode();
+		_method = other.getMethod();
+		_URI = other.getURI();
+		_config = other.getConfig();
+		_headers = other.getHeaders();
+
+}
 
 void CGI::buildEnv() {
 
@@ -109,21 +108,29 @@ void	CGI::openPipes() {
 		//thorw une Exception, ne pas exit SINON LEAKS
         exit(EXIT_FAILURE);
     }
-
+    fcntl(_inpipe[0], F_SETFD, FD_CLOEXEC);
+    fcntl(_inpipe[1], F_SETFD, FD_CLOEXEC);
+    fcntl(_outpipe[0], F_SETFD, FD_CLOEXEC);
+    fcntl(_outpipe[1], F_SETFD, FD_CLOEXEC);
 }
 
+/*
+Il faut ecrire dans stdin apres fork()
+Dans Parent:
+	- ferme extremites inutiles
+	- met descripteurs en non-blocking
+	- inscrit descripteur dans poll/epoll (maintenant ou plus tard ?)
+	- ecrit le body dans stdin
+	- ferme l'ecriture pour signaler EOF
+*/
 void	CGI::launchExecve() {
-
-	// buildEnv();
-    // buildArgv();
-	// openPipes();
 
     _pid = fork();
     if (_pid < 0) {
         // perror("fork");
 		//thorw une Exception, ne pas exit SINON LEAKS
 		//Ou modifier setCode puis return ;
-        exit(EXIT_FAILURE);
+		throw (ServerException("fork"));
     }
 
     if (_pid == 0) {
@@ -132,22 +139,31 @@ void	CGI::launchExecve() {
         dup2(_inpipe[0], STDIN_FILENO);
 		//la sortie du terminal (STDOUT) de l'enfant devient _outpipe[1]
         dup2(_outpipe[1], STDOUT_FILENO);
+
+		close(_inpipe[0]);
         close(_inpipe[1]);
         close(_outpipe[0]);
+        close(_outpipe[1]);
 
 		//envp : le CGI recoit ces variables d'env pour tourner
         execve(_argv[0], &_argv[0], &_envp[0]);
 		//modifier le code d'error (500 probleme serveur ??)
         perror("execve");
-        exit(EXIT_FAILURE);
+		throw (ServerException("execve"));
     } else {
 
 
-		// A priori cette partie la c'est le ServerMonitor qui va le gerer
         // Parent
         close(_inpipe[0]);
         close(_outpipe[1]);
 
+		// non-blocking
+		int flags;
+		flags = fcntl(_inpipe[1], F_GETFL, 0);
+		fcntl(_inpipe[1], F_SETFL, flags | O_NONBLOCK);
+		flags = fcntl(_outpipe[0], F_GETFL, 0);
+		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
+		/*
         // Simule un corps POST
         const char *post_data = "name=adrien";//redondant avec _body mais necessaire car STDIN_FILENO est en lecture seule,
 		//si je veux ecrire _body dans dans STDIN depuis l'enfant c'est galere
@@ -171,5 +187,6 @@ void	CGI::launchExecve() {
    
 		//Useless
         std::cout << "\n[CGI terminé avec code " << WEXITSTATUS(_status) << "]\n";
+		*/
     }
 }

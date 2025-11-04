@@ -215,7 +215,7 @@ void    ConfigParser::parseGlobal() {
     while (true) {
             std::string line = readLine();
             
-            if (line.empty() && _input.eof()) {
+            if (line.empty() && _input.eof()) { // VERIFIER QUE EMPTY MARCHe
                 break;
             }
             

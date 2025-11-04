@@ -31,6 +31,13 @@ class 	ParsingException : public std::runtime_error {
 		ParsingException(std::string msg): std::runtime_error(msg) {} 
 };
 
+class 	ServerException : public std::runtime_error {
+	
+	// parsing
+	public: 
+		ServerException(std::string msg): std::runtime_error(msg) {} 
+};
+
 // we should also deal with error codes
 
 #endif

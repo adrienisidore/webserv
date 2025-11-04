@@ -161,7 +161,7 @@ void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 		throw SocketException(strerror(errno));
 
 	_pollfds.push_back(pollfd_wrapper(socket));
-	_map_cgis[socket] = cgi;  
+	_map_cgis.insert({socket, cgi});  
 
 	std::cout << "A new CGI has been launched !" << std::endl;
 }
@@ -242,8 +242,6 @@ void	ServerMonitor::monitor_listening_sockets() {
 
 void	ServerMonitor::monitor_connections() {
 	// ecouter les sockets clients
-	
-	int	poll_cgi;
 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
 	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
@@ -283,11 +281,8 @@ void	ServerMonitor::monitor_connections() {
 
 			// La requet est syntaxiquement complete
 			if (connection->get_status() == READ_COMPLETE || connection->get_status() == ERROR) {
-
-				poll_cgi = connection->initialize_response();
+				connection->initialize_response();
 				it->events = POLLOUT;
-				if (poll_cgi)
-					add_new_cgi_socket(poll_cgi, connection->getResponse().getCGI())
 				// on ERROR -> keep in head that connection should be CLOSED
 			}
 
@@ -297,9 +292,10 @@ void	ServerMonitor::monitor_connections() {
 		if (it->revents & POLLOUT) {
 			if (connection->get_status() == READY_TO_SEND) {
 				
-				connection->send_response();
+				//connection->send_response();
 				connection->end_transfer();
 				it->events = POLLIN;
+				connection->set_status(END);
 
 				if (connection->getResponse().getCode())
 					it = close_tcp_connection(it);
@@ -329,15 +325,15 @@ void	ServerMonitor::monitor_cgis() {
 			bytes_received = recv(it->fd, buff, BUFF_SIZE, 0);
 			cgi.append_to_body(buff, BUFF_SIZE);
 
-			if (bytes_received == 0) {
-				cgi.connection.set_status(READY_TO_SEND);
-				cgi.connection.response.copyFrom(cgi);
+			if (bytes_received == 0) {	// EOF
+				cgi._connection->setStatus(READY_TO_SEND);
+				cgi._connection->_response.copyFrom(cgi);
 				it = close_cgi_socket(it);
 			}
 
 			else if (bytes_received < 0) {
-				cgi.connection.set_status(ERROR);
-				cgi.connection.set_error(500);
+				cgi._connection->setStatus(ERROR);
+				cgi._connection->set_error(500);
 				// mettre a POLLIN, etc... bonne idee ?
 				it = close_cgi_socket(it);
 			}

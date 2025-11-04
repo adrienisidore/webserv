@@ -7,7 +7,6 @@ class	ServerMonitor {
 
 private:
 
-	static ServerMonitor*			_instance;
 	static GlobalConfig				_global_config;
 	bool							_is_running;
 	std::vector<pollfd>				_pollfds; //all sockets we monitor, wrapped up for poll()
@@ -18,7 +17,6 @@ private:
 	void							create_all_listening_sockets();
 	void							bind_listening_socket(int socket);
 	void							add_new_client_socket(int socket);
-	void							add_new_cgi_socket(int socket, CGI cgi);
 	pollfd							pollfd_wrapper(int fd);
 
 	
@@ -38,9 +36,12 @@ private:
 
 public:
 
+	static ServerMonitor*			_instance;
+
 	ServerMonitor(const std::string & filename);
 	~ServerMonitor();
 
+	void	add_new_cgi_socket(int socket, CGI cgi);
 	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
 

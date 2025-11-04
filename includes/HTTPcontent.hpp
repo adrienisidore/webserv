@@ -11,7 +11,6 @@ class HTTPcontent {
 
 		int					_code;
 		LocationConfig		_config;
-		CGI					_cgi;
 
 	// lecture
 		std::string			_current_header; // track the header each TCP chunk, each time recv is called
@@ -31,25 +30,26 @@ class HTTPcontent {
 		std::string			_path;
 
 		HTTPcontent();
-		~HTTPcontent();
+		virtual ~HTTPcontent();
 
 		public:
 
 		//AJOUTER un pointeur vers sa TCPConnection : permet a partir du CGI (ou Response ou Request) de savoir a quelle TCPConnection il appartient
 
+		TCPConnection						*_connection;
+
+		//HTTPcontent							&operator=(const CGI &);
 		void								setLocation(const ServerConfig & servconfig);
 
 		void								setCode(const int & code);
-		void 								reset();
+		void 								reset(TCPConnection *connection);
 
 		virtual void						copyFrom(HTTPcontent& other) = 0;
 		int									getCode() const;
 		std::string							getMethod() const;
 		std::string							getURI() const;
-		std::string							getProtocol() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		LocationConfig						getConfig() const;
-		CGI									getCGI() const;
 
 		void								setContentLength(unsigned long);
 		unsigned long						getContentLength() const;

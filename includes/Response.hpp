@@ -7,19 +7,18 @@
 class Response : public HTTPcontent {
     public:
         Response();
-        ~Response();
+        virtual ~Response();
 
 		int 			hub();
 
 		void			copyFrom(HTTPcontent& other);
 
+		CGI _cgi;
+
     private:
 		void			checkPermissions();
 		void			buildPath();//Fais appel a checkPermissions, si tout est ok on peut continuer
 
-		// CGI _cgi;
-
-		//C'est TCPConnection qui renvoie la response
 };
 
 //PARAGRAPHE UTILE POUR ENVOYER EFFICACEMENT UNE REPONSE AVEC poll() :

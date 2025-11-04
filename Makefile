@@ -28,6 +28,7 @@ SRC = src/main.cpp \
 	  src/GlobalConfig.cpp \
 	  src/autoconfig.cpp \
 	  src/parsing.cpp \
+	  src/CGI.cpp
 
 OBJ = objets/
 

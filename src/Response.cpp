@@ -11,8 +11,6 @@ void	Response::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
-		//pertinent de reset other, par securite
-		other.reset();
 }
 
 Response::~Response() {}
@@ -35,12 +33,12 @@ void			Response::buildPath() {
 	//ATTENTION SI JE FAIS PAS D'ITERATOR CA CREE UNE NOUVELLE CLE
 	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
 	if (it->second != _config.getDirective("listen"))
-		return (setCode(400));
+		setCode(400); return;
 
 	//On regarde si dans ce server il existe une location == _URI ==> sinon setCode()
 	std::string location = _config.getDirective(_URI);
 	if (location == "")
-		return (setCode(404));//Bon code ?
+		setCode(404); return;//Bon code ?
 
 	//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
 	//root obligatoire ?
@@ -137,10 +135,10 @@ void	Response::checkPermissions() {
 		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
 		if ((access(_path.c_str(), F_OK) == 0 && access(_path.c_str(), W_OK) != 0)
 			|| (access(_path.c_str(), F_OK) != 0 && access(parentDir(_path).c_str(), W_OK | X_OK) != 0))
-			return (setCode(403));
+			setCode(403); return;
 	}
 	else if (_method == "DELETE" && access(parentDir(_path).c_str(), W_OK | X_OK) != 0)
-		return (setCode(403));//On a acces au repertoire parent pour faire des modifications
+		setCode(403); return;//On a acces au repertoire parent pour faire des modifications
 }
 
 int	Response::hub() {
@@ -151,13 +149,16 @@ int	Response::hub() {
 
 	// Je regarde si la LocationConfig indique que ce path correspond a une cgi
 	//Si oui alors :
+	try {
 		this->_cgi.copyFrom(*this);
-		this->_cgi->buildEnv();
-		this->_cgi->buildArgv();
+		this->_cgi.buildEnv();
+		this->_cgi.buildArgv();
 		this->_cgi.openPipes();
+	} catch (std::exception &er) {
+		// what to do when exception ?
+		return (0);
+	}
 		//Je verifie que tout s'est bien passe, sinon je setcode, je remplis mon body avec la page html et je m'arrete ici
-		// je renseigne _outpipe[0] pour le surveiller avec poll et je m'arrete ici
-		//ServerMonitor va s'occuper de recuperer les infos que renvoie le CGI avec monitor_cgi, et ainsi remplir le _body de response. 
 
 	// Si non alors:
 		// je remplis le body de cette instance avec la page statique necessaire et je m'arrete ici 

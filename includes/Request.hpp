@@ -13,7 +13,7 @@ class	Request : public HTTPcontent {
 
 	public:
 		Request();
-		~Request();
+		virtual ~Request();
 		
 		void			parse_header();
 		void			unchunk_body();
