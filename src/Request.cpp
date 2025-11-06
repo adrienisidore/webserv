@@ -38,7 +38,7 @@ void	Request::unchunk_body() {
 
 		backr = line.find('\r');
 		if (backr == std::string::npos)
-			setCode(400); return; // Verifier le code d'erreur
+			return setCode(400); // Verifier le code d'erreur
 		line_without = line.substr(0, backr);
 		
 		if (i % 2 == 0) {
@@ -46,13 +46,13 @@ void	Request::unchunk_body() {
 			//floor : fonction interdite I guess, supprimer librairie math
 			real_len = std::strtod(line_without.c_str(), &end);
 			if (*end != '\0' || std::floor(real_len) != real_len)
-				setCode(400); return;
+				return setCode(400);
 		}
 		else {
 			//Checker que line_len == real_len
 			line_len = line_without.size();
 			if (line_len != real_len)
-				setCode(400); return;
+				return setCode(400);
 			//Si tout va bien unchuncked_body.append(line_without); (doit etre init ?)
 			unchunked_body.append(line_without);
 		}
@@ -62,9 +62,9 @@ void	Request::unchunk_body() {
 
 	//Checker que la dernier ligne est bien "\r" sinon error 400
 	if(std::getline(stream, line))
-		setCode(400); return;
+		return setCode(400);
 	if (line != "\r")
-		setCode(400); return;	
+		return setCode(400);
 
 	_current_body = unchunked_body;
 }
@@ -82,14 +82,13 @@ void	Request::setStartLine() {
 	if (pos != std::string::npos)
 		start_line = message.substr(0, pos);
 	else
-		setCode(400); return;
+		return setCode(400);
 
 	//<METHOD> <RT> [HTTP/1.1] : 2 espaces sont necessaires pour une requete valide.
 	size_t first_space = start_line.find(' ');
 	size_t second_space = start_line.find(' ', first_space + 1);
 	if (first_space == std::string::npos || second_space == std::string::npos)
-		setCode(400); return;
-
+		return setCode(400);
 	//Remplissage des attributs
 	_method = start_line.substr(0, first_space);
 	_URI = start_line.substr(first_space + 1, second_space - first_space - 1);
@@ -98,7 +97,7 @@ void	Request::setStartLine() {
 	if (_method.empty() || _protocol != start_line.substr(second_space + 1)) return (setCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
 	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
-		setCode(501); return;
+		return setCode(501);
 }
 
 void	Request::setHeaders() {
@@ -120,7 +119,7 @@ void	Request::setHeaders() {
 		//Si on ne trouve pas de ":" ou pas de \r dans la ligne ou " :" Error 400
 		size_t colonPos = line.find(':');
 		if (colonPos == std::string::npos || line[line.size() - 1] != '\r' || line[colonPos - 1] == ' ' || line[colonPos + 1] != ' ')
-			setCode(400); return;
+			return setCode(400);
 		//Suppression de \r
 		line.erase(line.size() - 1);
 
@@ -147,7 +146,7 @@ Request::~Request() {}
 
 std::ostream&	operator<<(std::ostream& os, const Request &request) {
 
-	os << "\nRequest : " << request.getMethod() << " " << request.getURI() << " " << request.getProtocol() << std::endl;
+	// os << "\nRequest : " << request.getMethod() << " " << request.getURI() << " " << request._protocol << std::endl;
 
 	std::map<std::string, std::string> tmp_headers = request.getHeaders();
 	for (std::map<std::string, std::string>::const_iterator it = tmp_headers.begin(); it != tmp_headers.end(); ++it) {

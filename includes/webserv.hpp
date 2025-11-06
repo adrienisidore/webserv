@@ -55,8 +55,8 @@ enum {
 # include "ConfigParser.hpp"
 # include "HTTPcontent.hpp"
 # include "./Request.hpp"
-# include "./Response.hpp"
 # include "./CGI.hpp"
+# include "./Response.hpp"
 # include "./TCPConnection.hpp"
 # include "./ServerMonitor.hpp"
 

@@ -64,6 +64,7 @@ void	ServerMonitor::create_all_listening_sockets() {
 
 		bind_listening_socket(listening);	
 		
+		std::cout << "listening socket created" << std::endl;
 		}
 }
 
@@ -161,7 +162,7 @@ void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 		throw SocketException(strerror(errno));
 
 	_pollfds.push_back(pollfd_wrapper(socket));
-	_map_cgis.insert({socket, cgi});  
+	_map_cgis.insert(std::pair<int, CGI>(socket, cgi));  
 
 	std::cout << "A new CGI has been launched !" << std::endl;
 }
@@ -206,6 +207,7 @@ void	ServerMonitor::run() {
 	{
 		if (listen(it->first, MAX_QUEUE))
 			throw SocketException(strerror(errno));
+		std:: cout << "socket is listening..." << std::endl;
 		// if (listen(it->first, atoi(it->second.getDirective("max_queue").c_str())))
 		// 	throw SocketException(strerror(errno));
 
@@ -221,8 +223,11 @@ void	ServerMonitor::run() {
 				throw SocketException(strerror(errno));
 		}
 
+		std::cout << "before monitoting listening" << std::endl;
 		monitor_listening_sockets();
+		std::cout << "before monitoring connections" << std::endl;
 		monitor_connections();
+		std::cout << "before monitoring cgis" << std::endl;
 		monitor_cgis();
 
 		std::cout << "size of map connections: " << _map_connections.size() << std::endl;
@@ -295,7 +300,7 @@ void	ServerMonitor::monitor_connections() {
 				//connection->send_response();
 				connection->end_transfer();
 				it->events = POLLIN;
-				connection->set_status(END);
+				connection->setStatus(END);
 
 				if (connection->getResponse().getCode())
 					it = close_tcp_connection(it);

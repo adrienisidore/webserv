@@ -3,6 +3,7 @@
 
 # include "./webserv.hpp"
 
+class TCPConnection;
 //Request/Response :
 //All the data that goes from Request to Response
 class HTTPcontent {

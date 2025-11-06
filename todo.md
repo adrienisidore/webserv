@@ -1,5 +1,5 @@
 
-[ ] gerer toutes les erreurs compilation
+[x] gerer toutes les erreurs compilation
 
 [ ] finir fonction hub()
     [ ] gerer les exceptions (delete cgi sockets, ...)

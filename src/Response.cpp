@@ -33,12 +33,12 @@ void			Response::buildPath() {
 	//ATTENTION SI JE FAIS PAS D'ITERATOR CA CREE UNE NOUVELLE CLE
 	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
 	if (it->second != _config.getDirective("listen"))
-		setCode(400); return;
+		return setCode(400);
 
 	//On regarde si dans ce server il existe une location == _URI ==> sinon setCode()
 	std::string location = _config.getDirective(_URI);
 	if (location == "")
-		setCode(404); return;//Bon code ?
+		return setCode(404);
 
 	//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
 	//root obligatoire ?
@@ -135,10 +135,10 @@ void	Response::checkPermissions() {
 		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
 		if ((access(_path.c_str(), F_OK) == 0 && access(_path.c_str(), W_OK) != 0)
 			|| (access(_path.c_str(), F_OK) != 0 && access(parentDir(_path).c_str(), W_OK | X_OK) != 0))
-			setCode(403); return;
+			return setCode(403);
 	}
 	else if (_method == "DELETE" && access(parentDir(_path).c_str(), W_OK | X_OK) != 0)
-		setCode(403); return;//On a acces au repertoire parent pour faire des modifications
+		return setCode(403);//On a acces au repertoire parent pour faire des modifications
 }
 
 int	Response::hub() {
@@ -156,8 +156,9 @@ int	Response::hub() {
 		this->_cgi.openPipes();
 	} catch (std::exception &er) {
 		// what to do when exception ?
-		return (0);
+		return (-1);
 	}
+	return 0;
 		//Je verifie que tout s'est bien passe, sinon je setcode, je remplis mon body avec la page html et je m'arrete ici
 
 	// Si non alors:

@@ -176,11 +176,11 @@ void	TCPConnection::initialize_response() {
 			_response._cgi.launchExecve();
 		} 
 		catch (std::exception &er) {
-			///
+			return set_error(500);
 		}
 	}
 	else if (poll_cgi < 0) {
-		//throw (...); 
+		return set_error(500);
 	}
 	else if (poll_cgi == 0){
 		_status = READY_TO_SEND;	// /!\ could be on ERROR
@@ -279,6 +279,8 @@ void	TCPConnection::setStatus(int status) {_status = status;}
 int	TCPConnection::get_status() const {return _status;}
 
 Request	TCPConnection::getRequest() const {return _request;}
+
+Response TCPConnection::getResponse() const {return _response;}
 
 int		TCPConnection::getTCPSocket() const {return _tcp_socket;}
 
