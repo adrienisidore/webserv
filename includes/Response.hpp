@@ -17,7 +17,7 @@ class Response : public HTTPcontent {
 
     private:
 		void			checkPermissions();
-		void			buildPath();//Fais appel a checkPermissions, si tout est ok on peut continuer
+		void			buildPath();
 
 };
 

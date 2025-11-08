@@ -47,24 +47,17 @@ void			Response::buildPath() {
 	//On gere HEAD ?? Pour les siege de curl
 	if (this->getMethod() == "GET")
 	{
-
-		//On check si index file : si oui on retourne son chemin
-		this->checkPermissions();//?
+		// Checker que j'ai le droit de GET dans cette location
 
 	}
 	if (this->getMethod() == "POST")
 	{
-
-		//Checker si y'a une logic server qui s'appelle _URI.
-		//Ou si y'a un CGI
-		//Si pas de CGI on regarde si y'a une directive upload_store
-
+		// Checker que j'ai le droit de POST dans cette location
 	}
 
 	if (this->getMethod() == "DELETE")
 	{
-
-
+		// Checker que j'ai le droit de DELETE dans cette location
 	}
 }
 
@@ -141,26 +134,31 @@ void	Response::checkPermissions() {
 		return setCode(403);//On a acces au repertoire parent pour faire des modifications
 }
 
+// renvoie -1 si le body s'est remplie avec une page d'erreur
+// renvoie 0 si le body s'est rempli avec une page statique html (tout s'est bien passé)
+// renvoie le fd du pipe si un CGI a été enclenché (tout s'est bien passé)
 int	Response::hub() {
 
 	buildPath();
 	checkPermissions();
-	// Si le code d'erreur est positif alors je remplis _body avec ma page .html et je m'arrete ici
+	// Si le code d'erreur est positif alors je remplie le body avec la page statique d'erreur correspondante et je retourne -1
 
-	// Je regarde si la LocationConfig indique que ce path correspond a une cgi
+	// Je regarde si la LocationConfig indique que ce path correspond a une cgi.
 	//Si oui alors :
 	try {
 		this->_cgi.copyFrom(*this);
 		this->_cgi.buildEnv();
 		this->_cgi.buildArgv();
 		this->_cgi.openPipes();
+		// Si tout s'est bien passé je retourne le pipe d'écriture (ou lecture?) de l'enfant
+		// return this->_cgi._outpipe[1] (tout s'est bien passé)
 	} catch (std::exception &er) {
 		// what to do when exception ?
+		// Si exception alors le code d'erreur n'est plus à 0, je remplie le body avec la page statique d'erreur
+		// correspondante et je retourne -1
 		return (-1);
 	}
-	return 0;
-		//Je verifie que tout s'est bien passe, sinon je setcode, je remplis mon body avec la page html et je m'arrete ici
-
 	// Si non alors:
-		// je remplis le body de cette instance avec la page statique necessaire et je m'arrete ici 
+		// je remplie le body avec la page statique de l'URL demandée et je renvoie 0
+	return 0;
 }
