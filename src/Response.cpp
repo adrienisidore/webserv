@@ -26,24 +26,19 @@ static std::string		parentDir(const std::string &path) {
 		return path.substr(0, pos);
 }
 
+bool	is_cgi_directory(std::string name) {
+	(void)name;
+	return false;
+}
+
 //1) https://www.alimnaqvi.com/blog/webserv
 void			Response::buildPath() {
 
-	// Host doit etre formalise en mode "IP:Port" sinon erreur
-	//ATTENTION SI JE FAIS PAS D'ITERATOR CA CREE UNE NOUVELLE CLE
-	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
-	if (it->second != _config.getDirective("listen"))
-		return setCode(400);
 
-	//On regarde si dans ce server il existe une location == _URI ==> sinon setCode()
-	std::string location = _config.getDirective(_URI);
-	if (location == "")
-		return setCode(404);
-
-	//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
-	//root obligatoire ?
-	_path = _config.getDirective("root") + _URI;
+	// Verifier CGI avant le path
 	
+	// On verifie allowed-methods
+	/* CHECK ALLOWED METHODS
 	//On gere HEAD ?? Pour les siege de curl
 	if (this->getMethod() == "GET")
 	{
@@ -59,6 +54,50 @@ void			Response::buildPath() {
 	{
 		// Checker que j'ai le droit de DELETE dans cette location
 	}
+	*/
+	std::vector<std::string>	indexes;
+	bool	autoindex = false;
+
+	// Host doit etre formalise en mode "IP:Port" sinon erreur
+	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
+	if (it->second != _config.getDirective("listen"))
+		return setCode(400);
+
+	//On regarde si la location == _URI ==> sinon erreur
+	if (_config.getDirective("uri") != _URI || _URI.empty())
+		return setCode(404);
+
+	// root par defaut
+	std::string root = _config.getDirective("root");
+	if (root.empty())
+		root = "./ressources";
+
+	_path = root + _URI;
+
+	if (_URI[_URI.size() - 1] == '/') {
+		// Si URI == directory
+
+		if (is_cgi_directory(_URI)) {
+																	// HANDLE CGI DIRECTORY
+		}
+		else {
+			std::string index = _config.getDirective("index");
+			if (index.empty()) {
+				// Si pas d'index
+				if (_config.getDirective("autoindex") == "on")
+					autoindex = true;								// LIST ALL FILES IN THE DIRECTORY
+				else
+					return setCode(403);
+			}
+			else
+				indexes = split(index, ' ');						// TRY MULTIPLE INDEXES
+		}
+	} else {
+		// Si URI == filename
+																	// TRY ONE FILE
+	}
+	(void)autoindex;
+	//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
 }
 
 // A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs

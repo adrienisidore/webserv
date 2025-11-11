@@ -20,7 +20,7 @@ public:
 
 	void	inheritFromGlobal(const GlobalConfig &global);
 
-	void	addLocation(const std::string &path, const LocationConfig &loc);
+	void	addLocation(const std::string &path, LocationConfig &loc);
 
 	std::string									getDirective(const std::string &key) const;
 	const std::map<std::string, std::string> &	getDirectives() const;

@@ -12,7 +12,8 @@
 
 NAME = webserv
 
-FLAGS = -Wall -Wextra -Werror -g -std=c++98
+FLAGS = -Wall -Wextra -Werror -g -std=c++98 -fstandalone-debug
+
 
 INCLUDES = -I./includes/
 

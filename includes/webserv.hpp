@@ -7,10 +7,10 @@
 # define HEADER_MAX_SIZE 100000 // at least BUFF_SIZE because of the do while
 # define BODY_MAX_SIZE 1000000
 
-# define BETWEEN_CHUNK_MAX_TIME 10	// max time between TCP chunks WHEN A REQUEST 
-# define HEADER_MAX_TIME 10	// max time for the header to be sent
-# define BODY_MAX_TIME 10 // max time for the body to be sent
-# define NO_REQUEST_MAX_TIME 20 // max time between request
+# define BETWEEN_CHUNK_MAX_TIME 10000	// max time between TCP chunks WHEN A REQUEST 
+# define HEADER_MAX_TIME 10000	// max time for the header to be sent
+# define BODY_MAX_TIME 10000 // max time for the body to be sent
+# define NO_REQUEST_MAX_TIME 20000 // max time between request
 
 enum {READING_HEADER,
 	READING_BODY,
@@ -80,5 +80,6 @@ enum {
 // Parsing
 void	check_args(int ac, char **av);
 std::string parseConfig(const std::string& configFile);
+std::vector<std::string> split(const std::string& str, char delimiter);
 
 # endif

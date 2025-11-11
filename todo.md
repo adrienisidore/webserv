@@ -1,24 +1,24 @@
 
-[x] gerer toutes les erreurs compilation
+PARSING:
 
-[ ] finir fonction hub()
-    [ ] gerer les exceptions (delete cgi sockets, ...)
+    [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier
 
-[ ] TIMEOUT pour response et CGI
+RESPONSE:
 
-[ ] put status to END after response is sent
+    [ ] finir nouvelle fonction hub() ou buildPath()
+    [ ] send response
 
-[ ] gerer keep-alive
+SERVERMONITOR:
 
-[ ] send-response
+    [ ] gerer directive keep-alive
+    [ ] TIMEOUT pour response et CGI
 
-[ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier
+BONUS:
 
-[ ] intergrer toutes les directives dans le code (a la place des values par defaut)
+    [ ] gestion des cookies -> mdp + login dans un fichier
 
-[ ] gestion des cookies -> mdp + login dans un fichier
+TESTS:
 
-[ ] tests:
     [ ] leaks avec top ou htop
     [ ] siege
     [ ] fichiers lourds

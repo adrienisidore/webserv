@@ -98,13 +98,14 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 		// Format: "127.0.0.1:8080"
 		host = listen_value.substr(0, colon_pos);
 		port = listen_value.substr(colon_pos + 1);
+		std::cout << "host -> '" << host << "'" << std::endl;
+		std::cout << "port -> '" << port << "'" << std::endl;
 	}
 	else
 		throw ParsingException("listn: invalid IP / Port"); // devrait etre inutile si parsing est bien fait
 	//Verifier si on a besoin de convertir la c_str() avec htons ntohs
 	int	status = getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
 	// /!\ HOST and LISTEN must exist and always have the same value format
-	// ATTENTION il peut y avoir plus de serverConfigs que de listening sockets 
 	if (status) {
 		freeaddrinfo(res);
 		throw SocketException(gai_strerror(status));
@@ -135,7 +136,7 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 
 	if (_map_connections.size() < MAX_CONNECTIONS) { // specified in config file
 		// add the pollfd derived from the socket to the fds list
-		_pollfds.insert(last_socket(), pollfd_wrapper(tcp_socket));
+		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
 
 		// create a new tcp with the socket and add it to the map
 		TCPConnection	*connection = new TCPConnection(tcp_socket, config);
@@ -223,15 +224,16 @@ void	ServerMonitor::run() {
 				throw SocketException(strerror(errno));
 		}
 
-		std::cout << "before monitoting listening" << std::endl;
+		// std::cout << "before monitoring listening" << std::endl;
 		monitor_listening_sockets();
-		std::cout << "before monitoring connections" << std::endl;
+		// std::cout << "before monitoring connections" << std::endl;
 		monitor_connections();
-		std::cout << "before monitoring cgis" << std::endl;
+		// std::cout << "before monitoring cgis" << std::endl;
+		// std::cout << "size of pollfd: " << _pollfds.size() << std::endl;
+		// std::cout << "size of map connections: " << _map_connections.size() << std::endl;
+		// std::cout << "size of map server configs: " << _map_server_configs.size() << std::endl;
 		monitor_cgis();
-
-		std::cout << "size of map connections: " << _map_connections.size() << std::endl;
-		
+		// std::cout << "after monitoring cgis" << std::endl;
 		check_timeouts();
 	}
 }
@@ -253,7 +255,9 @@ void	ServerMonitor::monitor_connections() {
 		++it;
 	}
 
-	while (it != last_socket() && _is_running) {	// ONLY FOR CLIENTFDS, NOT CGIS
+	while (it != connected_socket_end() && _is_running) {	// IT can be last_socket
+
+		std::cout << "connection check" << std::endl;
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			it = close_tcp_connection(it);
@@ -300,7 +304,6 @@ void	ServerMonitor::monitor_connections() {
 				//connection->send_response();
 				connection->end_transfer();
 				it->events = POLLIN;
-				connection->setStatus(END);
 
 				if (connection->getResponse().getCode())
 					it = close_tcp_connection(it);
@@ -318,8 +321,8 @@ void	ServerMonitor::monitor_cgis() {
 	char	buff[BUFF_SIZE];
 	int		bytes_received;
 
-	std::vector<pollfd>::iterator	it = last_socket();
-	++it;
+	std::vector<pollfd>::iterator	it = connected_socket_end();
+
 	while (it != _pollfds.end() && _is_running) {
 
 		CGI	cgi = _map_cgis[it->fd];
@@ -346,7 +349,7 @@ void	ServerMonitor::monitor_cgis() {
 	}
 }
 
-std::vector<pollfd>::iterator	ServerMonitor::last_socket() {
+std::vector<pollfd>::iterator	ServerMonitor::connected_socket_end() {
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
 	for (size_t i = 0; i < _map_connections.size() + _map_server_configs.size(); ++i) {
 		++it;
