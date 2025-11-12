@@ -160,32 +160,47 @@ void	TCPConnection::read_body() {
 	return;
 }
 
-void	TCPConnection::initialize_response() {
+
+// execute la method puis construit la reponse -> plus qu'a l'envoyer
+void	TCPConnection::execute_method() {
 
 	int	poll_cgi;
 
 	_response.copyFrom(_request);
 
-	poll_cgi = _response.hub();
-	if (poll_cgi > 0) {
+	// Probleme : quelque soit la methode on execute le CGI de la meme maniere (mammouth)
+
+	poll_cgi = _response.fetch();// check compatibilite entre location config et request
+	if (poll_cgi) {
 
 		_status = NOT_READY_TO_SEND;
 		ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
 
 		try {
 			_response._cgi.launchExecve();
+			return;
 		} 
 		catch (std::exception &er) {
-			return set_error(500);
+
+			ServerMonitor::_instance->close_cgi_fd(poll_cgi);
+			_response.setCode(500);
 		}
 	}
-	else if (poll_cgi < 0) {
-		return set_error(500);
-	}
-	else if (poll_cgi == 0){
-		_status = READY_TO_SEND;	// /!\ could be on ERROR
-		return;
-	}
+
+	// POST ou DELETE : pour POST et DELETE on effectue une action
+	if (_response.getMethod() == "POST" && !_response.getCode())
+		_response._post_();
+	else if (_response.getMethod() == "DELETE" && !_response.getCode())
+		_response._delete_();
+	// ICI : toutes les actions ont ete executes, POST et DELETE on preremplie le _body
+	// il reste plus qu'a GET ou ERROR et ajouter la startLine (buildResponse : HTTP/1.1 200 ok)
+	else if (_response.getMethod() == "GET" && !_response.getCode())
+		_response._get_();
+	if (_response.getCode())
+		_response._error_();
+	
+	_status = READY_TO_SEND;
+	return;
 }
 
 void	TCPConnection::set_error(int error_code) {

@@ -2,7 +2,9 @@
 
 //405: Methode interdite pour la ressource
 
-Response::Response(): HTTPcontent() {}
+Response::Response(): HTTPcontent() {
+	_autoindex = false;
+}
 
 //Si changement, penser a changer la version de Request + les prototypes + CGI
 void	Response::copyFrom(HTTPcontent& other) {
@@ -11,6 +13,7 @@ void	Response::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
+		_autoindex = false;
 }
 
 Response::~Response() {}
@@ -26,44 +29,48 @@ static std::string		parentDir(const std::string &path) {
 		return path.substr(0, pos);
 }
 
-bool	is_cgi_directory(std::string name) {
-	(void)name;
-	return false;
+
+void		Response::checkAllowedMethods() {
+
+	// On verifie allowed-methods
+	/* CHECK ALLOWED METHODS DELTE POST :
+	s'il existe une directive allowed-method dans la locationConfig et que _method n'en fait pas partie
+	alors on setCode
+
+	*/
+}
+
+std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
+	std::string	idx_path;
+
+	for (std::vector<std::string>::iterator idx = indexes.begin(); idx != indexes.end(); ++idx) {
+		idx_path = _path + *idx;
+		checkPermissions(idx_path);
+		if (getCode() == 0) {
+			return *idx;
+		}
+		else
+			setCode(0);
+	}
+	return "";
 }
 
 //1) https://www.alimnaqvi.com/blog/webserv
+// A partir de la locationConfig on construit un chemin vers un fichier
+// 1) regarder si root/URI correspond a un fichier, si oui _path = ROOT/URI
+// 2) regarder si root/URI correspond a un dossier, auquel cas on construit le path a partir des index
+// 3) regarger si root/URI correspond a un dossier sans index, mais avec autoindex "on", auquel cas on
+// construit un fichier html liste deroulante et _path = root/URI/"ce fichier"
+
 void			Response::buildPath() {
 
+	// A replacer au bon endroit
+	if (getCode())
+		return;
 
-	// Verifier CGI avant le path
-	
-	// On verifie allowed-methods
-	/* CHECK ALLOWED METHODS
-	//On gere HEAD ?? Pour les siege de curl
-	if (this->getMethod() == "GET")
-	{
-		// Checker que j'ai le droit de GET dans cette location
-
-	}
-	if (this->getMethod() == "POST")
-	{
-		// Checker que j'ai le droit de POST dans cette location
-	}
-
-	if (this->getMethod() == "DELETE")
-	{
-		// Checker que j'ai le droit de DELETE dans cette location
-	}
-	*/
 	std::vector<std::string>	indexes;
-	bool	autoindex = false;
 
-	// Host doit etre formalise en mode "IP:Port" sinon erreur
-	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
-	if (it->second != _config.getDirective("listen"))
-		return setCode(400);
-
-	//On regarde si la location == _URI ==> sinon erreur
+	//On regarde s'il existe une location nomme URI
 	if (_config.getDirective("uri") != _URI || _URI.empty())
 		return setCode(404);
 
@@ -71,33 +78,34 @@ void			Response::buildPath() {
 	std::string root = _config.getDirective("root");
 	if (root.empty())
 		root = "./ressources";
-
+	
+	
 	_path = root + _URI;
 
+	// -----------------Differencie les types de requetes------------------------
 	if (_URI[_URI.size() - 1] == '/') {
 		// Si URI == directory
 
-		if (is_cgi_directory(_URI)) {
-																	// HANDLE CGI DIRECTORY
+		std::string index = _config.getDirective("index");
+		if (index.empty()) {
+			// Si pas d'index
+
+			if (_method == "GET" && _config.getDirective("autoindex") == "on")
+				_autoindex = true;
+			else
+				return setCode(403);
 		}
 		else {
-			std::string index = _config.getDirective("index");
-			if (index.empty()) {
-				// Si pas d'index
-				if (_config.getDirective("autoindex") == "on")
-					autoindex = true;								// LIST ALL FILES IN THE DIRECTORY
-				else
-					return setCode(403);
-			}
+			indexes = split(index, ' ');
+			index = try_multiple_indexes(indexes);
+			
+			if (index.empty())
+				return setCode(404);
 			else
-				indexes = split(index, ' ');						// TRY MULTIPLE INDEXES
+				_path += index;
+			
 		}
-	} else {
-		// Si URI == filename
-																	// TRY ONE FILE
 	}
-	(void)autoindex;
-	//On construit le path (root + _URI ou / + _URI) et on check les permissions  ==> sinon setCode()
 }
 
 // A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs
@@ -113,7 +121,7 @@ static bool	is_valid_path(std::string filename) {
 	return true;
 }
 
-void	Response::checkPermissions() {
+void	Response::checkPermissions(std::string path) {
 
 	if (_code) return;//Si j'ai un code ici a priori c'est forcement un code d'erreur
 
@@ -123,10 +131,10 @@ void	Response::checkPermissions() {
 	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")
 		setCode(405);
 
-	else if (!is_valid_path(_path))
+	else if (!is_valid_path(path))
 		setCode(400);
 
-	else if (stat(_path.c_str(), &path_properties) == -1) {
+	else if (stat(path.c_str(), &path_properties) == -1) {
 
 		int er = errno;
 
@@ -162,42 +170,130 @@ void	Response::checkPermissions() {
 	//  - Pour PUT/POST → droit d’écriture sur la ressource ou le répertoire parent
 	//  - Pour DELETE → droit d’écriture sur le répertoire parent
 
-    if ((_method == "GET" || _method == "HEAD") && access(_path.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
+    if ((_method == "GET" || _method == "HEAD") && access(path.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
 	else if (_method == "PUT" || _method == "POST") {
 		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
-		if ((access(_path.c_str(), F_OK) == 0 && access(_path.c_str(), W_OK) != 0)
-			|| (access(_path.c_str(), F_OK) != 0 && access(parentDir(_path).c_str(), W_OK | X_OK) != 0))
+		if ((access(path.c_str(), F_OK) == 0 && access(path.c_str(), W_OK) != 0)
+			|| (access(path.c_str(), F_OK) != 0 && access(parentDir(path).c_str(), W_OK | X_OK) != 0))
 			return setCode(403);
 	}
-	else if (_method == "DELETE" && access(parentDir(_path).c_str(), W_OK | X_OK) != 0)
+	else if (_method == "DELETE" && access(parentDir(path).c_str(), W_OK | X_OK) != 0)
 		return setCode(403);//On a acces au repertoire parent pour faire des modifications
 }
+
+bool	Response::is_cgi() {
+	std::string s_ = _config.getDirective("cgi_handler");
+	std::string::size_type pos = s_.find(' ');
+	bool		ok = false;
+
+	if (pos == std::string::npos) {
+		return false;
+	} else {
+		// check que le 1er arg de cgi_handler est bien une extension  (ex .py)
+		std::string extension  = s_.substr(0, pos);
+		ok =
+        extension.size() >= 2 &&
+        extension[0] == '.' &&
+        extension.find('.', 1) == std::string::npos;
+		// check que le fichier indique dans la location finit bien par la meme extension
+		ok = ok && extension == _path.substr(_path.rfind('.'));
+		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
+		checkPermissions(s_.substr(pos + 1));
+		return ok;
+	}
+}
+
+// fetch s'assure de la compatibilite entre la config de la location et la requete :
 
 // renvoie -1 si le body s'est remplie avec une page d'erreur
 // renvoie 0 si le body s'est rempli avec une page statique html (tout s'est bien passé)
 // renvoie le fd du pipe si un CGI a été enclenché (tout s'est bien passé)
-int	Response::hub() {
+int	Response::fetch() {
 
+	checkAllowedMethods();
+
+	// Host doit etre formalise en mode "IP:Port" sinon erreur (peut etre deja present ailleurs)
+	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
+	if (it->second != _config.getDirective("listen")) {
+		setCode(400);
+		return (0);
+	}
+		
 	buildPath();
-	checkPermissions();
-	// Si le code d'erreur est positif alors je remplie le body avec la page statique d'erreur correspondante et je retourne -1
+
+	checkPermissions(_path);
 
 	// Je regarde si la LocationConfig indique que ce path correspond a une cgi.
 	//Si oui alors :
-	try {
-		this->_cgi.copyFrom(*this);
-		this->_cgi.buildEnv();
-		this->_cgi.buildArgv();
-		this->_cgi.openPipes();
-		// Si tout s'est bien passé je retourne le pipe d'écriture (ou lecture?) de l'enfant
-		// return this->_cgi._outpipe[1] (tout s'est bien passé)
-	} catch (std::exception &er) {
-		// what to do when exception ?
-		// Si exception alors le code d'erreur n'est plus à 0, je remplie le body avec la page statique d'erreur
-		// correspondante et je retourne -1
-		return (-1);
+	if (is_cgi() && !getCode()) {
+		try {
+			this->_cgi.copyFrom(*this);
+			this->_cgi.buildEnv();
+			this->_cgi.buildArgv();
+			this->_cgi.openPipes();
+			// Si tout s'est bien passé je retourne le pipe d'écriture (ou lecture?) de l'enfant
+			return this->_cgi._outpipe[0];
+		} catch (std::exception &er) {
+			setCode(500);
+			return (0);
+		}
 	}
 	// Si non alors:
 		// je remplie le body avec la page statique de l'URL demandée et je renvoie 0
 	return 0;
+}
+
+// post le _body de _response, le vide et prerempli le nouveau body pour l'envoyer au client
+void		Response::_post_() {
+
+	// 1) si le fichier existe on l'ecrase, sinon on le cree (on y inclut _body)
+	// Créer (ou écraser) le fichier: -rw-r--r-- (0644), affecté par umask
+    int fd = open(_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+		setCode(405);
+        return ;
+    }
+
+    if (write(fd, _current_body.c_str(), _current_body.size()) < 0) {
+        close(fd);
+        return;
+    }
+
+    close(fd);
+	// 2) on erase 
+	setCurrentBody("");
+	// 3) on set les headers appropries
+	// 
+}
+
+void		Response::_delete_() {
+
+    if (std::remove(_path.c_str()) == 0)
+        return; // supprimé (fichier ou dossier vide)
+
+    const int e = errno;
+    if (e == ENOENT)
+		setCode(404);	// n'existe pas
+    if (e == EACCES || e == EPERM)
+		setCode(403); // droits insuffisants
+    if (e == ENOTEMPTY || e == EEXIST) 
+		setCode(409); // dossier non vide
+	else
+		setCode(500);
+	
+	setCurrentBody("");
+	// 3) on set les headers appropries
+
+}
+
+void	Response::_get_() {
+	
+	std::ifstream ifs(_path.c_str(), std::ios::in);
+    
+	if (!ifs)
+		return (setCode(404));
+    _current_body.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+    if (!ifs.eof() && ifs.fail())
+		return setCode(500);
+	// on set les headers appropries
 }

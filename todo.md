@@ -1,17 +1,25 @@
 
-PARSING:
+PARSING (GASTON):
 
     [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier
 
-RESPONSE:
+RESPONSE (ADRI):
 
-    [ ] finir nouvelle fonction hub() ou buildPath()
+    [ ] mettre les headers appropries dans toutes les methodes response et error
+    [ ] redirection directive -> vers une noubvelle location
     [ ] send response
 
-SERVERMONITOR:
+SERVERMONITOR / TCPCONNECTION (GASTON):
 
+    [ ] bien verifier le status ERROR
     [ ] gerer directive keep-alive
     [ ] TIMEOUT pour response et CGI
+    [ ] Segfault avec ctrlC (connection close)
+
+
+
+
+
 
 BONUS:
 

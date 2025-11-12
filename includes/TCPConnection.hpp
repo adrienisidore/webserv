@@ -33,7 +33,7 @@ public:
 	~TCPConnection();
 
 	void 	initialize_transfer();//One request per TCPConnection
-	void	initialize_response();
+	void	execute_method();
 	
 	void	check_body_headers();//if POST : check the headers and update the encoding process of the body
 	void 	use_recv();

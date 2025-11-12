@@ -22,6 +22,7 @@ private:
 	
 	std::vector<pollfd>::iterator	close_tcp_connection(std::vector<pollfd>::iterator);
 	std::vector<pollfd>::iterator	close_cgi_socket(std::vector<pollfd>::iterator);
+
 	std::vector<pollfd>::iterator	connected_socket_end() ;
 	void							monitor_listening_sockets();
 	void							monitor_connections();//monitor the tcp_socket (client connected)
@@ -42,6 +43,7 @@ public:
 	~ServerMonitor();
 
 	void	add_new_cgi_socket(int socket, CGI cgi);
+	void	close_cgi_fd(int fd);
 	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
 

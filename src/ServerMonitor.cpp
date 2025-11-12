@@ -183,6 +183,19 @@ std::vector<pollfd>::iterator	ServerMonitor::close_cgi_socket(std::vector<pollfd
 	_map_cgis.erase(it->fd);
 	return _pollfds.erase(it);
 }
+
+void	ServerMonitor::close_cgi_fd(int fd) {
+
+	std::vector<pollfd>::iterator it = _pollfds.begin();
+	while (it != _pollfds.end()) {
+		if (it->fd == fd) {
+			close_cgi_socket(it);
+			break;
+		}
+		++it;
+	}
+}
+
 // configure socket (non-blocking) and wrap it in a pollfd for the tracking_tab
 pollfd	ServerMonitor::pollfd_wrapper(int fd) {
 
@@ -290,7 +303,7 @@ void	ServerMonitor::monitor_connections() {
 
 			// La requet est syntaxiquement complete
 			if (connection->get_status() == READ_COMPLETE || connection->get_status() == ERROR) {
-				connection->initialize_response();
+				connection->execute_method();
 				it->events = POLLOUT;
 				// on ERROR -> keep in head that connection should be CLOSED
 			}

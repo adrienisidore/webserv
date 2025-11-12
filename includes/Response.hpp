@@ -9,15 +9,29 @@ class Response : public HTTPcontent {
         Response();
         virtual ~Response();
 
-		int 			hub();
+		int 			fetch();
+		void			_post_();
+		void			_delete_();
+		void			_get_();
+		void			_error_();
 
 		void			copyFrom(HTTPcontent& other);
 
-		CGI _cgi;
+		CGI 			_cgi;
+		bool 			_autoindex;
 
     private:
-		void			checkPermissions();
+
+		std::string		try_multiple_indexes(std::vector<std::string> indexes);
+		bool			is_cgi();
+
+		void			checkPermissions(std::string path);
+
+		void			checkAllowedMethods();
 		void			buildPath();
+
+
+
 
 };
 

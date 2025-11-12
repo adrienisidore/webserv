@@ -54,8 +54,8 @@ void CGI::buildEnv() {
 
 	cgi_headers = result;
 
-	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin(); it != cgi_headers.end(); ++it)
-		std::cout << it->first << " => " << it->second << std::endl;
+	// for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin(); it != cgi_headers.end(); ++it)
+	// 	std::cout << it->first << " => " << it->second << std::endl;
 
 	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin();
 		it != cgi_headers.end(); ++it) {
@@ -127,8 +127,6 @@ void	CGI::launchExecve() {
 
     _pid = fork();
     if (_pid < 0) {
-        // perror("fork");
-		//thorw une Exception, ne pas exit SINON LEAKS
 		//Ou modifier setCode puis return ;
 		throw (ServerException("fork"));
     }
