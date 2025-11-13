@@ -5,7 +5,8 @@ PARSING (GASTON):
 
 RESPONSE (ADRI):
 
-    [ ] mettre les headers appropries dans toutes les methodes response et error
+    [ ] coder _error_
+	[ ] un CGI peut etre enclenche depuis n'importe quel type de requete ?
     [ ] redirection directive -> vers une noubvelle location
     [ ] send response
 

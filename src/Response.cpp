@@ -243,8 +243,24 @@ int	Response::fetch() {
 	return 0;
 }
 
+void		Response::_error_() {
+	setCurrentBody("");
+
+}
+
+// Gerer les redirections redirection directive -> vers une nouvelle location
+
+
 // post le _body de _response, le vide et prerempli le nouveau body pour l'envoyer au client
 void		Response::_post_() {
+
+	// ATTENTION :	si une nouvelle ressource est cree : 201
+	// 				si j'ecrase un fichier alors : 200 ou 204
+	int	success_code;
+	if (access(_path.c_str(), F_OK) == 0)
+		success_code = 204;// 200 (body optionnel indiquant que c'est ok) ou 204 (pas de body)
+	else
+		success_code = 201;// body optionnel representant la ressource
 
 	// 1) si le fichier existe on l'ecrase, sinon on le cree (on y inclut _body)
 	// Créer (ou écraser) le fichier: -rw-r--r-- (0644), affecté par umask
@@ -258,12 +274,32 @@ void		Response::_post_() {
         close(fd);
         return;
     }
-
     close(fd);
-	// 2) on erase 
+
+	if (getCode())
+		return _error_();
+
+	// size_t content_length = _current_body.length();// si je ne renvoie pas de corps, alors pas de content_length
+	// 2) on erase le body pour le remplir avec les nouvelles infos
 	setCurrentBody("");
 	// 3) on set les headers appropries
-	// 
+	std::map<std::string, std::string>::const_iterator it = _headers.find("CONTENT-TYPE");
+	_current_body = _protocol + " " + std::to_string(success_code);
+	if (success_code == 201)
+		_current_body += "Created\r\n";
+	else
+		_current_body += "No Content\r\n";
+	if (success_code == 201) {
+		if (it == _headers.end())
+			_current_body = _current_body + "Content-Type: " + "Unknown\r\n";
+		else
+			_current_body = _current_body + "Content-Type: " + it->second + "\r\n";
+	}
+
+	// _current_body += "Content-Length: " + std::to_string(content_length) + "\r\n";
+	if (success_code == 201)
+		_current_body +="Location: " + _path + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+	_current_body += "\r\n";// On decide arbitrairement de ne pas renvoyer de body ici.
 }
 
 void		Response::_delete_() {
@@ -282,8 +318,73 @@ void		Response::_delete_() {
 		setCode(500);
 	
 	setCurrentBody("");
+
+	if (getCode())
+		return _error_();
+	
 	// 3) on set les headers appropries
 
+	int success_code = 204; 
+	setCurrentBody(""); 
+	_current_body = _protocol + " " + std::to_string(success_code) + " No Content\r\n";
+	_current_body += "\r\n";
+}
+
+#include <string>
+#include <map>
+
+
+static const std::map<std::string, std::string>& get_mime_map() {
+	static std::map<std::string, std::string> mime_types;
+	
+	// Initialisation conditionnelle (C++98 safety check pour static init)
+	if (mime_types.empty()) {
+		// Encodage de texte et HTML
+		mime_types[".html"] = "text/html";
+		mime_types[".htm"] = "text/html";
+		mime_types[".css"] = "text/css";
+		mime_types[".js"] = "application/javascript";
+		mime_types[".txt"] = "text/plain";
+		
+		// Images
+		mime_types[".jpg"] = "image/jpeg";
+		mime_types[".jpeg"] = "image/jpeg";
+		mime_types[".png"] = "image/png";
+		mime_types[".gif"] = "image/gif";
+		mime_types[".ico"] = "image/x-icon";
+		
+		// Documents et autres
+		mime_types[".pdf"] = "application/pdf";
+		mime_types[".xml"] = "application/xml";
+		mime_types[".json"] = "application/json";
+	}
+	return mime_types;
+}
+
+static std::string get_mime_type_from_path(const std::string& path) {
+	const std::map<std::string, std::string>& mime_map = get_mime_map();
+	
+	// 1. Trouver le dernier point ('.')
+	size_t pos = path.find_last_of('.');
+	
+	// Si pas de point ou si le point est le dernier caractère, utiliser le type par défaut
+	if (pos == std::string::npos || pos == path.length() - 1) {
+		return "application/octet-stream";
+	}
+	
+	// 2. Extraire l'extension (y compris le point)
+	// Nous présumons ici que cette extension est déjà en minuscules.
+	std::string ext = path.substr(pos);
+	
+	// 3. Rechercher dans la map
+	std::map<std::string, std::string>::const_iterator it = mime_map.find(ext);
+	
+	if (it != mime_map.end()) {
+		return it->second;
+	}
+	
+	// 4. Renvoyer le type par défaut pour les fichiers inconnus
+	return "application/octet-stream";
 }
 
 void	Response::_get_() {
@@ -295,5 +396,39 @@ void	Response::_get_() {
     _current_body.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
     if (!ifs.eof() && ifs.fail())
 		return setCode(500);
-	// on set les headers appropries
+	
+	// Fermer le descripteur de fichier dès que la lecture est complète.
+	ifs.close();
+	
+	// Vérification finale des erreurs avant de construire la réponse
+	if (getCode())
+		return _error_();
+	
+	// --- Construction de la réponse HTTP/1.1 (200 OK) ---
+	
+	// 2. Sauvegarder le contenu du fichier et sa taille
+	std::string response_body = _current_body; // Contient les données du fichier
+	size_t content_length = response_body.length(); // Taille exacte du corps de la réponse
+	
+	// 3. Vider _current_body pour y CONSTRUIRE les en-têtes de la réponse
+	_current_body.clear(); 
+	
+	// 4. Ligne de statut (200 OK)
+	_current_body += _protocol + " 200 OK\r\n";
+	
+	// 5. En-tête Content-Type (Détermination dynamique)
+	std::string content_type = get_mime_type_from_path(_path); 
+	_current_body += "Content-Type: " + content_type + "\r\n";
+	
+	// 6. En-tête Content-Length (Obligatoire pour les connexions non chunked)
+	_current_body += "Content-Length: " + std::to_string(content_length) + "\r\n";
+
+	// 7. En-tête Connection (Fermeture de la connexion après l'envoi)
+	_current_body += "Connection: close\r\n"; 
+
+	// 8. Séparateur double \r\n (Fin des en-têtes)
+	_current_body += "\r\n";
+	
+	// 9. Corps de la Réponse (Le contenu du fichier)
+	_current_body += response_body;
 }
