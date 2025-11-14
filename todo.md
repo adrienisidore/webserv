@@ -1,18 +1,20 @@
 
 PARSING (GASTON):
 
-    [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier
+    [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier (est ce qu'on ignore ou pas)
 
 RESPONSE (ADRI):
 
-    [ ] mettre les headers appropries dans toutes les methodes response et error
+    [x] mettre les headers appropries dans toutes les methodes response et error
     [ ] redirection directive -> vers une noubvelle location
-    [ ] send response
+    [x] send response
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [ ] bien verifier le status ERROR
-    [ ] gerer directive keep-alive
+    [x] bien verifier le status ERROR
+    [x] gerer directive keep-alive
+    [ ] CGI verifier EOF et gerer le POST 
+
     [ ] TIMEOUT pour response et CGI
     [ ] Segfault avec ctrlC (connection close)
 

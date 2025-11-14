@@ -274,17 +274,11 @@ void	ServerMonitor::monitor_connections() {
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			it = close_tcp_connection(it);
-			// SEND ERROR RESPONSE HERE
 			continue;
 		}
 		
 		TCPConnection	*connection = _map_connections[it->fd];
 
-        if (connection->get_status() == ERROR ||
-            connection->get_status() == CLIENT_DISCONNECTED) {
-            it = close_tcp_connection(it);
-            continue;
-        }
 		if (it->revents & POLLIN) {
 			
 			//La requete precedente a etre geree
@@ -302,7 +296,7 @@ void	ServerMonitor::monitor_connections() {
 				connection->read_body();
 
 			// La requet est syntaxiquement complete
-			if (connection->get_status() == READ_COMPLETE || connection->get_status() == ERROR) {
+			if (connection->get_status() == READ_COMPLETE) {
 				connection->execute_method();
 				it->events = POLLOUT;
 				// on ERROR -> keep in head that connection should be CLOSED
@@ -314,11 +308,12 @@ void	ServerMonitor::monitor_connections() {
 		if (it->revents & POLLOUT) {
 			if (connection->get_status() == READY_TO_SEND) {
 				
-				//connection->send_response();
+				send(it->fd, connection->getResponse().getCurrentBody().c_str(), connection->getResponse().getCurrentBody().size(), 0);
+
 				connection->end_transfer();
 				it->events = POLLIN;
 
-				if (connection->getResponse().getCode())
+				if (!connection->getResponse().keep_alive())
 					it = close_tcp_connection(it);
 			}
 			else
@@ -353,7 +348,6 @@ void	ServerMonitor::monitor_cgis() {
 			}
 
 			else if (bytes_received < 0) {
-				cgi._connection->setStatus(ERROR);
 				cgi._connection->set_error(500);
 				// mettre a POLLIN, etc... bonne idee ?
 				it = close_cgi_socket(it);

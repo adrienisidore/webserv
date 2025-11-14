@@ -16,6 +16,7 @@ class Response : public HTTPcontent {
 		void			_error_();
 
 		void			copyFrom(HTTPcontent& other);
+		bool			keep_alive() const;
 
 		CGI 			_cgi;
 		bool 			_autoindex;

@@ -82,7 +82,7 @@ void	TCPConnection::read_header() {
 
 	use_recv();
 
-	if (_status == CLIENT_DISCONNECTED || _status == ERROR)
+	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
         return;
 	// APPEND TO REQUEST CURRENT HEADER
 	_request.append_to_header(_buff, _bytes_received);
@@ -99,9 +99,10 @@ void	TCPConnection::read_header() {
 		_request.parse_header();
 		
 		if (_request.getCode()) {
-			_status = ERROR;
+			_status = READ_COMPLETE;
 			return;
 		}
+
 		_request.setLocation(_config);
 		if (_request.getMethod() == "POST") {
 			_body_start_time = time(NULL);
@@ -121,6 +122,8 @@ void	TCPConnection::read_body() {
 	
 	use_recv();
 	
+	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
+        return;
 	// APPEND TO REQUEST CURRENT BODY
 
 	_request.append_to_body(_buff, BUFF_SIZE);		// THE READING
@@ -136,17 +139,11 @@ void	TCPConnection::read_body() {
 		if (header_end != std::string::npos) {
 
 			_request.unchunk_body();
-
-			if (_request.getCode()) {
-				_status = ERROR;
-				return;
-			}
-			else {
-				_status = READ_COMPLETE;
-				return;
-			}
+			_status = READ_COMPLETE;
+			return;
 		}
 	}
+
 	else if (getBodyProtocol() == CONTENT_LENGTH) {
 
 		int diff = _request.getCurrentBody().size() - _request.getContentLength();
@@ -167,8 +164,6 @@ void	TCPConnection::execute_method() {
 	int	poll_cgi;
 
 	_response.copyFrom(_request);
-
-	// Probleme : quelque soit la methode on execute le CGI de la meme maniere (mammouth)
 
 	poll_cgi = _response.fetch();// check compatibilite entre location config et request
 	if (poll_cgi) {
@@ -205,7 +200,7 @@ void	TCPConnection::execute_method() {
 
 void	TCPConnection::set_error(int error_code) {
 
-	_status = ERROR;
+	_status = READ_COMPLETE;
 	_request.setCode(error_code);
 	return;
 }
@@ -251,42 +246,6 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 
 	_request.setContentLength(length);
     return true;
-}
-
-//  send_response();
-void TCPConnection::send_response(void)
-{
-    struct stat fileStat;
-    if (stat("../ressources/ServerInterface.html", &fileStat) == -1) return;//Envoyer code d'erreur serveur
-    int fileSize = fileStat.st_size;
-
-    int fd = open("../ressources/ServerInterface.html", O_RDONLY);
-    if (fd == -1) return;//Il faudra envoyer le bon code d'erreur 4xx/5xx si problème
-
-    // Charger fichier
-    char *fileContent = new char[fileSize];
-    read(fd, fileContent, fileSize);
-    close(fd);
-
-    std::ostringstream string_fileSize;
-    string_fileSize << fileSize;
-    std::string header = 
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: " + string_fileSize.str() + "\r\n"
-        "Connection: keep-alive\r\n\r\n";
-
-    int responseSize = strlen(header.c_str()) + fileSize;//Fonction interdite
-    char *response = new char[responseSize];
-    memcpy(response, header.c_str(), strlen(header.c_str()));//Fonction interdite
-    memcpy(response + strlen(header.c_str()), fileContent, fileSize);//Fonction interdite
-
-    std::cout << "Server's response: " << response << std::endl;
-
-    send(_tcp_socket, response, responseSize, 0);
-
-    delete[] fileContent;
-    delete[] response;
 }
 
 void	TCPConnection::setStatus(int status) {_status = status;}

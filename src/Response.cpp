@@ -40,6 +40,17 @@ void		Response::checkAllowedMethods() {
 	*/
 }
 
+bool		Response::keep_alive() const {
+
+	std::map<std::string, std::string> headers = getHeaders();
+	std::map<std::string, std::string>::const_iterator connection_header = headers.find("CONNECTION");
+	if (connection_header != headers.end() && connection_header->second == "close")
+		return false;
+	else if (getCode())
+		return false;
+	return true;
+}
+
 std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
 	std::string	idx_path;
 
