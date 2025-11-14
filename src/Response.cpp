@@ -238,8 +238,7 @@ int	Response::fetch() {
 			return (0);
 		}
 	}
-	// Si non alors:
-		// je remplie le body avec la page statique de l'URL demandée et je renvoie 0
+
 	return 0;
 }
 
