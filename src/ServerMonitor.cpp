@@ -294,7 +294,6 @@ void	ServerMonitor::monitor_connections() {
 
 			if (connection->get_status() == READING_BODY)
 				connection->read_body();
-
 			// La requet est syntaxiquement complete
 			if (connection->get_status() == READ_COMPLETE) {
 				connection->execute_method();
@@ -302,8 +301,11 @@ void	ServerMonitor::monitor_connections() {
 				// on ERROR -> keep in head that connection should be CLOSED
 			}
 
-			else if (connection->get_status() == CLIENT_DISCONNECTED)
+			else if (connection->get_status() == CLIENT_DISCONNECTED) {
 				it = close_tcp_connection(it);
+				continue;
+			}
+
 		}
 		if (it->revents & POLLOUT) {
 			if (connection->get_status() == READY_TO_SEND) {
@@ -313,8 +315,10 @@ void	ServerMonitor::monitor_connections() {
 				connection->end_transfer();
 				it->events = POLLIN;
 
-				if (!connection->getResponse().keep_alive())
+				if (!connection->getResponse().keep_alive()) {
 					it = close_tcp_connection(it);
+					continue;
+				}
 			}
 			else
 				++it;

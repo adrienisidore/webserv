@@ -102,9 +102,9 @@ void	TCPConnection::read_header() {
 			_status = READ_COMPLETE;
 			return;
 		}
-
 		_request.setLocation(_config);
-		if (_request.getMethod() == "POST") {
+		
+		if (_request.getMethod() == "POST" && !_request.getCode()) {
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
 			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end));

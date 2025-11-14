@@ -14,12 +14,46 @@ void	HTTPcontent::reset(TCPConnection *connection) {
 	//a priori Locationconfig n'a pas besoin d'etre nettoye (a checker).
 }
 
-void	HTTPcontent::setLocation(const ServerConfig & servconfig) {
+void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
 
-	_config = servconfig.getLocations().at(_URI);
+    std::string best_match_path = "";
+    int max_length = -1; // Use -1 to ensure any match (even "/") is longer
 
+    typedef std::map<std::string, LocationConfig> LocationMap;
+    typedef LocationMap::const_iterator           LocationIterator;
+
+    const LocationMap& locations = servconfig.getLocations();
+
+    // 1. Iterate through all locations
+    for (LocationIterator it = locations.begin(); it != locations.end(); ++it) {
+        
+        const std::string& location_path = it->first;
+
+        if (_URI.rfind(location_path, 0) == 0) {	// rfind because we search backwards starting at position 0 (only 1 check)
+            
+            // It's a prefix match. Check if it's the longest one found so far.
+            int current_length = static_cast<int>(location_path.length());
+            if (current_length > max_length) {
+                max_length = current_length;
+                best_match_path = location_path;
+            }
+        }
+    }
+
+    // 2. After checking all locations, get the config for the best match
+	if (max_length == -1) {
+		return setCode(404);
+	}
+	
+	LocationIterator found = locations.find(best_match_path);
+	
+	if (found == locations.end()) {
+		return setCode(404);
+	}
+
+	// Success! Assign the configuration from the found iterator's value
+	_config = found->second;
 }
-
 // HTTPcontent	&HTTPcontent::operator=(const CGI &src) {
 // 	_code = src.getCode();
 // 	_config = src.getConfig();

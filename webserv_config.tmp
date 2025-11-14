@@ -2,9 +2,9 @@ root html;
 autoindex off;
 server
 listen 127.0.0.1:8080;
-root ./ressources/;
+root ./ressources;
 index index.html;
-location /images
+location /colorfull/
 autoindex on;
 cgi_handler .php /usr/bin/php-cgi;
 location /

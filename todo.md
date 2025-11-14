@@ -5,18 +5,17 @@ PARSING (GASTON):
 
 RESPONSE (ADRI):
 
-    [x] mettre les headers appropries dans toutes les methodes response et error
-    [ ] redirection directive -> vers une noubvelle location
-    [x] send response
+	[ ] finir buildEnv et finir de launchexecve (pour le cas de POST)
+	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
+    [ ] checkAllowedMethods()
+    
+    [ ] autoindex on -> list directories
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [x] bien verifier le status ERROR
-    [x] gerer directive keep-alive
+    [ ] fermer la connection quand ferme browser
     [ ] CGI verifier EOF et gerer le POST 
-
     [ ] TIMEOUT pour response et CGI
-    [ ] Segfault avec ctrlC (connection close)
 
 
 
@@ -33,3 +32,5 @@ TESTS:
     [ ] siege
     [ ] fichiers lourds
     [ ] CGI boucle infinie (non bloquant pour autres clienbts + )
+    [x] Se connecter avec localhost ne fonctionne pas car webserv ne reconnait que 127.0.0.1 (fichier config)
+

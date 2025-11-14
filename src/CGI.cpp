@@ -26,6 +26,7 @@ void	CGI::copyFrom(HTTPcontent& other) {
 
 }
 
+// A FINIR
 void CGI::buildEnv() {
 
 	//Securite (surement useless)
@@ -33,16 +34,12 @@ void CGI::buildEnv() {
     _envp.clear();
 	//Voir tableau : https://www.alimnaqvi.com/blog/webserv car certains elements sont obligatoires.
 
-	//Doit-on egalement ajouter l'environnement global ?
+	//Doit-on egalement ajouter l'environnement global ? Non je crois pas
 
-	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _)
+	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _) A FAIRE
 	std::map<std::string, std::string>	cgi_headers;
-	// cgi_headers = headers;
-	cgi_headers["BONJOUR-CAVA"] = "OK";
-	cgi_headers["HELLO-WORLD"] = "YES";
-
+	cgi_headers = _headers;
 	std::map<std::string, std::string> result;
-
 	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin();
 		it != cgi_headers.end(); ++it) {
 		std::string newKey = "HTTP_";
@@ -51,7 +48,6 @@ void CGI::buildEnv() {
 			newKey += (*c == '-') ? '_' : *c;
 		result[newKey] = it->second;
 	}
-
 	cgi_headers = result;
 
 	// for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin(); it != cgi_headers.end(); ++it)
@@ -66,15 +62,24 @@ void CGI::buildEnv() {
 
 	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	_env_strings.push_back("REQUEST_METHOD=POST");//attribut _methods de HTTPcontent
-	_env_strings.push_back("REQUEST_URI=URI");//attribut _URI de HTTPcontent
+	std::string request_method = "REQUEST_METHOD=" + _method;
+	_env_strings.push_back(request_method.c_str());//attribut _methods de HTTPcontent
+	std::string request_uri = "REQUEST_URI=" + _URI;
+	_env_strings.push_back(request_uri.c_str());//attribut _URI de HTTPcontent
+
 	_env_strings.push_back("SCRIPT_FILENAME/home/.../test.cgi");//Chemin absolu complet vers l'executable cgi
 	_env_strings.push_back("SCRIPT_NAME=./test.cgi");//Chemin relatif vers le CGI
-	_env_strings.push_back("QUERY_STRING=TEST1TEST2TEST3");//la partie apres le "?" de l'URI
-	_env_strings.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");//le header content-type fournit des la request
+
+	// _env_strings.push_back("QUERY_STRING=TEST1TEST2TEST3");//la partie apres le "?" de l'URI
+
+	// N'est pas forcement fourni si la request est chunked
 	_env_strings.push_back("CONTENT_LENGTH=11");//taille du body de la REQUEST (total sieze of unchunked_body si le body etait chunked)
+
+	// A Aller chercher dans le fichier config
 	_env_strings.push_back("SERVER_NAME=localhost");//le hostname du serveur (LocationConfig) ou le
 	_env_strings.push_back("SERVER_PORT=8080");
+
+
 	_env_strings.push_back("REMOTE_ADDR=127.0.0.1");//L'adresse IP du client
 
     for (size_t i = 0; i < _env_strings.size(); ++i)
