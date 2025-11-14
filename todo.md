@@ -5,10 +5,10 @@ PARSING (GASTON):
 
 RESPONSE (ADRI):
 
-    [ ] coder _error_
+	[x] coder _error_ : 400, 403, 404, 405, 409, 411, 413, 414, 500, 501
 	[ ] un CGI peut etre enclenche depuis n'importe quel type de requete ?
-    [ ] redirection directive -> vers une noubvelle location
-    [ ] send response
+	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
+	[ ] send response (dans TCPConnection)
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 

@@ -243,12 +243,72 @@ int	Response::fetch() {
 	return 0;
 }
 
-void		Response::_error_() {
-	setCurrentBody("");
 
+static std::string loadFile(const std::string &path) {
+	std::ifstream f(path.c_str());
+	if (!f.is_open())
+		return "<html><body>File error</body></html>";
+	std::string content, line;
+	while (std::getline(f, line))
+		content += line + "\n";
+	return content;
 }
 
-// Gerer les redirections redirection directive -> vers une nouvelle location
+void Response::_error_() {
+	// Pages HTML des erreurs (chargées une seule fois)
+	static std::map<int, std::string> pages;
+	if (pages.empty()) {
+		pages[400] = loadFile("errors/400.html");
+		pages[403] = loadFile("errors/403.html");
+		pages[404] = loadFile("errors/404.html");
+		pages[405] = loadFile("errors/405.html");
+		pages[409] = loadFile("errors/409.html");
+		pages[411] = loadFile("errors/411.html");
+		pages[413] = loadFile("errors/413.html");
+		pages[414] = loadFile("errors/414.html");
+		pages[500] = loadFile("errors/500.html");
+		pages[501] = loadFile("errors/501.html");
+	}
+
+	// Reason phrases (HTTP/1.1)
+	static std::map<int, std::string> reason;
+	if (reason.empty()) {
+		reason[400] = "Bad Request";
+		reason[403] = "Forbidden";
+		reason[404] = "Not Found";
+		reason[405] = "Method Not Allowed";
+		reason[409] = "Conflict";
+		reason[411] = "Length Required";
+		reason[413] = "Payload Too Large";
+		reason[414] = "URI Too Long";
+		reason[500] = "Internal Server Error";
+		reason[501] = "Not Implemented";
+	}
+
+	// Sélection du corps
+	std::map<int, std::string>::iterator it = pages.find(_code);
+	const std::string &body = (it != pages.end()) ? it->second : pages[500];
+
+	// Reason phrase
+	std::string rp = "Error";
+	if (reason.find(_code) != reason.end())
+		rp = reason[_code];
+
+	std::ostringstream out;
+	out << "HTTP/1.1 " << _code << " " << rp << "\r\n"
+		<< "Content-Type: text/html\r\n"
+		<< "Content-Length: " << body.size() << "\r\n"
+		<< "Connection: close\r\n"
+		<< "\r\n"
+		<< body;
+
+	_current_body = out.str();
+}
+
+
+
+
+// Gerer les redirections redirection directive -> vers une nouvelle location, ATTENTION AUX REDIRECTIONS INFINIES
 
 
 // post le _body de _response, le vide et prerempli le nouveau body pour l'envoyer au client
@@ -284,10 +344,10 @@ void		Response::_post_() {
 	setCurrentBody("");
 	// 3) on set les headers appropries
 	std::map<std::string, std::string>::const_iterator it = _headers.find("CONTENT-TYPE");
-	_current_body = _protocol + " " + std::to_string(success_code);
+	_current_body = _protocol + " " + std::to_string(success_code) + " ";
 	if (success_code == 201)
 		_current_body += "Created\r\n";
-	else
+	else if (success_code == 204)
 		_current_body += "No Content\r\n";
 	if (success_code == 201) {
 		if (it == _headers.end())
@@ -424,7 +484,9 @@ void	Response::_get_() {
 	_current_body += "Content-Length: " + std::to_string(content_length) + "\r\n";
 
 	// 7. En-tête Connection (Fermeture de la connexion après l'envoi)
-	_current_body += "Connection: close\r\n"; 
+	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
+	if (it->second == "close")
+		_current_body += "Connection: close\r\n"; 
 
 	// 8. Séparateur double \r\n (Fin des en-têtes)
 	_current_body += "\r\n";
