@@ -10,6 +10,7 @@ class Response : public HTTPcontent {
         virtual ~Response();
 
 		int 			fetch();
+		void			execute();
 		void			_post_();
 		void			_delete_();
 		void			_get_();

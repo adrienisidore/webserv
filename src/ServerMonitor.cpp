@@ -153,15 +153,6 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 
 
-	sockaddr_in	param;
-	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
-	socklen_t	tcp_size = sizeof(param);
-
-	int	tcp_socket = accept(socket, (sockaddr *)&param, &tcp_size);
-
-	if (tcp_socket == -1)
-		throw SocketException(strerror(errno));
-
 	_pollfds.push_back(pollfd_wrapper(socket));
 	_map_cgis.insert(std::pair<int, CGI>(socket, cgi));  
 
@@ -358,15 +349,35 @@ void	ServerMonitor::monitor_cgis() {
 
 	while (it != _pollfds.end() && _is_running) {
 
+        if (_map_cgis.find(it->fd) == _map_cgis.end()) {
+            ++it;
+            continue;
+        }
+
 		CGI	cgi = _map_cgis[it->fd];
 		// check for POLLERR
 		if (it->revents & POLLIN) {
 
 			memset(buff, 0, BUFF_SIZE);
 			bytes_received = recv(it->fd, buff, BUFF_SIZE, 0);
-			cgi.append_to_body(buff, BUFF_SIZE);
+			if (bytes_received > 0) {
+				cgi.append_to_body(buff, BUFF_SIZE);
+				++it;
+			}
 
-			if (bytes_received == 0) {	// EOF
+			else if (bytes_received == 0) {	// EOF
+				int	status;
+				waitpid(cgi._pid, &status, 0); // or NOHANG ?
+				
+				if (WIFEXITED(status)) {
+					if (WEXITSTATUS(status) != 0) {
+						cgi._connection->set_error(500);
+						it = close_cgi_socket(it);
+						continue;
+					}
+				}
+				close(cgi._pid);
+
 				cgi._connection->setStatus(READY_TO_SEND);
 				cgi._connection->_response.copyFrom(cgi);
 				it = close_cgi_socket(it);
@@ -378,6 +389,8 @@ void	ServerMonitor::monitor_cgis() {
 				it = close_cgi_socket(it);
 			}
 		}
+		else
+			++it;
 	}
 }
 

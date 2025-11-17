@@ -9,6 +9,7 @@ class CGI : public HTTPcontent {
 	public:
 		CGI();
 		virtual ~CGI();
+		void	execute_cgi();
 		void	launchExecve();
 
 		pid_t	_pid;

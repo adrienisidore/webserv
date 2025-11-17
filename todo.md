@@ -12,10 +12,11 @@ RESPONSE (ADRI):
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
+    [x] CGI verifier EOF et gerer le POST -> Inpipe
     [x] autoindex on -> list directories
-    [ ] TIMEOUT 
+    [ ] debug monitoring cgi, connection_end()...
+    [ ] implement TIMEOUT directives 
     [ ] TIMEOUT pour response et CGI
-    [ ] CGI verifier EOF et gerer le POST 
 
 
 

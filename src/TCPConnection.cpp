@@ -171,31 +171,23 @@ void	TCPConnection::execute_method() {
 	if (poll_cgi) {
 
 		_status = NOT_READY_TO_SEND;
-		ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
 
 		try {
-			_response._cgi.launchExecve();
+			_response._cgi.execute_cgi();
+			ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
 			return;
 		} 
 		catch (std::exception &er) {
 
 			ServerMonitor::_instance->close_cgi_fd(poll_cgi);
 			_response.setCode(500);
+			_response._error_();
+			_status = READY_TO_SEND;
 		}
 	}
-
-	// POST ou DELETE : pour POST et DELETE on effectue une action
-	if (_response.getMethod() == "POST" && !_response.getCode())
-		_response._post_();
-	else if (_response.getMethod() == "DELETE" && !_response.getCode())
-		_response._delete_();
-	// ICI : toutes les actions ont ete executes, POST et DELETE on preremplie le _body
-	// il reste plus qu'a GET ou ERROR et ajouter la startLine (buildResponse : HTTP/1.1 200 ok)
-	else if (_response.getMethod() == "GET" && !_response.getCode())
-		_response._get_();
-	if (_response.getCode())
-		_response._error_();
 	
+	// Not a cgi -> execute right now 
+	_response.execute();
 	_status = READY_TO_SEND;
 	return;
 }
@@ -226,7 +218,7 @@ std::string	get_time_stamp() {
 bool TCPConnection::is_valid_length(const std::string& content_length) {
 
 	if (content_length.empty())
-		return false;
+		return false; //would in theory a get cgi be able to upload a file 
 	
 	for (size_t i = 0; i < content_length.length(); i++) {
 		if (!std::isdigit(static_cast<unsigned char>(content_length[i])))

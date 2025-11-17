@@ -23,6 +23,7 @@ void	CGI::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
+		_path = other.getPath();
 
 }
 
@@ -93,12 +94,14 @@ void CGI::buildArgv() {
 	_argv_strings.clear();
     _argv.clear();
 
-    _argv_strings.push_back("./test2.cgi"); // Chemin vers exécutable
+	std::string	handler_directive = _config.getDirective("cgi_handler");
+	_argv_strings.push_back(handler_directive.substr(handler_directive.find(' ') + 1));
+    _argv_strings.push_back(_path); // Chemin vers exécutable
 
 	//Si j'ai d'autres arguments a donner au programme c'est ICI
 	// *** ICI ***
-    _argv_strings.push_back("param1");
-    _argv_strings.push_back("param2");
+    // _argv_strings.push_back("param1");
+    // _argv_strings.push_back("param2");
 
     for (size_t i = 0; i < _argv_strings.size(); ++i)
         _argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
@@ -128,7 +131,7 @@ Dans Parent:
 	- ecrit le body dans stdin
 	- ferme l'ecriture pour signaler EOF
 */
-void	CGI::launchExecve() {
+void	CGI::execute_cgi() {
 
     _pid = fork();
     if (_pid < 0) {
@@ -166,30 +169,22 @@ void	CGI::launchExecve() {
 		fcntl(_inpipe[1], F_SETFL, flags | O_NONBLOCK);
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
-		/*
-        // Simule un corps POST
-        const char *post_data = "name=adrien";//redondant avec _body mais necessaire car STDIN_FILENO est en lecture seule,
-		//si je veux ecrire _body dans dans STDIN depuis l'enfant c'est galere
-		// Parent : ecrit _body dans _inpipe
-        write(_inpipe[1], post_data, 11);
+
+
+		if (getMethod() == "POST" && !getCode())
+			write(_inpipe[1], _current_body.c_str(), _current_body.size());
+
         close(_inpipe[1]);
+        //close(_outpipe[0]);
 
-        // Lit la sortie du CGI (_outpipe) : ce qu'on envoie au client ==> le body
-
-		//////////////////////////////////////////////////////////////////////////////
-		// Il faut faire un appel a read a chaque fois qu'on passe sur poll()
-        char buffer[1024];
-        ssize_t n;
-        while ((n = read(_outpipe[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[n] = '\0';
-            std::cout << buffer;
-        }
-        close(_outpipe[0]);
-		waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
-		//////////////////////////////////////////////////////////////////////////////
-   
-		//Useless
-        std::cout << "\n[CGI terminé avec code " << WEXITSTATUS(_status) << "]\n";
-		*/
-    }
+		//waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
+		// -> NOT HERE
+		///
+		// if (WIFEXITED(_status) && WEXITSTATUS(_status) == 0)
+		// 	std::cout << "[CGI success]\n";
+		// else {
+		// 	std::cout << "[CGI failed with code " << WEXITSTATUS(_status) << "]\n";
+		// 	setCode(500);
+		// }
+	}
 }

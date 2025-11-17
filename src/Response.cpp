@@ -229,15 +229,6 @@ int	Response::fetch() {
 	if (getCode())
 		return 0;
 	checkAllowedMethods();
-
-	// Host doit etre formalise en mode "IP:Port" sinon erreur (peut etre deja present ailleurs)
-	/*
-	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
-	if (it->second != _config.getDirective("listen")) {
-		setCode(400);
-		return (0);
-	}
-	*/
 		
 	buildPath();
 
@@ -262,6 +253,23 @@ int	Response::fetch() {
 	return 0;
 }
 
+void	Response::execute() {
+
+	// POST ou DELETE : pour POST et DELETE on effectue une action
+	if (getMethod() == "POST" && !getCode())
+		_post_();
+
+	else if (getMethod() == "DELETE" && !getCode())
+		_delete_();
+
+	// ICI : toutes les actions ont ete executes, POST et DELETE on preremplie le _body
+	// il reste plus qu'a GET ou ERROR et ajouter la startLine (buildResponse : HTTP/1.1 200 ok)
+	else if (getMethod() == "GET" && !getCode())
+		_get_();
+
+	if (getCode())
+		_error_();
+} 
 
 static std::string loadFile(const std::string &path) {
 	std::ifstream f(path.c_str());
