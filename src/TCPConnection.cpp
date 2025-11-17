@@ -58,8 +58,10 @@ void TCPConnection::use_recv() {
 		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
 		return;
 	}
-	else if (_bytes_received < 0)
+	else if (_bytes_received < 0) {
+		_status = CLIENT_DISCONNECTED;
 		return set_error(500);
+	}
 }
 
 //On reutilise les attributs _buff, _bytes_received ...

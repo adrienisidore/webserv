@@ -236,6 +236,14 @@ void	ServerMonitor::run() {
 			else
 				throw SocketException(strerror(errno));
 		}
+		
+		// ADD THIS DEBUG:
+		std::cout << "poll() returned!" << std::endl;
+		for (size_t i = 0; i < _pollfds.size(); ++i) {
+			if (_pollfds[i].revents != 0) {
+				std::cout << "fd " << _pollfds[i].fd << " revents: " << _pollfds[i].revents << std::endl;
+			}
+		}
 
 		// std::cout << "before monitoring listening" << std::endl;
 		monitor_listening_sockets();
@@ -264,15 +272,22 @@ void	ServerMonitor::monitor_connections() {
 	// ecouter les sockets clients
 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
+	std::cout << "=== MONITOR CONNECTIONS START ===" << std::endl;
+    std::cout << "Total pollfds: " << _pollfds.size() << std::endl;
+    std::cout << "Server configs: " << _map_server_configs.size() << std::endl;
+    std::cout << "TCP connections: " << _map_connections.size() << std::endl;
 	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 		++it;
 	}
 
 	while (it != connected_socket_end() && _is_running) {	// IT can be last_socket
+		std::cout << "connection check - checking fd: " << it->fd 
+              << " revents: " << it->revents << std::endl;  // ← ADD THIS
 
-		std::cout << "connection check" << std::endl;
+		bool	should_close = false;
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
+			std::cout << "DETECTED HANGUP/ERROR" << std::endl;
 			it = close_tcp_connection(it);
 			continue;
 		}
@@ -280,7 +295,7 @@ void	ServerMonitor::monitor_connections() {
 		TCPConnection	*connection = _map_connections[it->fd];
 
 		if (it->revents & POLLIN) {
-			
+			std::cout << "DETECTED POLLIN" << std::endl;
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
 				connection->initialize_transfer();
@@ -295,34 +310,42 @@ void	ServerMonitor::monitor_connections() {
 			if (connection->get_status() == READING_BODY)
 				connection->read_body();
 			// La requet est syntaxiquement complete
-			if (connection->get_status() == READ_COMPLETE) {
+
+			if (connection->get_status() == CLIENT_DISCONNECTED)
+				should_close = true;
+
+			else if (connection->get_status() == READ_COMPLETE) {
 				connection->execute_method();
 				it->events = POLLOUT;
 				// on ERROR -> keep in head that connection should be CLOSED
 			}
 
-			else if (connection->get_status() == CLIENT_DISCONNECTED) {
-				it = close_tcp_connection(it);
-				continue;
-			}
-
 		}
-		if (it->revents & POLLOUT) {
+		else if (it->revents & POLLOUT) {
+			std::cout << "DETECTED POLLOUT" << std::endl;
 			if (connection->get_status() == READY_TO_SEND) {
 				
-				send(it->fd, connection->getResponse().getCurrentBody().c_str(), connection->getResponse().getCurrentBody().size(), 0);
+				ssize_t sent;
+				sent = send(it->fd, connection->getResponse().getCurrentBody().c_str(), connection->getResponse().getCurrentBody().size(), 0);
+                if (sent < 0) {
+                    std::cout << "Send failed: " << strerror(errno) << std::endl;
+                    should_close = true;
+                } else {
 
-				connection->end_transfer();
-				it->events = POLLIN;
+					connection->end_transfer();
+					it->events = POLLIN;
 
-				if (!connection->getResponse().keep_alive()) {
-					it = close_tcp_connection(it);
-					continue;
-				}
+					if (!connection->getResponse().keep_alive())
+						should_close = true;
+					}
 			}
-			else
-				++it;
+			else {
+				std::cout << "WARNING: POLLOUT but not READY_TO_SEND, resetting to POLLIN" << std::endl;
+				it->events = POLLIN;
+			}
 		}
+		if (should_close)
+			it = close_tcp_connection(it);
 		else
 			++it;
 	}	
@@ -360,14 +383,21 @@ void	ServerMonitor::monitor_cgis() {
 	}
 }
 
-std::vector<pollfd>::iterator	ServerMonitor::connected_socket_end() {
-	std::vector<pollfd>::iterator	it = _pollfds.begin();
-	for (size_t i = 0; i < _map_connections.size() + _map_server_configs.size(); ++i) {
-		++it;
-	}
-	return it;
+std::vector<pollfd>::iterator ServerMonitor::connected_socket_end() {
+    std::vector<pollfd>::iterator it = _pollfds.begin();
+    
+    // Skip listening sockets
+    for (size_t i = 0; i < _map_server_configs.size(); ++i) {
+        ++it;
+    }
+    
+    // Skip TCP connection sockets
+    for (size_t i = 0; i < _map_connections.size(); ++i) {
+        ++it;
+    }
+    
+    return it;  // ← Now points to first CGI pipe (or end if no CGIs)
 }
-
 
 int		ServerMonitor::calculate_next_timeout() {
 
@@ -419,9 +449,11 @@ void	ServerMonitor::check_timeouts() {
 	time_t	now = time(NULL);
 	int		timeout = 0;
 
-	std::vector<pollfd>::iterator	it = _pollfds.begin();
-	++it;
-	while (it != _pollfds.end()) {
+    std::vector<pollfd>::iterator it = _pollfds.begin();
+    for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
+        ++it;
+    }
+	while (it != connected_socket_end()) {
 		TCPConnection	*conn = _map_connections[it->fd];
 
 		timeout = 0;

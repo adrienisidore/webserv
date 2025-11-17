@@ -92,7 +92,6 @@ void	Request::setStartLine() {
 	//Remplissage des attributs
 	_method = start_line.substr(0, first_space);
 	_URI = start_line.substr(first_space + 1, second_space - first_space - 1);
-
 	//Verification de la methode et du protocole : verifier logique (adri) du empty
 	if (_method.empty() || _protocol != start_line.substr(second_space + 1)) return (setCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)

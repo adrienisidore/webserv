@@ -88,7 +88,7 @@ void			Response::buildPath() {
 	
 	
 	_path = root + _URI;
-
+	std::cout << "path is : " << _path << std::endl;
 	// -----------------Differencie les types de requetes------------------------
 	if (_URI[_URI.size() - 1] == '/') {
 		// Si URI == directory
@@ -205,9 +205,11 @@ bool	Response::is_cgi() {
         extension.find('.', 1) == std::string::npos;
 		// check que le fichier indique dans la location finit bien par la meme extension
 		ok = ok && extension == _path.substr(_path.rfind('.'));
+		if (!ok)
+			return false;
 		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
 		checkPermissions(s_.substr(pos + 1));
-		return ok;
+		return true;
 	}
 }
 
@@ -381,9 +383,9 @@ void		Response::_delete_() {
     const int e = errno;
     if (e == ENOENT)
 		setCode(404);	// n'existe pas
-    if (e == EACCES || e == EPERM)
+	else if (e == EACCES || e == EPERM)
 		setCode(403); // droits insuffisants
-    if (e == ENOTEMPTY || e == EEXIST) 
+	else if (e == ENOTEMPTY || e == EEXIST) 
 		setCode(409); // dossier non vide
 	else
 		setCode(500);

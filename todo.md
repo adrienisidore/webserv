@@ -13,7 +13,8 @@ RESPONSE (ADRI):
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [ ] fermer la connection quand ferme browser
+    [x] fermer la connection quand ferme browser -> firefox forces keep-alive on tabs
+    [ ] nettoyer tout le caca que j'ai fait 
     [ ] CGI verifier EOF et gerer le POST 
     [ ] TIMEOUT pour response et CGI
 

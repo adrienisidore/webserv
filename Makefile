@@ -12,10 +12,14 @@
 
 NAME = webserv
 
-FLAGS = -Wall -Wextra -Werror -g -std=c++98 -fstandalone-debug
+FLAGS = -Wall -Wextra -Werror -g -std=c++98
+#-fstandalone-debug
 
+# For schoool
+#INCLUDES = -I./includes/
+# For me
+INCLUDES = -I./includes/ -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11
 
-INCLUDES = -I./includes/
 
 SRC = src/main.cpp \
 	  src/ConfigParser.cpp \
