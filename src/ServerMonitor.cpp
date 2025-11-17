@@ -237,8 +237,6 @@ void	ServerMonitor::run() {
 				throw SocketException(strerror(errno));
 		}
 		
-		// ADD THIS DEBUG:
-		std::cout << "poll() returned!" << std::endl;
 		for (size_t i = 0; i < _pollfds.size(); ++i) {
 			if (_pollfds[i].revents != 0) {
 				std::cout << "fd " << _pollfds[i].fd << " revents: " << _pollfds[i].revents << std::endl;
@@ -272,10 +270,10 @@ void	ServerMonitor::monitor_connections() {
 	// ecouter les sockets clients
 
 	std::vector<pollfd>::iterator	it = _pollfds.begin();
-	std::cout << "=== MONITOR CONNECTIONS START ===" << std::endl;
-    std::cout << "Total pollfds: " << _pollfds.size() << std::endl;
-    std::cout << "Server configs: " << _map_server_configs.size() << std::endl;
-    std::cout << "TCP connections: " << _map_connections.size() << std::endl;
+	// std::cout << "=== MONITOR CONNECTIONS START ===" << std::endl;
+	//    std::cout << "Total pollfds: " << _pollfds.size() << std::endl;
+	//    std::cout << "Server configs: " << _map_server_configs.size() << std::endl;
+	//    std::cout << "TCP connections: " << _map_connections.size() << std::endl;
 	for (size_t i = 0; i < _global_config.getServers().size(); ++i) {
 		++it;
 	}

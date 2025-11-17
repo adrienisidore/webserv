@@ -106,8 +106,12 @@ void			Response::buildPath() {
 			indexes = split(index, ' ');
 			index = try_multiple_indexes(indexes);
 			
-			if (index.empty())
-				return setCode(404);
+			if (index.empty()) {
+				if (_method == "GET" && _config.getDirective("autoindex") == "on")
+					_autoindex = true;
+				else
+					return setCode(403);
+			}
 			else
 				_path += index;
 			
@@ -176,7 +180,9 @@ void	Response::checkPermissions(std::string path) {
 	//  - Pour GET/HEAD → droit de lecture sur la ressource
 	//  - Pour PUT/POST → droit d’écriture sur la ressource ou le répertoire parent
 	//  - Pour DELETE → droit d’écriture sur le répertoire parent
-	if (S_ISDIR(path_properties.st_mode))
+	if (_autoindex && !S_ISDIR(path_properties.st_mode))
+		return setCode(404);
+	if (!_autoindex && S_ISDIR(path_properties.st_mode))
 		return setCode(404);
     if ((_method == "GET" || _method == "HEAD") && access(path.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
 	else if (_method == "PUT" || _method == "POST") {
@@ -225,11 +231,13 @@ int	Response::fetch() {
 	checkAllowedMethods();
 
 	// Host doit etre formalise en mode "IP:Port" sinon erreur (peut etre deja present ailleurs)
+	/*
 	std::map<std::string, std::string>::const_iterator it = _headers.find("HOST");
 	if (it->second != _config.getDirective("listen")) {
 		setCode(400);
 		return (0);
 	}
+	*/
 		
 	buildPath();
 
@@ -383,9 +391,9 @@ void		Response::_delete_() {
     const int e = errno;
     if (e == ENOENT)
 		setCode(404);	// n'existe pas
-	else if (e == EACCES || e == EPERM)
+	if (e == EACCES || e == EPERM)
 		setCode(403); // droits insuffisants
-	else if (e == ENOTEMPTY || e == EEXIST) 
+	if (e == ENOTEMPTY || e == EEXIST) 
 		setCode(409); // dossier non vide
 	else
 		setCode(500);
@@ -464,26 +472,33 @@ static std::string get_mime_type_from_path(const std::string& path) {
 
 void	Response::_get_() {
 	
-	std::ifstream ifs(_path.c_str(), std::ios::in);
-    
-	if (!ifs)
-		return (setCode(404));
-    _current_body.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-    if (!ifs.eof() && ifs.fail())
-		return setCode(500);
-	
-	// Fermer le descripteur de fichier dès que la lecture est complète.
-	ifs.close();
-	
-	// Vérification finale des erreurs avant de construire la réponse
+	std::string body;
+
+	if (_autoindex)
+		body = get_autoindex();
+	else {
+		std::ifstream ifs(_path.c_str(), std::ios::in);
+		
+		if (!ifs)
+			return (setCode(404));
+		body.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+		if (!ifs.eof() && ifs.fail())
+			return setCode(500);
+		
+		ifs.close();
+	}
 	if (getCode())
 		return _error_();
-	
-	// --- Construction de la réponse HTTP/1.1 (200 OK) ---
-	
+
+	build_valid_response_get(body);
+}
+
+// --- Construction de la réponse HTTP/1.1 (200 OK) ---
+void	Response::build_valid_response_get(std::string body) {
+
 	// 2. Sauvegarder le contenu du fichier et sa taille
-	std::string response_body = _current_body; // Contient les données du fichier
-	size_t content_length = response_body.length(); // Taille exacte du corps de la réponse
+	size_t content_length = body.length(); // Taille exacte du corps de la réponse
+	std::string	content_type;
 	
 	// 3. Vider _current_body pour y CONSTRUIRE les en-têtes de la réponse
 	_current_body.clear(); 
@@ -492,7 +507,10 @@ void	Response::_get_() {
 	_current_body += _protocol + " 200 OK\r\n";
 	
 	// 5. En-tête Content-Type (Détermination dynamique)
-	std::string content_type = get_mime_type_from_path(_path); 
+	if (_autoindex)
+		content_type = "text/html";	
+	else
+		content_type = get_mime_type_from_path(_path); 
 	_current_body += "Content-Type: " + content_type + "\r\n";
 
 	std::stringstream ss;
@@ -509,5 +527,121 @@ void	Response::_get_() {
 	_current_body += "\r\n";
 	
 	// 9. Corps de la Réponse (Le contenu du fichier)
-	_current_body += response_body;
+	_current_body += body;
+}
+
+static std::string autoindex_html_body(std::string uri) {
+	std::string html_body;
+
+    // Construction du header HTML
+    html_body += "<!DOCTYPE html>\r\n";
+    html_body += "<html>\r\n";
+    html_body += "<head>\r\n";
+    html_body += "<meta charset=\"UTF-8\">\r\n";
+    html_body += "<title>Index of " + uri + "</title>\r\n";
+    html_body += "<style>\r\n";
+    html_body += "body { font-family: Arial, sans-serif; margin: 40px; }\r\n";
+    html_body += "h1 { color: #333; }\r\n";
+    html_body += "table { border-collapse: collapse; width: 100%; }\r\n";
+    html_body += "th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }\r\n";
+    html_body += "th { background-color: #4CAF50; color: white; }\r\n";
+    html_body += "tr:hover { background-color: #f5f5f5; }\r\n";
+    html_body += "a { color: #0066cc; text-decoration: none; }\r\n";
+    html_body += "a:hover { text-decoration: underline; }\r\n";
+    html_body += "</style>\r\n";
+    html_body += "</head>\r\n";
+    html_body += "<body>\r\n";
+    html_body += "<h1>Index of " + uri + "</h1>\r\n";
+    html_body += "<hr>\r\n";
+    html_body += "<table>\r\n";
+    html_body += "<tr><th>Name</th><th>Size</th></tr>\r\n";
+
+    // Ajout du lien parent si on n'est pas à la racine
+    if (uri != "/") {
+        html_body += "<tr>\r\n";
+        html_body += "<td><a href=\"../\">Parent Directory</a></td>\r\n";
+        html_body += "<td>-</td>\r\n";
+        html_body += "</tr>\r\n";
+    }
+
+	return html_body;
+}
+
+// remplir le body avec une liste du repertoire courant
+std::string	Response::get_autoindex() {
+
+    std::string html_body = autoindex_html_body(_URI);
+    struct dirent* entry;
+    std::vector<std::string> entries;
+    DIR* dir = opendir(_path.c_str());
+    if (!dir) {
+		setCode(403); // Forbidden si impossible d'ouvrir le répertoire
+		return "";
+	}
+    
+    // Lecture des entrées du répertoire
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+        
+        // Ignorer . et ..
+        if (name == "." || name == "..")
+            continue;
+            
+        entries.push_back(name);
+    }
+    
+    // Tri alphabétique des entrées
+    std::sort(entries.begin(), entries.end());
+    
+    // Construction des lignes du tableau
+    for (size_t i = 0; i < entries.size(); i++) {
+        std::string name = entries[i];
+        std::string full_path = _path;
+
+        full_path += name;
+        
+        struct stat file_stat;
+        if (stat(full_path.c_str(), &file_stat) != 0)
+            continue;
+        
+        html_body += "<tr>\r\n";
+        
+        // Nom du fichier/dossier avec lien
+        std::string link = name;
+        if (S_ISDIR(file_stat.st_mode))
+            link += "/";
+        html_body += "<td><a href=\"" + link + "\">" + name;
+        if (S_ISDIR(file_stat.st_mode))
+            html_body += "/";
+        html_body += "</a></td>\r\n";
+        
+        // Taille
+        html_body += "<td>";
+        if (S_ISDIR(file_stat.st_mode)) {
+            html_body += "-";
+        } else {
+            std::stringstream ss;
+            off_t size = file_stat.st_size;
+            if (size < 1024)
+                ss << size << " B";
+            else if (size < 1024 * 1024)
+                ss << (size / 1024) << " KB";
+            else
+                ss << (size / (1024 * 1024)) << " MB";
+            html_body += ss.str();
+        }
+        html_body += "</td>\r\n";
+		html_body += "</tr>\r\n";
+    }
+    
+    closedir(dir);
+    
+    // Fin du HTML
+    html_body += "</table>\r\n";
+    html_body += "<hr>\r\n";
+    html_body += "</body>\r\n";
+    html_body += "</html>\r\n";
+
+	return html_body;
+    
 }

@@ -47,6 +47,8 @@ enum {
 # include <cstring>      // pour strlen(), memcpy() : FONCTION INTERDITE
 # include <sstream> // ostream : INTERDIT
 # include <fstream>
+# include <dirent.h>
+# include <algorithm>
 
 # include "./GlobalConfig.hpp"
 # include "./ServerConfig.hpp"

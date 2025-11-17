@@ -25,6 +25,8 @@ class Response : public HTTPcontent {
 
 		std::string		try_multiple_indexes(std::vector<std::string> indexes);
 		bool			is_cgi();
+		void			build_valid_response_get(std::string body);
+		std::string		get_autoindex();
 
 		void			checkPermissions(std::string path);
 

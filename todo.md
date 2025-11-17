@@ -9,14 +9,13 @@ RESPONSE (ADRI):
 	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
     [ ] checkAllowedMethods()
     
-    [ ] autoindex on -> list directories
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [x] fermer la connection quand ferme browser -> firefox forces keep-alive on tabs
-    [ ] nettoyer tout le caca que j'ai fait 
-    [ ] CGI verifier EOF et gerer le POST 
+    [x] autoindex on -> list directories
+    [ ] TIMEOUT 
     [ ] TIMEOUT pour response et CGI
+    [ ] CGI verifier EOF et gerer le POST 
 
 
 
