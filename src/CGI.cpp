@@ -26,7 +26,70 @@ void	CGI::copyFrom(HTTPcontent& other) {
 
 }
 
-// A FINIR
+static std::string buildQueryString(const std::string &raw_uri) {
+    size_t pos = raw_uri.find('?');
+    if (pos == std::string::npos)
+        return "QUERY_STRING="; // vide
+    return std::string("QUERY_STRING=") + raw_uri.substr(pos + 1);
+}
+
+static std::string buildContentLength(const std::string &body) {
+    return std::string("CONTENT_LENGTH=") + std::string(body.empty() ? "0" : 
+                     static_cast<std::ostringstream&>(std::ostringstream() << body.size()).str());
+}
+
+static std::string buildContentType(const std::map<std::string,std::string> &headers) {
+    std::map<std::string,std::string>::const_iterator it = headers.find("Content-Type");
+    if (it == headers.end())
+        return ""; // ne pas ajouter
+    return std::string("CONTENT_TYPE=") + it->second;
+}
+
+static std::string buildServerNameHost(const std::map<std::string,std::string> &headers, LocationConfig & config, int which)
+{
+    std::map<std::string,std::string>::const_iterator it = headers.find("HOST");
+
+    // --- Correction point 2 : séparer correctement host et port depuis la config ---
+    // config.listen contient typiquement "127.0.0.1:8080"
+    std::string listen = config.getDirective("listen");
+    std::string conf_host = listen;
+    std::string conf_port = "8080"; // fallback raisonnable
+
+    size_t pos = listen.find(':');
+    if (pos != std::string::npos) {
+        conf_host = listen.substr(0, pos);
+        conf_port = listen.substr(pos + 1);
+    }
+
+    if (!which)
+    {
+        if (it == headers.end()) 
+            return std::string("SERVER_NAME=") + conf_host;
+
+        std::string host = it->second;
+        size_t p = host.find(':');
+        if (p != std::string::npos)
+            host = host.substr(0, p);
+
+        return std::string("SERVER_NAME=") + host;
+    }
+    else
+    {
+        if (it != headers.end()) {
+            const std::string &host = it->second;
+            size_t p = host.find(':');
+            if (p != std::string::npos)
+                return std::string("SERVER_PORT=") + host.substr(p + 1);
+        }
+
+        // --- Correction point 3 : fallback dynamique depuis listen ---
+        return std::string("SERVER_PORT=") + conf_port;
+    }
+}
+
+
+
+
 void CGI::buildEnv() {
 
 	//Securite (surement useless)
@@ -67,20 +130,20 @@ void CGI::buildEnv() {
 	std::string request_uri = "REQUEST_URI=" + _URI;
 	_env_strings.push_back(request_uri.c_str());//attribut _URI de HTTPcontent
 
+	//A CODER
 	_env_strings.push_back("SCRIPT_FILENAME/home/.../test.cgi");//Chemin absolu complet vers l'executable cgi
 	_env_strings.push_back("SCRIPT_NAME=./test.cgi");//Chemin relatif vers le CGI
-
-	// _env_strings.push_back("QUERY_STRING=TEST1TEST2TEST3");//la partie apres le "?" de l'URI
-
-	// N'est pas forcement fourni si la request est chunked
-	_env_strings.push_back("CONTENT_LENGTH=11");//taille du body de la REQUEST (total sieze of unchunked_body si le body etait chunked)
-
-	// A Aller chercher dans le fichier config
-	_env_strings.push_back("SERVER_NAME=localhost");//le hostname du serveur (LocationConfig) ou le
-	_env_strings.push_back("SERVER_PORT=8080");
-
-
 	_env_strings.push_back("REMOTE_ADDR=127.0.0.1");//L'adresse IP du client
+	///////////////////////////////////////////////
+
+	_env_strings.push_back(buildQueryString(_URI));//la partie apres le "?"
+
+	_env_strings.push_back(buildContentLength(_current_body));
+
+	_env_strings.push_back(buildContentType(_headers));
+
+	_env_strings.push_back(buildServerNameHost(_headers, _config, 0));
+	_env_strings.push_back(buildServerNameHost(_headers, _config, 1));
 
     for (size_t i = 0; i < _env_strings.size(); ++i)
         _envp.push_back(const_cast<char*>(_env_strings[i].c_str()));
