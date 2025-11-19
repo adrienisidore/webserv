@@ -51,6 +51,7 @@ class HTTPcontent {
 		std::string							getURI() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		LocationConfig						getConfig() const;
+		std::string							getPath() const;
 
 		void								setContentLength(unsigned long);
 		unsigned long						getContentLength() const;

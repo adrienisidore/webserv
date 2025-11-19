@@ -23,6 +23,7 @@ void	CGI::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
+		_path = other.getPath();
 
 }
 
@@ -232,10 +233,10 @@ void	CGI::openPipes() {
 		//thorw une Exception, ne pas exit SINON LEAKS
         exit(EXIT_FAILURE);
     }
-    fcntl(_inpipe[0], F_SETFD, FD_CLOEXEC);
-    fcntl(_inpipe[1], F_SETFD, FD_CLOEXEC);
-    fcntl(_outpipe[0], F_SETFD, FD_CLOEXEC);
-    fcntl(_outpipe[1], F_SETFD, FD_CLOEXEC);
+    fcntl(_inpipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(_inpipe[1], F_SETFL, O_NONBLOCK);
+    fcntl(_outpipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(_outpipe[1], F_SETFL, O_NONBLOCK);
 }
 
 /*
@@ -247,7 +248,7 @@ Dans Parent:
 	- ecrit le body dans stdin
 	- ferme l'ecriture pour signaler EOF
 */
-void	CGI::launchExecve() {
+void	CGI::execute_cgi() {
 
     _pid = fork();
     if (_pid < 0) {
@@ -295,22 +296,31 @@ void	CGI::launchExecve() {
         write(_inpipe[1], post_data, 11);
         close(_inpipe[1]);
 
-        // Lit la sortie du CGI (_outpipe) : ce qu'on envoie au client ==> le body
 
-		//////////////////////////////////////////////////////////////////////////////
-		// Il faut faire un appel a read a chaque fois qu'on passe sur poll()
-        char buffer[1024];
-        ssize_t n;
-        while ((n = read(_outpipe[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[n] = '\0';
-            std::cout << buffer;
-        }
-        close(_outpipe[0]);
-		waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
-		//////////////////////////////////////////////////////////////////////////////
-   
-		//Useless
-        std::cout << "\n[CGI terminé avec code " << WEXITSTATUS(_status) << "]\n";
-		*/
-    }
+		if (getMethod() == "POST" && !getCode()) {
+			ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
+        	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
+		}
+
+        close(_inpipe[1]);
+		    int status;
+		pid_t result = waitpid(_pid, &status, WNOHANG);
+		if (result != 0) {
+			std::cerr << "CGI died immediately! status=" << status << "\n";
+			throw ServerException("CGI failed to start");
+		}
+		
+		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
+        //close(_outpipe[0]);
+
+		//waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
+		// -> NOT HERE
+		///
+		// if (WIFEXITED(_status) && WEXITSTATUS(_status) == 0)
+		// 	std::cout << "[CGI success]\n";
+		// else {
+		// 	std::cout << "[CGI failed with code " << WEXITSTATUS(_status) << "]\n";
+		// 	setCode(500);
+		// }
+	}
 }

@@ -77,6 +77,8 @@ std::map<std::string, std::string>	HTTPcontent::getHeaders() const {return (_hea
 
 LocationConfig						HTTPcontent::getConfig() const { return (_config);}
 
+std::string							HTTPcontent::getPath() const {return _path;}
+
 HTTPcontent::~HTTPcontent() {}
 
 void	HTTPcontent::append_to_header(char buff[BUFF_SIZE], int bytes) {_current_header.append(buff, (size_t)bytes);}
