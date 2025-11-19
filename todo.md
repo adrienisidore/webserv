@@ -1,14 +1,20 @@
-
+[ ] checker qu'on a pas incorpore des fonctions interdites
 PARSING (GASTON):
 
     [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier (est ce qu'on ignore ou pas)
 
 RESPONSE (ADRI):
 
-	[ ] finir buildEnv et finir de launchexecve (pour le cas de POST)
+	[x] finir buildEnv et finir de launchexecve (pour le cas de POST)
+
 	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
-    [ ] checkAllowedMethods()
-    
+	se baser sur "return" pour gerer ca, et savoir ou on doit checker les redirections dans le code
+	[ ] voir avec Gaston pour modifier add_new_client_socket(int listening) (REMOTE_ADDR)
+
+    [x] checkAllowedMethods()
+	[ ] si la location correspond a la fois a CGI et redi, on fait quoi ?
+
+    [ ] autoindex on -> list directories
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
