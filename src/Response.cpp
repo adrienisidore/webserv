@@ -57,19 +57,30 @@ std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
 
 void	Response::createFromCgi(CGI &cgi) {
 	
+
+	std::string body = "<!DOCTYPE html><html><body><h1>" + cgi.getCurrentBody() + "</h1></body></html>";
+
+	size_t content_length = body.length();
+
 	copyFrom(cgi);
 	_current_body.clear(); 
 	
 	_current_body += _protocol + " 200 OK\r\n";
 	_current_body += "Content-Type: text/html\r\n";
-	_current_body += "Status: 200 OK\r\n";
-	_current_body += "Content-Length: " + cgi.getCurrentBody().length();
+
+	std::stringstream ss;
+	ss << content_length;
+	_current_body += "Content-Length: " + ss.str() + "\r\n";
+
+	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
+	if (it != _headers.end() && it->second == "close")
+		_current_body += "Connection: close\r\n"; 
+
 	_current_body += "\r\n";
-	_current_body
-
-
+	_current_body += body;
 
 }
+
 void Response::checkAllowedMethods() {
 
 	// Récupérer toutes les directives de la location

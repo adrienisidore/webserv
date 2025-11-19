@@ -247,7 +247,7 @@ void	ServerMonitor::run() {
 		monitor_cgis();
 		// std::cout << "after monitoring cgis" << std::endl;
 		check_timeouts();
-		sleep(1);
+		//sleep(1);
 	}
 }
 
