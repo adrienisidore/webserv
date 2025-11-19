@@ -151,36 +151,6 @@ void ServerMonitor::add_new_client_socket(int listening) {
 	}
 }
 
-// void	ServerMonitor::add_new_client_socket(int listening) {
-
-// 	ServerConfig	config = _map_server_configs[listening];
-
-// 	sockaddr_in	param;
-// 	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
-// 	socklen_t	tcp_size = sizeof(param);
-	
-
-// 	//Creation du socket connecte pour le tcp
-// 	int	tcp_socket = accept(listening, (sockaddr *)&param, &tcp_size);
-
-// 	if (tcp_socket == -1)
-// 		throw SocketException(strerror(errno));
-
-// 	if (_map_connections.size() < MAX_CONNECTIONS) { // specified in config file
-// 		// add the pollfd derived from the socket to the fds list
-// 		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
-
-// 		// create a new tcp with the socket and add it to the map
-// 		TCPConnection	*connection = new TCPConnection(tcp_socket, config);
-// 		_map_connections[tcp_socket] = connection;
-
-// 		std::cout << "A new TCP connection arrived !" << std::endl;
-// 	}
-// 	else {
-// 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
-// 		close(tcp_socket);
-// 	}
-// }
 
 void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 
@@ -405,60 +375,50 @@ void	ServerMonitor::monitor_cgis() {
 
 		CGI	&cgi = _map_cgis[it->fd];
 
-		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
-            std::cout << "CGI pipe closed (POLLHUP/ERR)" << std::endl;
-            
-            int status;
-            waitpid(cgi._pid, &status, 0);
-            
-            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-                std::cerr << "CGI exited with error: " << WEXITSTATUS(status) << std::endl;
-                cgi._connection->set_error(500);
-                it = close_cgi_socket(it);
-                continue;
-            }
+		if (it->revents & (POLLIN | POLLHUP)) {
 
-            std::cout << "CGI finished successfully, body size: " << cgi.getCurrentBody().size() << std::endl;
-            cgi._connection->setStatus(READY_TO_SEND);
-            cgi._connection->_response.copyFrom(cgi);
-
-            it = close_cgi_socket(it);
-            continue;
-        }
-
-		if (it->revents & POLLIN) {
+			std::cout << "=== CGI READ ATTEMPT ===" << std::endl;
+			std::cout << "fd: " << it->fd << std::endl;
+			std::cout << "revents: " << it->revents << " (POLLIN=" << (it->revents & POLLIN) 
+					<< ", POLLHUP=" << (it->revents & POLLHUP) << ")" << std::endl;
+			std::cout << "Current body size: " << cgi.getCurrentBody().size() << std::endl;
 
 			memset(buff, 0, BUFF_SIZE);
 			bytes_received = read(it->fd, buff, BUFF_SIZE);
 
 			if (bytes_received > 0) {
+				std::cout << "Data received: [" << std::string(buff, bytes_received) << "]" << std::endl;
 				cgi.append_to_body(buff, bytes_received);
 				++it;
+				continue;
 			}
 
 			else if (bytes_received == 0) {	// EOF
+				std::cout << "EOF" << std::endl;
 				int	status;
 				waitpid(cgi._pid, &status, 0); // or NOHANG ?
 				
-			if (WIFEXITED(status) && (WEXITSTATUS(status) != 0)) {
-					cgi._connection->set_error(500);
+				if (WIFEXITED(status) && (WEXITSTATUS(status) != 0)) {
+						cgi._connection->set_error(500);
+						it = close_cgi_socket(it);
+						continue;
+				}
+					//close(cgi._pid);
+
+					cgi._connection->setStatus(READY_TO_SEND);
+					cgi._connection->_response.createFromCgi(cgi);
+					std::cout << "CURRENT BODY" << cgi._connection->_response.getCurrentBody() << std::endl;
+					std::cout << "CGI CURRENT BODY" << cgi.getCurrentBody() << std::endl;
 					it = close_cgi_socket(it);
 					continue;
 			}
-				//close(cgi._pid);
-
-				std::cout << "CGI CONNECTIN" << cgi._connection->get_status() << std::endl;
-				cgi._connection->setStatus(READY_TO_SEND);
-				std::cout << "READY TO SEND" << std::endl;
-				cgi._connection->_response.copyFrom(cgi);
-				std::cout << "CURRENT BODY" << cgi._connection->_response.getCurrentBody() << std::endl;
-				it = close_cgi_socket(it);
-			}
 
 			else if (bytes_received < 0) {
+				std::cout << "errno: " << errno << " (" << strerror(errno) << ")" << std::endl;	// FORBIDDEN
 				cgi._connection->set_error(500);
 				// mettre a POLLIN, etc... bonne idee ?
 				it = close_cgi_socket(it);
+				continue;
 			}
 		}
 		else

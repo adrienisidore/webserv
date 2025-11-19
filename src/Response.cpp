@@ -55,6 +55,21 @@ std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
 	return "";
 }
 
+void	Response::createFromCgi(CGI &cgi) {
+	
+	copyFrom(cgi);
+	_current_body.clear(); 
+	
+	_current_body += _protocol + " 200 OK\r\n";
+	_current_body += "Content-Type: text/html\r\n";
+	_current_body += "Status: 200 OK\r\n";
+	_current_body += "Content-Length: " + cgi.getCurrentBody().length();
+	_current_body += "\r\n";
+	_current_body
+
+
+
+}
 void Response::checkAllowedMethods() {
 
 	// Récupérer toutes les directives de la location

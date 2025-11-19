@@ -24,7 +24,6 @@ void	CGI::copyFrom(HTTPcontent& other) {
 		_config = other.getConfig();
 		_headers = other.getHeaders();
 		_path = other.getPath();
-
 }
 
 static std::string buildQueryString(const std::string &raw_uri) {
@@ -106,8 +105,8 @@ std::string buildScriptFilename(const std::string &root, const std::string &loca
     // 3. construire le chemin absolu : root + location_uri + script_name
     std::string full = root;
 
-    if (!full.empty() && full[full.size() - 1] != '/')
-        full += '/';
+    // if (!full.empty() && full[full.size() - 1] != '/')
+    //     full += '/';
 
     if (!location_uri.empty()) {
         full += location_uri;
@@ -224,7 +223,11 @@ void CGI::buildArgv() {
 	_argv_strings.clear();
 	_argv.clear();
 
-	_argv_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI)); // Chemin vers exécutable
+	//_argv_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI)); // Chemin vers exécutable
+	
+	std::string	handler_directive = _config.getDirective("cgi_handler");
+	_argv_strings.push_back(handler_directive.substr(handler_directive.find(' ') + 1));
+    _argv_strings.push_back(_path); // Chemin vers exécutable
 
 	for (size_t i = 0; i < _argv_strings.size(); ++i)
 		_argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
@@ -308,24 +311,13 @@ void	CGI::execute_cgi() {
 		}
 
         close(_inpipe[1]);
-		    int status;
-		pid_t result = waitpid(_pid, &status, WNOHANG);
-		if (result != 0) {
-			std::cerr << "CGI died immediately! status=" << status << "\n";
-			throw ServerException("CGI failed to start");
-		}
+		//     int status;
+		// pid_t result = waitpid(_pid, &status, WNOHANG);			-> waitpid() already in monitor_cgi()
+		// if (result != 0) {
+		// 	std::cerr << "CGI died immediately! status=" << status << "\n";
+		// 	throw ServerException("CGI failed to start");
+		//}
 		
 		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
-        //close(_outpipe[0]);
-
-		//waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
-		// -> NOT HERE
-		///
-		// if (WIFEXITED(_status) && WEXITSTATUS(_status) == 0)
-		// 	std::cout << "[CGI success]\n";
-		// else {
-		// 	std::cout << "[CGI failed with code " << WEXITSTATUS(_status) << "]\n";
-		// 	setCode(500);
-		// }
 	}
 }

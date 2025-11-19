@@ -15,7 +15,7 @@ RESPONSE (ADRI):
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [x] CGI verifier EOF et gerer le POST -> Inpipe
+    [ ] trop de waitpid?
     [x] autoindex on -> list directories
     [ ] s'assurer que le path va jusq'ua '?'
     [ ] debug monitoring cgi, connection_end()...
