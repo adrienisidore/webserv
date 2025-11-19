@@ -28,6 +28,7 @@ class CGI : public HTTPcontent {
 		std::vector<std::string> _argv_strings;
 		std::vector<char*> _argv;
 		void buildArgv();
+
 };
 
 #endif

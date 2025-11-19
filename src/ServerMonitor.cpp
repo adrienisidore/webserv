@@ -119,6 +119,54 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 	freeaddrinfo(res);
 }
 
+//A MODIFIER POUR ENREGISTRER L'ADRESSE DU CLIENT ET L'INTEGRER DANS LES VAR D'ENV DU CGI
+
+// class TCPConnection {
+// public:
+//     TCPConnection(int fd, const ServerConfig &config,
+//                   const struct sockaddr_storage &addr,
+//                   socklen_t addr_len);
+
+//     struct sockaddr_storage _client_addr;
+//     socklen_t               _client_addr_len;
+
+//     // ...
+// };
+
+// void ServerMonitor::add_new_client_socket(int listening) {
+
+// 	ServerConfig config = _map_server_configs[listening];
+
+// 	// structure générique IPv4/IPv6
+// 	struct sockaddr_storage client_addr;
+// 	socklen_t addr_len = sizeof(client_addr);
+
+// 	// acceptation du client → remplit client_addr
+// 	int tcp_socket = accept(listening,
+// 							(struct sockaddr *)&client_addr,
+// 							&addr_len);
+
+// 	if (tcp_socket == -1)
+// 		throw SocketException(strerror(errno));
+
+// 	if (_map_connections.size() < MAX_CONNECTIONS) {
+
+// 		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
+
+// 		// PASSAGE DE L'ADRESSE AU TCPConnection
+// 		TCPConnection *connection =
+// 			new TCPConnection(tcp_socket, config, client_addr, addr_len);
+
+// 		_map_connections[tcp_socket] = connection;
+
+// 		std::cout << "A new TCP connection arrived !" << std::endl;
+// 	}
+// 	else {
+// 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
+// 		close(tcp_socket);
+// 	}
+// }
+
 void	ServerMonitor::add_new_client_socket(int listening) {
 
 	ServerConfig	config = _map_server_configs[listening];

@@ -29,7 +29,7 @@ void	CGI::copyFrom(HTTPcontent& other) {
 static std::string buildQueryString(const std::string &raw_uri) {
     size_t pos = raw_uri.find('?');
     if (pos == std::string::npos)
-        return "QUERY_STRING="; // vide
+        return "QUERY_STRING=";
     return std::string("QUERY_STRING=") + raw_uri.substr(pos + 1);
 }
 
@@ -87,19 +87,80 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
     }
 }
 
+// root           : chemin absolu du dossier racine
+// location_uri   : chemin défini dans la config (ex: "cgi-bin")
+// uri            : URI complète fournie par le client (ex: "/cgi-bin/run.cgi?x=1")
+std::string buildScriptFilename(const std::string &root, const std::string &location_uri, const std::string &uri)
+{
+    // 1. enlever la query string
+    size_t q = uri.find('?');
+    std::string path = (q == std::string::npos) ? uri : uri.substr(0, q);
 
+    // 2. extraire le script_name (après le dernier '/')
+    size_t slash = path.rfind('/');
+    std::string script_name = (slash == std::string::npos)
+                                ? path
+                                : path.substr(slash + 1);
+
+    // 3. construire le chemin absolu : root + location_uri + script_name
+    std::string full = root;
+
+    if (!full.empty() && full[full.size() - 1] != '/')
+        full += '/';
+
+    if (!location_uri.empty()) {
+        full += location_uri;
+        if (full[full.size() - 1] != '/')
+            full += '/';
+    }
+
+    full += script_name;
+
+    return std::string("SCRIPT_FILENAME=") + full;
+}
+
+
+static std::string buildScriptName(const std::string &uri)
+{
+    size_t pos = uri.find('?');
+    std::string path = (pos == std::string::npos) ? uri : uri.substr(0, pos);
+    return std::string("SCRIPT_NAME=") + path;
+}
+
+static std::string buildRemoteAddr(const struct sockaddr_storage &addr, socklen_t len)
+{
+	// On suppose IPv4 (sockaddr_in)
+	const struct sockaddr_in *a = reinterpret_cast<const struct sockaddr_in*>(&addr);
+
+	// Récupérer l'adresse au format binaire
+	uint32_t ip = ntohl(a->sin_addr.s_addr);
+
+	// Extraire chaque octet
+	unsigned char o1 = (ip >> 24) & 0xFF;
+	unsigned char o2 = (ip >> 16) & 0xFF;
+	unsigned char o3 = (ip >> 8)  & 0xFF;
+	unsigned char o4 = ip & 0xFF;
+
+	// Construire la string IPv4
+	std::ostringstream oss;
+	oss << "REMOTE_ADDR="
+		<< (int)o1 << "."
+		<< (int)o2 << "."
+		<< (int)o3 << "."
+		<< (int)o4;
+
+	return oss.str();
+}
 
 
 void CGI::buildEnv() {
 
-	//Securite (surement useless)
 	_env_strings.clear();
     _envp.clear();
 	//Voir tableau : https://www.alimnaqvi.com/blog/webserv car certains elements sont obligatoires.
 
 	//Doit-on egalement ajouter l'environnement global ? Non je crois pas
 
-	// Ajouter tous les _headers + "HTTP_" (en modifiant - pour _) A FAIRE
 	std::map<std::string, std::string>	cgi_headers;
 	cgi_headers = _headers;
 	std::map<std::string, std::string> result;
@@ -113,15 +174,10 @@ void CGI::buildEnv() {
 	}
 	cgi_headers = result;
 
-	// for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin(); it != cgi_headers.end(); ++it)
-	// 	std::cout << it->first << " => " << it->second << std::endl;
-
 	for (std::map<std::string, std::string>::const_iterator it = cgi_headers.begin();
 		it != cgi_headers.end(); ++it) {
 		_env_strings.push_back(it->first + "=" + it->second);
 	}
-
-	//On inclut egalement un certain nombre de var d'env :
 
 	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
@@ -130,42 +186,42 @@ void CGI::buildEnv() {
 	std::string request_uri = "REQUEST_URI=" + _URI;
 	_env_strings.push_back(request_uri.c_str());//attribut _URI de HTTPcontent
 
+	_env_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI));//Chemin absolu complet vers l'executable cgi
+	_env_strings.push_back(buildScriptName(_URI));//Chemin relatif vers le CGI
+
 	//A CODER
-	_env_strings.push_back("SCRIPT_FILENAME/home/.../test.cgi");//Chemin absolu complet vers l'executable cgi
-	_env_strings.push_back("SCRIPT_NAME=./test.cgi");//Chemin relatif vers le CGI
 	_env_strings.push_back("REMOTE_ADDR=127.0.0.1");//L'adresse IP du client
+	// _env_strings.push_back(buildRemoteAddr(_connection->_client_addr, _connection->_client_addr_len));
+
 	///////////////////////////////////////////////
 
 	_env_strings.push_back(buildQueryString(_URI));//la partie apres le "?"
-
 	_env_strings.push_back(buildContentLength(_current_body));
-
 	_env_strings.push_back(buildContentType(_headers));
-
 	_env_strings.push_back(buildServerNameHost(_headers, _config, 0));
 	_env_strings.push_back(buildServerNameHost(_headers, _config, 1));
 
     for (size_t i = 0; i < _env_strings.size(); ++i)
         _envp.push_back(const_cast<char*>(_env_strings[i].c_str()));
     _envp.push_back(NULL);
+
+	//Affichage du resultat :
+	for (std::vector<std::string>::const_iterator it = _env_strings.begin(); it != _env_strings.end(); ++it)
+		std::cout << *it << std::endl;
 }
+
+
 
 void CGI::buildArgv() {
 
-	//Securite (surement useless)
 	_argv_strings.clear();
-    _argv.clear();
+	_argv.clear();
 
-    _argv_strings.push_back("./test2.cgi"); // Chemin vers exécutable
+	_argv_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI)); // Chemin vers exécutable
 
-	//Si j'ai d'autres arguments a donner au programme c'est ICI
-	// *** ICI ***
-    _argv_strings.push_back("param1");
-    _argv_strings.push_back("param2");
-
-    for (size_t i = 0; i < _argv_strings.size(); ++i)
-        _argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
-    _argv.push_back(NULL);
+	for (size_t i = 0; i < _argv_strings.size(); ++i)
+		_argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
+	_argv.push_back(NULL);
 }
 
 void	CGI::openPipes() {
@@ -229,6 +285,8 @@ void	CGI::launchExecve() {
 		fcntl(_inpipe[1], F_SETFL, flags | O_NONBLOCK);
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
+
+
 		/*
         // Simule un corps POST
         const char *post_data = "name=adrien";//redondant avec _body mais necessaire car STDIN_FILENO est en lecture seule,

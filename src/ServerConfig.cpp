@@ -20,7 +20,7 @@ void		ServerConfig::inheritFromGlobal(const GlobalConfig &global) {
 }
 
 void ServerConfig::addLocation(const std::string &path, LocationConfig &location) {
-	location.setDirective("uri", path);
+	location.setDirective("location_uri", path);
     locations[path] = location;
     locations[path].inheritFromServer(*this);
 

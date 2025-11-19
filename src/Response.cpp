@@ -29,17 +29,6 @@ static std::string		parentDir(const std::string &path) {
 		return path.substr(0, pos);
 }
 
-
-void		Response::checkAllowedMethods() {
-
-	// On verifie allowed-methods
-	/* CHECK ALLOWED METHODS DELTE POST :
-	s'il existe une directive allowed-method dans la locationConfig et que _method n'en fait pas partie
-	alors on setCode
-
-	*/
-}
-
 bool		Response::keep_alive() const {
 
 	std::map<std::string, std::string> headers = getHeaders();
@@ -65,6 +54,45 @@ std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
 	}
 	return "";
 }
+
+void Response::checkAllowedMethods() {
+
+	// Récupérer toutes les directives de la location
+	const std::map<std::string, std::string> &dirs = _config.getDirectives();
+
+	// Vérifier si "allowed_methods" existe
+	std::map<std::string, std::string>::const_iterator it = dirs.find("allowed_methods");
+
+	// S'il n'y a pas de directive allowed_methods → tout est autorisé
+	if (it == dirs.end())
+		return;
+
+	// Récupérer la liste des méthodes autorisées (séparées par des espaces)
+	const std::string &value = it->second;    // ex : "GET POST DELETE"
+	std::vector<std::string> allowed;
+
+	// Découpage simple par espaces
+	std::istringstream iss(value);
+	std::string token;
+	while (iss >> token)
+		allowed.push_back(token);
+
+	// Vérifier si _method est dedans
+	bool ok = false;
+	for (size_t i = 0; i < allowed.size(); ++i) {
+		if (allowed[i] == _method) {
+			ok = true;
+			break;
+		}
+	}
+
+	// Méthode non autorisée → 405
+	if (!ok) {
+		setCode(405);
+	}
+}
+
+
 
 //1) https://www.alimnaqvi.com/blog/webserv
 // A partir de la locationConfig on construit un chemin vers un fichier
@@ -310,13 +338,18 @@ void Response::_error_() {
 		<< "Content-Type: text/html\r\n"
 		<< "Content-Length: " << body.size() << "\r\n"
 		<< "Connection: close\r\n"
-		<< "\r\n"
-		<< body;
-
+		<< "\r\n";
+	if (_code == 405)
+	{
+		// Dans le _headers de la reponse faite au client on ajoute les requetes allowed
+		const std::map<std::string, std::string> &dirs = _config.getDirectives();
+		std::map<std::string, std::string>::const_iterator it_ = dirs.find("allowed_methods");
+		std::string allow = "Allow: " + it_->second;
+		out << allow;
+	}
+	out	<< body;
 	_current_body = out.str();
 }
-
-
 
 
 // Gerer les redirections redirection directive -> vers une nouvelle location, ATTENTION AUX REDIRECTIONS INFINIES
