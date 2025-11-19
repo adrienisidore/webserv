@@ -245,6 +245,7 @@ void	ServerMonitor::run() {
 		monitor_cgis();
 		// std::cout << "after monitoring cgis" << std::endl;
 		check_timeouts();
+		sleep(1);
 	}
 }
 
@@ -269,7 +270,7 @@ void	ServerMonitor::monitor_connections() {
 		++it;
 	}
 
-	while (it != connected_socket_end() && _is_running) {	// IT can be last_socket
+	while (it != _pollfds.end() && it != connected_socket_end() && _is_running) {	// IT can be last_socket
 		std::cout << "connection check - checking fd: " << it->fd 
               << " revents: " << it->revents << std::endl;  // ← ADD THIS
 
@@ -304,8 +305,12 @@ void	ServerMonitor::monitor_connections() {
 				should_close = true;
 
 			else if (connection->get_status() == READ_COMPLETE) {
+				
+				std::cout << "it->fd : " << it->fd << std::endl;
+
 				connection->execute_method();
 				it->events = POLLOUT;
+				std::cout << "it->fd : " << it->fd << std::endl;
 				// on ERROR -> keep in head that connection should be CLOSED
 			}
 
@@ -320,7 +325,7 @@ void	ServerMonitor::monitor_connections() {
                     std::cout << "Send failed: " << strerror(errno) << std::endl;
                     should_close = true;
                 } else {
-
+                    std::cout << "Send succeded: " << connection->getResponse().getCurrentBody() << std::endl;
 					connection->end_transfer();
 					it->events = POLLIN;
 
@@ -329,15 +334,24 @@ void	ServerMonitor::monitor_connections() {
 					}
 			}
 			else {
-				std::cout << "WARNING: POLLOUT but not READY_TO_SEND, resetting to POLLIN" << std::endl;
-				it->events = POLLIN;
+				std::cout << "WARNING: POLLOUT but not READY_TO_SEND" << std::endl;
+				//it->events = POLLIN;
 			}
 		}
 		if (should_close)
 			it = close_tcp_connection(it);
-		else
+		else {
+			std::cout << "++it" << std::endl;
 			++it;
+		}
 	}	
+	for (std::map<int, TCPConnection *>::iterator connection = _map_connections.begin(); connection != _map_connections.end(); ++connection) {
+		for (std::map<int, CGI>::iterator it = connection->second->_map_cgi_fds_to_add.begin(); it != connection->second->_map_cgi_fds_to_add.end(); ++it) {
+			add_new_cgi_socket(it->first, it->second);
+		}
+		connection->second->_map_cgi_fds_to_add.clear();
+	}
+
 }
 
 void	ServerMonitor::monitor_cgis() {
@@ -349,19 +363,44 @@ void	ServerMonitor::monitor_cgis() {
 
 	while (it != _pollfds.end() && _is_running) {
 
+		std::cout << "CGI check" << std::endl;
+
         if (_map_cgis.find(it->fd) == _map_cgis.end()) {
+			std::cout << "CGI skip" << std::endl;
             ++it;
             continue;
         }
 
-		CGI	cgi = _map_cgis[it->fd];
-		// check for POLLERR
+		CGI	&cgi = _map_cgis[it->fd];
+
+		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
+            std::cout << "CGI pipe closed (POLLHUP/ERR)" << std::endl;
+            
+            int status;
+            waitpid(cgi._pid, &status, 0);
+            
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                std::cerr << "CGI exited with error: " << WEXITSTATUS(status) << std::endl;
+                cgi._connection->set_error(500);
+                it = close_cgi_socket(it);
+                continue;
+            }
+
+            std::cout << "CGI finished successfully, body size: " << cgi.getCurrentBody().size() << std::endl;
+            cgi._connection->setStatus(READY_TO_SEND);
+            cgi._connection->_response.copyFrom(cgi);
+
+            it = close_cgi_socket(it);
+            continue;
+        }
+
 		if (it->revents & POLLIN) {
 
 			memset(buff, 0, BUFF_SIZE);
-			bytes_received = recv(it->fd, buff, BUFF_SIZE, 0);
+			bytes_received = read(it->fd, buff, BUFF_SIZE);
+
 			if (bytes_received > 0) {
-				cgi.append_to_body(buff, BUFF_SIZE);
+				cgi.append_to_body(buff, bytes_received);
 				++it;
 			}
 
@@ -369,17 +408,18 @@ void	ServerMonitor::monitor_cgis() {
 				int	status;
 				waitpid(cgi._pid, &status, 0); // or NOHANG ?
 				
-				if (WIFEXITED(status)) {
-					if (WEXITSTATUS(status) != 0) {
-						cgi._connection->set_error(500);
-						it = close_cgi_socket(it);
-						continue;
-					}
-				}
-				close(cgi._pid);
+			if (WIFEXITED(status) && (WEXITSTATUS(status) != 0)) {
+					cgi._connection->set_error(500);
+					it = close_cgi_socket(it);
+					continue;
+			}
+				//close(cgi._pid);
 
+				std::cout << "CGI CONNECTIN" << cgi._connection->get_status() << std::endl;
 				cgi._connection->setStatus(READY_TO_SEND);
+				std::cout << "READY TO SEND" << std::endl;
 				cgi._connection->_response.copyFrom(cgi);
+				std::cout << "CURRENT BODY" << cgi._connection->_response.getCurrentBody() << std::endl;
 				it = close_cgi_socket(it);
 			}
 
@@ -406,7 +446,10 @@ std::vector<pollfd>::iterator ServerMonitor::connected_socket_end() {
     for (size_t i = 0; i < _map_connections.size(); ++i) {
         ++it;
     }
-    
+	std::cout << "map server configf size : " << _map_server_configs.size() << std::endl;
+	std::cout << "map connections    size : " << _map_connections.size() << std::endl;
+	std::cout << "map cgis           size : " << _map_cgis.size() << std::endl;
+	std::cout << "connected socket end : " << it->fd << std::endl;
     return it;  // ← Now points to first CGI pipe (or end if no CGIs)
 }
 

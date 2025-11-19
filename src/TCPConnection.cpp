@@ -174,12 +174,14 @@ void	TCPConnection::execute_method() {
 
 		try {
 			_response._cgi.execute_cgi();
-			ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
+			_map_cgi_fds_to_add.insert(std::pair<int, CGI>(poll_cgi, _response._cgi));  
+			//ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
 			return;
 		} 
 		catch (std::exception &er) {
-
-			ServerMonitor::_instance->close_cgi_fd(poll_cgi);
+			close(poll_cgi);
+			_map_cgi_fds_to_add.erase(poll_cgi);
+			//ServerMonitor::_instance->close_cgi_fd(poll_cgi);
 			_response.setCode(500);
 			_response._error_();
 			_status = READY_TO_SEND;

@@ -23,11 +23,12 @@ private:
 	int				_status; //statut de la livraison de la donnee
 	
 	int				_body_protocol; // is content_length precised, or is it a chunked body
-
+	
 public:
 
 	Response		_response; // current response, must be initialized by another function
 	Request			_request;	// current request, initialized by initialize_transfer()
+	std::map<int, CGI>	_map_cgi_fds_to_add; //all sockets we monitor, wrapped up for poll()
 
 	TCPConnection(int tcp_socket, ServerConfig config);
 	~TCPConnection();

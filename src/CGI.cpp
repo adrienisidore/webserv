@@ -116,10 +116,10 @@ void	CGI::openPipes() {
 		//thorw une Exception, ne pas exit SINON LEAKS
         exit(EXIT_FAILURE);
     }
-    fcntl(_inpipe[0], F_SETFD, FD_CLOEXEC);
-    fcntl(_inpipe[1], F_SETFD, FD_CLOEXEC);
-    fcntl(_outpipe[0], F_SETFD, FD_CLOEXEC);
-    fcntl(_outpipe[1], F_SETFD, FD_CLOEXEC);
+    fcntl(_inpipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(_inpipe[1], F_SETFL, O_NONBLOCK);
+    fcntl(_outpipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(_outpipe[1], F_SETFL, O_NONBLOCK);
 }
 
 /*
@@ -171,10 +171,20 @@ void	CGI::execute_cgi() {
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
 
 
-		if (getMethod() == "POST" && !getCode())
-			write(_inpipe[1], _current_body.c_str(), _current_body.size());
+		if (getMethod() == "POST" && !getCode()) {
+			ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
+        	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
+		}
 
         close(_inpipe[1]);
+		    int status;
+		pid_t result = waitpid(_pid, &status, WNOHANG);
+		if (result != 0) {
+			std::cerr << "CGI died immediately! status=" << status << "\n";
+			throw ServerException("CGI failed to start");
+		}
+		
+		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
         //close(_outpipe[0]);
 
 		//waitpid(_pid, &_status, 0);//Attention il faut que ce soit non-blocking, lire article : https://www.alimnaqvi.com/blog/webserv
