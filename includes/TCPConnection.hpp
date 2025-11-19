@@ -30,7 +30,12 @@ public:
 	Request			_request;	// current request, initialized by initialize_transfer()
 	std::map<int, CGI>	_map_cgi_fds_to_add; //all sockets we monitor, wrapped up for poll()
 
-	TCPConnection(int tcp_socket, ServerConfig config);
+	struct sockaddr_storage _client_addr;
+	socklen_t               _client_addr_len;
+
+
+	// TCPConnection(int tcp_socket, ServerConfig config);
+	TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len);
 	~TCPConnection();
 
 	void 	initialize_transfer();//One request per TCPConnection

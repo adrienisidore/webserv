@@ -9,17 +9,15 @@ RESPONSE (ADRI):
 
 	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
 	se baser sur "return" pour gerer ca, et savoir ou on doit checker les redirections dans le code
-	[ ] voir avec Gaston pour modifier add_new_client_socket(int listening) (REMOTE_ADDR)
 
     [x] checkAllowedMethods()
 	[ ] si la location correspond a la fois a CGI et redi, on fait quoi ?
-
-    [ ] autoindex on -> list directories
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
     [x] CGI verifier EOF et gerer le POST -> Inpipe
     [x] autoindex on -> list directories
+    [ ] s'assurer que le path va jusq'ua '?'
     [ ] debug monitoring cgi, connection_end()...
     [ ] implement TIMEOUT directives 
     [ ] TIMEOUT pour response et CGI

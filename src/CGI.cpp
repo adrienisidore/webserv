@@ -130,27 +130,34 @@ static std::string buildScriptName(const std::string &uri)
 
 static std::string buildRemoteAddr(const struct sockaddr_storage &addr, socklen_t len)
 {
-	// On suppose IPv4 (sockaddr_in)
-	const struct sockaddr_in *a = reinterpret_cast<const struct sockaddr_in*>(&addr);
+    // Vérifier qu'on a bien au moins la taille d'un sockaddr_in
+    if (len < sizeof(struct sockaddr_in))
+        return "REMOTE_ADDR=0.0.0.0";
 
-	// Récupérer l'adresse au format binaire
-	uint32_t ip = ntohl(a->sin_addr.s_addr);
+    const struct sockaddr_in *a = reinterpret_cast<const struct sockaddr_in*>(&addr);
 
-	// Extraire chaque octet
-	unsigned char o1 = (ip >> 24) & 0xFF;
-	unsigned char o2 = (ip >> 16) & 0xFF;
-	unsigned char o3 = (ip >> 8)  & 0xFF;
-	unsigned char o4 = ip & 0xFF;
+    // Vérifier la famille (IPv4) : ne traite pas les IPv6 car pas de fonctions autorisees par le sujet
+	// pour les traiter
+    if (a->sin_family != AF_INET)
+        return "REMOTE_ADDR=0.0.0.0";
 
-	// Construire la string IPv4
-	std::ostringstream oss;
-	oss << "REMOTE_ADDR="
-		<< (int)o1 << "."
-		<< (int)o2 << "."
-		<< (int)o3 << "."
-		<< (int)o4;
+    // Récupérer l'adresse au format binaire
+    uint32_t ip = ntohl(a->sin_addr.s_addr);
 
-	return oss.str();
+    // Extraire chaque octet
+    unsigned char o1 = (ip >> 24) & 0xFF;
+    unsigned char o2 = (ip >> 16) & 0xFF;
+    unsigned char o3 = (ip >> 8)  & 0xFF;
+    unsigned char o4 = ip & 0xFF;
+
+    std::ostringstream oss;
+    oss << "REMOTE_ADDR="
+        << (int)o1 << "."
+        << (int)o2 << "."
+        << (int)o3 << "."
+        << (int)o4;
+
+    return oss.str();
 }
 
 
@@ -190,9 +197,8 @@ void CGI::buildEnv() {
 	_env_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI));//Chemin absolu complet vers l'executable cgi
 	_env_strings.push_back(buildScriptName(_URI));//Chemin relatif vers le CGI
 
-	//A CODER
-	_env_strings.push_back("REMOTE_ADDR=127.0.0.1");//L'adresse IP du client
-	// _env_strings.push_back(buildRemoteAddr(_connection->_client_addr, _connection->_client_addr_len));
+	// _env_strings.push_back("REMOTE_ADDR=127.0.0.1");
+	_env_strings.push_back(buildRemoteAddr(_connection->_client_addr, _connection->_client_addr_len));//L'adresse IP du client
 
 	///////////////////////////////////////////////
 
@@ -288,7 +294,6 @@ void	CGI::execute_cgi() {
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
 
 
-		/*
         // Simule un corps POST
         const char *post_data = "name=adrien";//redondant avec _body mais necessaire car STDIN_FILENO est en lecture seule,
 		//si je veux ecrire _body dans dans STDIN depuis l'enfant c'est galere

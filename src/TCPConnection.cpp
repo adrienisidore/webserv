@@ -1,6 +1,9 @@
 #include "webserv.hpp"
 
-TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
+
+// TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
+TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len)
+	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)  {
 	end_transfer();//A quoi ca sert ?
 }
 

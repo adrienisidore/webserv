@@ -119,75 +119,28 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 	freeaddrinfo(res);
 }
 
-//A MODIFIER POUR ENREGISTRER L'ADRESSE DU CLIENT ET L'INTEGRER DANS LES VAR D'ENV DU CGI
 
-// class TCPConnection {
-// public:
-//     TCPConnection(int fd, const ServerConfig &config,
-//                   const struct sockaddr_storage &addr,
-//                   socklen_t addr_len);
+void ServerMonitor::add_new_client_socket(int listening) {
 
-//     struct sockaddr_storage _client_addr;
-//     socklen_t               _client_addr_len;
+	ServerConfig config = _map_server_configs[listening];
 
-//     // ...
-// };
+	// structure générique IPv4/IPv6
+	struct sockaddr_storage client_addr;
+	socklen_t addr_len = sizeof(client_addr);
 
-// void ServerMonitor::add_new_client_socket(int listening) {
-
-// 	ServerConfig config = _map_server_configs[listening];
-
-// 	// structure générique IPv4/IPv6
-// 	struct sockaddr_storage client_addr;
-// 	socklen_t addr_len = sizeof(client_addr);
-
-// 	// acceptation du client → remplit client_addr
-// 	int tcp_socket = accept(listening,
-// 							(struct sockaddr *)&client_addr,
-// 							&addr_len);
-
-// 	if (tcp_socket == -1)
-// 		throw SocketException(strerror(errno));
-
-// 	if (_map_connections.size() < MAX_CONNECTIONS) {
-
-// 		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
-
-// 		// PASSAGE DE L'ADRESSE AU TCPConnection
-// 		TCPConnection *connection =
-// 			new TCPConnection(tcp_socket, config, client_addr, addr_len);
-
-// 		_map_connections[tcp_socket] = connection;
-
-// 		std::cout << "A new TCP connection arrived !" << std::endl;
-// 	}
-// 	else {
-// 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
-// 		close(tcp_socket);
-// 	}
-// }
-
-void	ServerMonitor::add_new_client_socket(int listening) {
-
-	ServerConfig	config = _map_server_configs[listening];
-
-	sockaddr_in	param;
-	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
-	socklen_t	tcp_size = sizeof(param);
-	
-
-	//Creation du socket connecte pour le tcp
-	int	tcp_socket = accept(listening, (sockaddr *)&param, &tcp_size);
+	// acceptation du client → remplit client_addr
+	int tcp_socket = accept(listening, (struct sockaddr *)&client_addr, &addr_len);
 
 	if (tcp_socket == -1)
 		throw SocketException(strerror(errno));
 
-	if (_map_connections.size() < MAX_CONNECTIONS) { // specified in config file
-		// add the pollfd derived from the socket to the fds list
+	if (_map_connections.size() < MAX_CONNECTIONS) {
+
 		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
 
-		// create a new tcp with the socket and add it to the map
-		TCPConnection	*connection = new TCPConnection(tcp_socket, config);
+		// PASSAGE DE L'ADRESSE AU TCPConnection
+		TCPConnection *connection = new TCPConnection(tcp_socket, config, client_addr, addr_len);
+
 		_map_connections[tcp_socket] = connection;
 
 		std::cout << "A new TCP connection arrived !" << std::endl;
@@ -197,6 +150,37 @@ void	ServerMonitor::add_new_client_socket(int listening) {
 		close(tcp_socket);
 	}
 }
+
+// void	ServerMonitor::add_new_client_socket(int listening) {
+
+// 	ServerConfig	config = _map_server_configs[listening];
+
+// 	sockaddr_in	param;
+// 	memset(&param, 0, sizeof(param));//FONCTION INTERDITE
+// 	socklen_t	tcp_size = sizeof(param);
+	
+
+// 	//Creation du socket connecte pour le tcp
+// 	int	tcp_socket = accept(listening, (sockaddr *)&param, &tcp_size);
+
+// 	if (tcp_socket == -1)
+// 		throw SocketException(strerror(errno));
+
+// 	if (_map_connections.size() < MAX_CONNECTIONS) { // specified in config file
+// 		// add the pollfd derived from the socket to the fds list
+// 		_pollfds.insert(connected_socket_end(), pollfd_wrapper(tcp_socket));
+
+// 		// create a new tcp with the socket and add it to the map
+// 		TCPConnection	*connection = new TCPConnection(tcp_socket, config);
+// 		_map_connections[tcp_socket] = connection;
+
+// 		std::cout << "A new TCP connection arrived !" << std::endl;
+// 	}
+// 	else {
+// 		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
+// 		close(tcp_socket);
+// 	}
+// }
 
 void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 
