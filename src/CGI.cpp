@@ -90,6 +90,7 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
 // root           : chemin absolu du dossier racine
 // location_uri   : chemin défini dans la config (ex: "cgi-bin")
 // uri            : URI complète fournie par le client (ex: "/cgi-bin/run.cgi?x=1")
+
 std::string buildScriptFilename(const std::string &root, const std::string &location_uri, const std::string &uri)
 {
     // 1. enlever la query string
