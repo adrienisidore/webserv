@@ -1,4 +1,4 @@
-root html;
+root ./ressources;
 autoindex off;
 server
 listen 127.0.0.1:8080;
@@ -8,4 +8,7 @@ location /colorfull/
 autoindex on;
 cgi_handler .py /usr/bin/python3;
 location /
+index index.html;
+location /oui
+return 301 ../ressources;
 index index.html;

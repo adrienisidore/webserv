@@ -1,31 +1,22 @@
+
+PARSING ADRI :
 [ ] checker qu'on a pas incorpore des fonctions interdites
-PARSING (GASTON):
 
-    [ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier (est ce qu'on ignore ou pas)
-
-RESPONSE (ADRI):
-
-	[x] finir buildEnv et finir de launchexecve (pour le cas de POST)
-
-	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
-	se baser sur "return" pour gerer ca, et savoir ou on doit checker les redirections dans le code
-
-    [x] checkAllowedMethods()
-	[ ] si la location correspond a la fois a CGI et redi, on fait quoi ?
+[ ] parsingAutoConfig checker que les directives qu'on gere sont correctement parses (autoindex ne peut valeur que on ou off)
+[ ] checker que les directives sont au bon endroit (autoindex peut etre dans global ?)
+[ ] checker que les redirections fonctionnent
+[x] Gerer les redirections infinies dans le parsing
+[x] dans root et dans location_uri checker que ca mene pas vers des chemins interdits
+?[ ] faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier (est ce qu'on ignore ou pas)
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [ ] trop de waitpid?
+    [x] CGI verifier EOF et gerer le POST -> Inpipe
     [x] autoindex on -> list directories
-    [ ] s'assurer que le path va jusq'ua '?'
-    [ ] debug monitoring cgi, connection_end()...
+    [x] debug monitoring cgi, connection_end()...
     [ ] implement TIMEOUT directives 
     [ ] TIMEOUT pour response et CGI
-
-
-
-
-
+	[ ] s'assurer que le path va jusq'ua '?'
 
 BONUS:
 
