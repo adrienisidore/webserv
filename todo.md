@@ -2,8 +2,8 @@
 PARSING ADRI :
 [ ] checker qu'on a pas incorpore des fonctions interdites
 
-[ ] parsingAutoConfig checker que les directives qu'on gere sont correctement parses (autoindex ne peut valeur que on ou off)
-[ ] checker que les directives sont au bon endroit (autoindex peut etre dans global ?)
+?[ ] parsingAutoConfig checker que les directives qu'on gere sont correctement parses (autoindex ne peut valeur que on ou off)
+?[ ] checker que les directives sont au bon endroit (autoindex peut etre dans global ?)
 [ ] checker que les redirections fonctionnent
 [x] Gerer les redirections infinies dans le parsing
 [x] dans root et dans location_uri checker que ca mene pas vers des chemins interdits
