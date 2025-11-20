@@ -34,6 +34,8 @@ class Response : public HTTPcontent {
 
 		void			checkPermissions(std::string path);
 
+		void 			checkRedir();
+
 		void			checkAllowedMethods();
 		void			buildPath();
 

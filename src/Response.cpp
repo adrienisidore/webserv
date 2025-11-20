@@ -249,6 +249,19 @@ void	Response::checkPermissions(std::string path) {
 		return setCode(403);//On a acces au repertoire parent pour faire des modifications
 }
 
+void Response::checkRedir() {
+
+	std::string value = _config.getDirective("return");
+
+	if (value.empty())
+		return; // aucune redirection
+
+	std::istringstream iss(value);
+	int code;
+	iss >> code;   // lit uniquement le code (301, 302, 307, 308)
+	_code = code;  // on applique juste le code
+}
+
 bool	Response::is_cgi() {
 	std::string s_ = _config.getDirective("cgi_handler");
 	std::string::size_type pos = s_.find(' ');
@@ -283,6 +296,8 @@ int	Response::fetch() {
 	if (getCode())
 		return 0;
 	checkAllowedMethods();
+
+	checkRedir();//Verifie que la location n'est pas une redir, sinon set le code de "return"
 		
 	buildPath();
 
@@ -336,9 +351,15 @@ static std::string loadFile(const std::string &path) {
 }
 
 void Response::_error_() {
+
 	// Pages HTML des erreurs (chargées une seule fois)
 	static std::map<int, std::string> pages;
 	if (pages.empty()) {
+		pages[301] = loadFile("ressources/errors/301.html");
+		pages[302] = loadFile("ressources/errors/302.html");
+		pages[307] = loadFile("ressources/errors/307.html");
+		pages[308] = loadFile("ressources/errors/308.html");
+
 		pages[400] = loadFile("ressources/errors/400.html");
 		pages[403] = loadFile("ressources/errors/403.html");
 		pages[404] = loadFile("ressources/errors/404.html");
@@ -351,9 +372,14 @@ void Response::_error_() {
 		pages[501] = loadFile("ressources/errors/501.html");
 	}
 
-	// Reason phrases (HTTP/1.1)
+	// Reason phrases
 	static std::map<int, std::string> reason;
 	if (reason.empty()) {
+		reason[301] = "Moved Permanently";
+		reason[302] = "Found";
+		reason[307] = "Temporary Redirect";
+		reason[308] = "Permanent Redirect";
+
 		reason[400] = "Bad Request";
 		reason[403] = "Forbidden";
 		reason[404] = "Not Found";
@@ -366,7 +392,7 @@ void Response::_error_() {
 		reason[501] = "Not Implemented";
 	}
 
-	// Sélection du corps
+	// Sélection du corps de la page
 	std::map<int, std::string>::iterator it = pages.find(_code);
 	const std::string &body = (it != pages.end()) ? it->second : pages[500];
 
@@ -376,20 +402,39 @@ void Response::_error_() {
 		rp = reason[_code];
 
 	std::ostringstream out;
+
+	// Status line
 	out << "HTTP/1.1 " << _code << " " << rp << "\r\n"
 		<< "Content-Type: text/html\r\n"
 		<< "Content-Length: " << body.size() << "\r\n"
-		<< "Connection: close\r\n"
-		<< "\r\n";
-	if (_code == 405)
-	{
-		// Dans le _headers de la reponse faite au client on ajoute les requetes allowed
-		const std::map<std::string, std::string> &dirs = _config.getDirectives();
-		std::map<std::string, std::string>::const_iterator it_ = dirs.find("allowed_methods");
-		std::string allow = "Allow: " + it_->second;
-		out << allow;
+		<< "Connection: close\r\n";
+
+	// Redirections 3xx → ajouter Location:
+	if (_code >= 300 && _code <= 399) {
+		std::string ret = _config.getDirective("return"); // "301 /new"
+		if (!ret.empty()) {
+			std::istringstream iss(ret);
+			int code_3xx;
+			std::string target;
+			iss >> code_3xx >> target;
+			out << "Location: " << target << "\r\n";
+		}
 	}
-	out	<< body;
+
+	// Méthode interdite → ajouter Allow:
+	if (_code == 405) {
+		const std::map<std::string, std::string> &dirs = _config.getDirectives();
+		std::map<std::string, std::string>::const_iterator it2 = dirs.find("allowed_methods");
+		if (it2 != dirs.end())
+			out << "Allow: " << it2->second << "\r\n";
+	}
+
+	// Fin des headers
+	out << "\r\n";
+
+	// Corps HTML
+	out << body;
+
 	_current_body = out.str();
 }
 
