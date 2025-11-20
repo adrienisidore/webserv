@@ -15,12 +15,10 @@ RESPONSE (ADRI):
 
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
-    [ ] trop de waitpid?
-    [x] autoindex on -> list directories
-    [ ] s'assurer que le path va jusq'ua '?'
-    [ ] debug monitoring cgi, connection_end()...
+    [x] s'assurer que le path va jusq'ua '?'
     [ ] implement TIMEOUT directives 
     [ ] TIMEOUT pour response et CGI
+    [ ] tester POST CGI
 
 
 

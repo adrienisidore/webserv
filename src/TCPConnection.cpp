@@ -3,11 +3,29 @@
 
 // TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
 TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len)
-	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)  {
+	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)
+{
+	_header_max_time = ret_time_directive("client_header_timeout", 60);
+	_body_max_time = ret_time_directive("client_body_timeout", 60);
+	_between_chunks_max_time = ret_time_directive("send_timeout", 10);
+	_no_request_max_time = ret_time_directive("keepalive_timeout", 200);
+	_cgi_max_time = ret_time_directive("cgi_timeout", 10);
+
 	end_transfer();//A quoi ca sert ?
 }
 
 TCPConnection::~TCPConnection() {}
+
+time_t TCPConnection::ret_time_directive(std::string directive_name, int defaul) const {
+
+	std::string	directive_str = _config.getDirective(directive_name);
+	if (!directive_str.empty()) {
+		time_t	time = std::atoi(directive_str.c_str());
+		if (time > 0)
+			return time;
+	}
+	return defaul; 
+}
 
 //When transfer is done, or before waiting the data
 void	TCPConnection::end_transfer() {
@@ -15,6 +33,7 @@ void	TCPConnection::end_transfer() {
 	_header_start_time = 0;
 	_last_tcp_chunk_time = 0;
 	_body_start_time = 0;
+	_cgi_start_time = 0;
 	_end_of_request_time = time(NULL);
 }
 
@@ -24,6 +43,7 @@ void	TCPConnection::initialize_transfer() {
 	_header_start_time = time(NULL);
 	_end_of_request_time = 0;
 	_body_start_time = 0;
+	_cgi_start_time = 0;
 	_status = READING_HEADER;
 	_request.reset(this);
 	_response.reset(this);
@@ -85,6 +105,8 @@ void TCPConnection::use_recv() {
 
 void	TCPConnection::read_header() {
 
+	unsigned long	max_size;
+
 	use_recv();
 
 	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
@@ -93,7 +115,16 @@ void	TCPConnection::read_header() {
 	_request.append_to_header(_buff, _bytes_received);
 
 	// std::cout << "Header: " << _request.getCurrentHeader() << std::endl;
-	if (_request.getCurrentHeader().size() > HEADER_MAX_SIZE)
+	std::string max_size_str = _config.getDirective("client_header_buffer_size");
+	if (max_size_str.empty())
+		max_size = HEADER_MAX_SIZE;
+	else {
+		max_size = std::atol(max_size_str.c_str());
+		if (max_size <= 0)
+			max_size = HEADER_MAX_SIZE;
+	}
+
+	if (max_size < _request.getCurrentHeader().size())
 		return set_error(431);
 
 	// CHECK IF END OF HEADER
@@ -126,6 +157,8 @@ void	TCPConnection::read_header() {
 void	TCPConnection::read_body() {
 	
 	use_recv();
+
+	double	max_size;
 	
 	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
         return;
@@ -134,8 +167,17 @@ void	TCPConnection::read_body() {
 	_request.append_to_body(_buff, BUFF_SIZE);		// THE READING
 
 	// std::cout << "Body: " << _request.getCurrentBody() << std::endl;
-	if (_request.getCurrentBody().size() > BODY_MAX_SIZE)
-			return set_error(413);
+	std::string max_size_str = _config.getDirective("client_max_body_size");
+	if (max_size_str.empty())
+		max_size = BODY_MAX_SIZE;
+	else {
+		max_size = std::atol(max_size_str.c_str());
+		if (max_size <= 0)
+			max_size = BODY_MAX_SIZE;
+	}
+
+	if (max_size < _request.getCurrentBody().size())
+		return set_error(413);
 	
 	// CHECK IF END OF BODY
 	if (getBodyProtocol() == CHUNKED) {
@@ -170,6 +212,10 @@ void	TCPConnection::execute_method() {
 
 	_response.copyFrom(_request);
 
+	_header_start_time = 0;
+	_body_start_time = 0;
+	_last_tcp_chunk_time = 0;
+
 	poll_cgi = _response.fetch();// check compatibilite entre location config et request
 	if (poll_cgi) {
 
@@ -178,6 +224,7 @@ void	TCPConnection::execute_method() {
 		try {
 			_response._cgi.execute_cgi();
 			_map_cgi_fds_to_add.insert(std::pair<int, CGI>(poll_cgi, _response._cgi));  
+			_cgi_start_time = time(NULL);
 			//ServerMonitor::_instance->add_new_cgi_socket(poll_cgi, _response._cgi);
 			return;
 		} 
@@ -240,7 +287,18 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 	if (errno == ERANGE || *endptr != '\0')
 		return false;
 	
-	if (length > BODY_MAX_SIZE)
+	double	max_size;
+
+	std::string max_size_str = _config.getDirective("client_max_body_size");
+	if (max_size_str.empty())
+		max_size = BODY_MAX_SIZE;
+	else {
+		max_size = std::atol(max_size_str.c_str());
+		if (max_size <= 0)
+			max_size = BODY_MAX_SIZE;
+	}
+
+	if (length > max_size)
 		return false;
 
 	_request.setContentLength(length);
@@ -265,6 +323,18 @@ time_t	TCPConnection::getLastChunkTime() const {return _last_tcp_chunk_time;}
 
 time_t	TCPConnection::getEndOfRequestTime() const {return _end_of_request_time;}
 
+time_t	TCPConnection::getCGITime() const {return _cgi_start_time;}
+
 int		TCPConnection::getBodyProtocol() const {return _body_protocol;}
 
 void	TCPConnection::setBodyProtocol(int protocol) {_body_protocol = protocol;}
+
+time_t	TCPConnection::getHeaderMaxTime() const {return _header_max_time;}
+
+time_t	TCPConnection::getBodyMaxTime() const {return _body_max_time;}
+
+time_t	TCPConnection::getBetweenChunksMaxTime() const {return _between_chunks_max_time;}
+
+time_t	TCPConnection::getNoRequestMaxTime() const {return _no_request_max_time;}
+
+time_t	TCPConnection::getCGIMaxTime() const {return _cgi_max_time;}

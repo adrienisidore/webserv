@@ -140,12 +140,14 @@ void			Response::buildPath() {
 	if (root.empty())
 		root = "./ressources";
 	
-	
-	_path = root + _URI;
+	size_t query = _URI.find("?");
+	std::string	uri = _URI.substr(0, query);	
+
+	_path = root + uri;
 	std::cout << "path is : " << _path << std::endl;
 	// -----------------Differencie les types de requetes------------------------
-	if (_URI[_URI.size() - 1] == '/') {
-		// Si URI == directory
+	if (uri[uri.size() - 1] == '/') {
+		// Si uri == directory
 
 		std::string index = _config.getDirective("index");
 		if (index.empty()) {

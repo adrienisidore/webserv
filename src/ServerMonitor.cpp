@@ -161,14 +161,37 @@ void	ServerMonitor::add_new_cgi_socket(int socket, CGI cgi) {
 	std::cout << "A new CGI has been launched !" << std::endl;
 }
 
+
+
 //std::vector<pollfd>::iterator	ServerMonitor::close_cg
 std::vector<pollfd>::iterator	ServerMonitor::close_tcp_connection(std::vector<pollfd>::iterator it) {
 	std::cout << "Closing connection" << std::endl;
+
+	if (_map_connections[it->fd]->get_status() == NOT_READY_TO_SEND)
+		close_associated_cgi(it->fd);
+
 	close(it->fd);
 	delete _map_connections[it->fd];	// Warning: it creates the element if doesn't exist yet
 	_map_connections.erase(it->fd);
 	return _pollfds.erase(it);
 }
+
+std::vector<pollfd>::iterator	ServerMonitor::close_associated_cgi()
+
+for (std::map<int, TCPConnection*>::iterator it = _map_connections.begin();
+         it != _map_connections.end(); ) {
+        
+        if (it->second == conn_to_remove) {
+            // Found it!
+            delete it->second;  // Free memory
+            _map_connections.erase(it++);  // Erase and move to next
+            return;  // Stop after first match
+        } else {
+            ++it;
+        }
+    }
+
+kill(_map_connections[it->fd]->_response._cgi._pid, SIGKILL);
 
 std::vector<pollfd>::iterator	ServerMonitor::close_cgi_socket(std::vector<pollfd>::iterator it) {
 
@@ -350,6 +373,7 @@ void	ServerMonitor::monitor_connections() {
 	for (std::map<int, TCPConnection *>::iterator connection = _map_connections.begin(); connection != _map_connections.end(); ++connection) {
 		for (std::map<int, CGI>::iterator it = connection->second->_map_cgi_fds_to_add.begin(); it != connection->second->_map_cgi_fds_to_add.end(); ++it) {
 			add_new_cgi_socket(it->first, it->second);
+
 		}
 		connection->second->_map_cgi_fds_to_add.clear();
 	}
@@ -452,33 +476,38 @@ int		ServerMonitor::calculate_next_timeout() {
 	if (_map_connections.empty())
 		return (100);
 
-	int	next_timeout = NO_REQUEST_MAX_TIME;
+	int	next_timeout = -1;
 	for (std::map<int, TCPConnection *>::iterator it = _map_connections.begin(); it != _map_connections.end(); ++it) {
 		TCPConnection	*conn = it->second;
 
 		int	remaining;
 
 		if (conn->getEndOfRequestTime()) {
-			remaining = NO_REQUEST_MAX_TIME - (now - conn->getEndOfRequestTime());
-			if (remaining > 0 && remaining < next_timeout)
+			remaining = conn->getNoRequestMaxTime() - (now - conn->getEndOfRequestTime());
+			if (next_timeout < 0 || (remaining > 0 && remaining < next_timeout))
 				next_timeout = remaining;
 		}
 
 		if (conn->getHeaderTime()) {
-			remaining = HEADER_MAX_TIME - (now - conn->getHeaderTime());
-			if (remaining > 0 && remaining < next_timeout)
+			remaining = conn->getHeaderMaxTime() - (now - conn->getHeaderTime());
+			if (next_timeout < 0 || (remaining > 0 && remaining < next_timeout))
 				next_timeout = remaining;
 		}
 
 		if (conn->getBodyTime()) {
-			remaining = BODY_MAX_TIME - (now - conn->getBodyTime());
-			if (remaining > 0 && remaining < next_timeout)
+			remaining = conn->getBodyMaxTime() - (now - conn->getBodyTime());
+			if (next_timeout < 0 || (remaining > 0 && remaining < next_timeout))
 				next_timeout = remaining;
 		}
 
 		if (conn->getLastChunkTime()) {
-			remaining = BETWEEN_CHUNK_MAX_TIME- (now - conn->getLastChunkTime());
-			if (remaining > 0 && remaining < next_timeout)
+			remaining = conn->getBetweenChunksMaxTime() - (now - conn->getLastChunkTime());
+			if (next_timeout < 0 || (remaining > 0 && remaining < next_timeout))
+				next_timeout = remaining;
+		}
+		if (conn->getCGITime()) {
+			remaining = conn->getCGIMaxTime() - (now - conn->getCGITime());
+			if (next_timeout < 0 || (remaining > 0 && remaining < next_timeout))
 				next_timeout = remaining;
 		}
 	}
@@ -504,16 +533,19 @@ void	ServerMonitor::check_timeouts() {
 
 		timeout = 0;
 
-		if (conn->getEndOfRequestTime() && (now - conn->getEndOfRequestTime() > HEADER_MAX_TIME)) // CONFIG 
+		if (conn->getEndOfRequestTime() && (now - conn->getEndOfRequestTime() > conn->getNoRequestMaxTime())) // CONFIG 
 			timeout = 1;
 
-		else if (conn->getHeaderTime() && (now - conn->getHeaderTime() > HEADER_MAX_TIME)) // CONFIG
+		else if (conn->getHeaderTime() && (now - conn->getHeaderTime() > conn->getHeaderMaxTime())) // CONFIG
 			timeout = 1;
 
-		else if (conn->getBodyTime() && (now - conn->getBodyTime() > BODY_MAX_TIME)) // CONFIG
+		else if (conn->getBodyTime() && (now - conn->getBodyTime() > conn->getBodyMaxTime())) // CONFIG
 			timeout = 1;
 
-		else if (conn->getLastChunkTime() && (now - conn->getLastChunkTime() > BETWEEN_CHUNK_MAX_TIME)) // CONFIG
+		else if (conn->getLastChunkTime() && (now - conn->getLastChunkTime() > conn->getBetweenChunksMaxTime())) // CONFIG
+			timeout = 1;
+
+		else if (conn->getCGITime() && (now - conn->getCGITime() > conn->getCGIMaxTime())) // CONFIG
 			timeout = 1;
 
 		if (timeout) {
