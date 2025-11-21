@@ -10,5 +10,5 @@ cgi_handler .py /usr/bin/python3;
 location /
 index index.html;
 location /oui
-return 301 ../ressources;
+return 301 /colorfull/;
 index index.html;
