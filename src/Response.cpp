@@ -140,12 +140,14 @@ void			Response::buildPath() {
 	if (root.empty())
 		root = "./ressources";
 	
-	
-	_path = root + _URI;
+	size_t query = _URI.find("?");
+	std::string	uri = _URI.substr(0, query);	
+
+	_path = root + uri;
 	std::cout << "path is : " << _path << std::endl;
 	// -----------------Differencie les types de requetes------------------------
-	if (_URI[_URI.size() - 1] == '/') {
-		// Si URI == directory
+	if (uri[uri.size() - 1] == '/') {
+		// Si uri == directory
 
 		std::string index = _config.getDirective("index");
 		if (index.empty()) {
@@ -370,6 +372,7 @@ void Response::_error_() {
 		pages[414] = loadFile("ressources/errors/414.html");
 		pages[500] = loadFile("ressources/errors/500.html");
 		pages[501] = loadFile("ressources/errors/501.html");
+		pages[504] = loadFile("ressources/errors/504.html");
 	}
 
 	// Reason phrases
@@ -390,8 +393,10 @@ void Response::_error_() {
 		reason[414] = "URI Too Long";
 		reason[500] = "Internal Server Error";
 		reason[501] = "Not Implemented";
+		reason[504] = "Timeout";
 	}
 
+	std::cout << "CODE IS " << _code << std::endl;
 	// Sélection du corps de la page
 	std::map<int, std::string>::iterator it = pages.find(_code);
 	const std::string &body = (it != pages.end()) ? it->second : pages[500];
