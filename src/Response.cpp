@@ -372,6 +372,7 @@ void Response::_error_() {
 		pages[414] = loadFile("ressources/errors/414.html");
 		pages[500] = loadFile("ressources/errors/500.html");
 		pages[501] = loadFile("ressources/errors/501.html");
+		pages[504] = loadFile("ressources/errors/504.html");
 	}
 
 	// Reason phrases
@@ -392,8 +393,10 @@ void Response::_error_() {
 		reason[414] = "URI Too Long";
 		reason[500] = "Internal Server Error";
 		reason[501] = "Not Implemented";
+		reason[504] = "Timeout";
 	}
 
+	std::cout << "CODE IS " << _code << std::endl;
 	// Sélection du corps de la page
 	std::map<int, std::string>::iterator it = pages.find(_code);
 	const std::string &body = (it != pages.end()) ? it->second : pages[500];

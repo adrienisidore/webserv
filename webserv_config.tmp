@@ -10,7 +10,7 @@ request_header_timeout 3;
 request_body_timeout 6;
 keepalive_timeout 5;
 send_timeout 10;
-cgi_timeout 5;
+cgi_timeout 3;
 location /colorfull/
 autoindex on;
 cgi_handler .py /usr/bin/python3;
