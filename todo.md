@@ -9,8 +9,6 @@ RESPONSE (ADRI):
 	[ ] redirection directive -> vers une nouvelle location. ATTENTION AUX REDIRECTIONS INFINIES
 	se baser sur "return" pour gerer ca, et savoir ou on doit checker les redirections dans le code
 
-	[ ] si la location correspond a la fois a CGI et redi, on fait quoi ?
-
 SERVERMONITOR / TCPCONNECTION (GASTON):
 
     [ ] tester POST CGI
