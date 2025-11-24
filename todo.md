@@ -13,12 +13,12 @@ SERVERMONITOR / TCPCONNECTION (GASTON):
     
     [ ] tester POST sans CGI
     [ ] tester DELETE
-    [ ] creer CGI en PHP ou LUA 
+    [ ] creer CGI en PHP
     [ ] tester les differentes methodes read()
 
 BONUS:
 
-    [ ] gestion des cookies -> mdp + login dans un fichier
+    ?[ ] gestion des cookies -> mdp + login dans un fichier
 
 TESTS:
 
@@ -26,5 +26,5 @@ TESTS:
     [ ] siege
     [ ] fichiers lourds
     [ ] CGI boucle infinie (non bloquant pour autres clienbts + )
-    [x] Se connecter avec localhost ne fonctionne pas car webserv ne reconnait que 127.0.0.1 (fichier config)
+    [ ] test fichier de l'ecole
 
