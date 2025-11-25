@@ -1,6 +1,8 @@
 
 PARSING ADRI :
 Probleme de leak au niveau de connected_socket_end (supprimer cout)
+
+[ ] peut on avoir un global sans directivre "root" ? Il y a un "root" par defaut ?
 [ ] Checker les leaks en toute circonstances
 [ ] checker qu'on a pas incorpore des fonctions interdites (A la fin du projet)
 [ ] tester HEAD (PUT n'est pus supporte par le serveur)
