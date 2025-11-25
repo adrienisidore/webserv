@@ -16,8 +16,13 @@ Probleme de leak au niveau de connected_socket_end (supprimer cout)
 TESTS:
 
     [ ] tester les differentes methodes read()
-    [ ] tester POST sans CGI
+        [x] chunked
+        [ ] specific content-length
+
+    [ ] tester POST sans CGI   
     [ ] tester DELETE
+        => marche mais verifier que la reponse envoyee est toujours bonne
+
     [ ] leaks avec top ou htop
     [ ] siege
     [ ] fichiers lourds
