@@ -1,5 +1,6 @@
 
 PARSING ADRI :
+
 Probleme de leak au niveau de connected_socket_end (supprimer cout)
 
 [ ] peut on avoir un global sans directivre "root" ? Il y a un "root" par defaut ?
