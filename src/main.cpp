@@ -4,10 +4,13 @@
 
  	try {
 		check_args(ac, av);
-		std::string temp_file = parseConfig(av[1]);
+		std::string temp_file;
+		if (ac == 1)
+			temp_file = parseConfig("default.conf");
+		else
+			temp_file = parseConfig(av[1]);
  		ServerMonitor	ServerMonitor(temp_file);
 		ServerMonitor.run();
-		// add servers to Server Monitor and run them
  	}
  	catch (SocketException &er) {
  		std::cerr << "Error Socket: " << er.what() << std::endl;

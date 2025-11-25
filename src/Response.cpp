@@ -153,7 +153,7 @@ void			Response::buildPath() {
 		if (index.empty()) {
 			// Si pas d'index
 
-			if (_method == "GET" && _config.getDirective("autoindex") == "on")
+			if ((_method == "GET" || _method == "HEAD") && _config.getDirective("autoindex") == "on")
 				_autoindex = true;
 			else
 				return setCode(403);
@@ -163,7 +163,7 @@ void			Response::buildPath() {
 			index = try_multiple_indexes(indexes);
 			
 			if (index.empty()) {
-				if (_method == "GET" && _config.getDirective("autoindex") == "on")
+				if ((_method == "GET" || _method == "HEAD") && _config.getDirective("autoindex") == "on")
 					_autoindex = true;
 				else
 					return setCode(403);
@@ -195,7 +195,7 @@ void	Response::checkPermissions(std::string path) {
 	struct stat path_properties;//path_properties
 
 	// stat() : Récupération des métadonnées du fichier/répertoire, échoue si la ressource n'existe pas ou n'est pas accessible.
-	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")
+	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")// PUT
 		setCode(405);
 
 	else if (!is_valid_path(path))
@@ -241,7 +241,7 @@ void	Response::checkPermissions(std::string path) {
 	if (!_autoindex && S_ISDIR(path_properties.st_mode))
 		return setCode(404);
     if ((_method == "GET" || _method == "HEAD") && access(path.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
-	else if (_method == "PUT" || _method == "POST") {
+	else if (_method == "POST") { // _method == "PUT" || _method == "POST"
 		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
 		if ((access(path.c_str(), F_OK) == 0 && access(path.c_str(), W_OK) != 0)
 			|| (access(path.c_str(), F_OK) != 0 && access(parentDir(path).c_str(), W_OK | X_OK) != 0))
@@ -335,7 +335,7 @@ void	Response::execute() {
 
 	// ICI : toutes les actions ont ete executes, POST et DELETE on preremplie le _body
 	// il reste plus qu'a GET ou ERROR et ajouter la startLine (buildResponse : HTTP/1.1 200 ok)
-	else if (getMethod() == "GET" && !getCode())
+	else if ((getMethod() == "GET" || getMethod() == "HEAD") && !getCode())
 		_get_();
 
 	if (getCode())
@@ -644,6 +644,8 @@ void	Response::build_valid_response_get(std::string body) {
 	_current_body += "\r\n";
 	
 	// 9. Corps de la Réponse (Le contenu du fichier)
+	if (_method == "HEAD")
+		return ;
 	_current_body += body;
 }
 

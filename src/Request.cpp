@@ -95,7 +95,7 @@ void	Request::setStartLine() {
 	//Verification de la methode et du protocole : verifier logique (adri) du empty
 	if (_method.empty() || _protocol != start_line.substr(second_space + 1)) return (setCode(400));
 	// Méthode non implémentée dans ce serveur (exemple : GIT / HTTP/1.1)
-	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "PUT" && _method != "DELETE")
+	if (_method != "GET" && _method != "HEAD" && _method != "POST" && _method != "DELETE")// PUT
 		return setCode(501);
 }
 

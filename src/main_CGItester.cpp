@@ -105,16 +105,16 @@
 //     }
 // }
 
-int main() {
+// int main() {
 
-	// launchExecve();
+// 	// launchExecve();
 
-	CGI	cgi;
+// 	CGI	cgi;
 
-	cgi.launchExecve();
+// 	cgi.launchExecve();
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 // Principe

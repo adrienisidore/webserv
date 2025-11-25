@@ -4,7 +4,9 @@ void	check_args(int ac, char **av) {
 
 	std::string	config_file_name;
 
-	if (ac != 2)
+	if (ac == 1)
+		return ;
+	if (ac > 2)
 		throw (std::invalid_argument("wrong number of arguments"));
 
 	config_file_name = av[1];
