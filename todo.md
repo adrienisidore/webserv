@@ -9,6 +9,7 @@ PARSING ADRI :
 
 ?[ ] gerer HEAD
 
+
 SERVERMONITOR / TCPCONNECTION (GASTON):
     
     [ ] tester POST sans CGI
