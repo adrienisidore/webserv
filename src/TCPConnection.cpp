@@ -53,15 +53,17 @@ void	TCPConnection::initialize_transfer() {
 
 void	TCPConnection::check_body_headers() {
 
-	if (_request.getHeaders().find("CONTENT-LENGTH") != _request.getHeaders().end()) {
-		if (!is_valid_length(_request.getHeaders()["CONTENT-LENGTH"]))
+	std::map<std::string, std::string>	headers = _request.getHeaders();
+
+	if (headers.find("CONTENT-LENGTH") != headers.end()) {
+		if (!is_valid_length(headers["CONTENT-LENGTH"]))
 			return set_error(413);
 		else
 			setBodyProtocol(CONTENT_LENGTH);
 	}
 
-	else if (_request.getHeaders().find("TRANSFER-ENCODING") != _request.getHeaders().end() 
-		&& _request.getHeaders()["TRANSFER-ENCODING"] == "chunked") {
+	else if (headers.find("TRANSFER-ENCODING") != headers.end() 
+		&& headers["TRANSFER-ENCODING"] == "chunked") {
 		setBodyProtocol(CHUNKED);
 	}
 
@@ -72,7 +74,6 @@ void	TCPConnection::check_body_headers() {
 }
 
 void TCPConnection::use_recv() {
-
 	memset(_buff, 0, BUFF_SIZE);
 	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
 	_last_tcp_chunk_time = time(NULL);
@@ -81,7 +82,7 @@ void TCPConnection::use_recv() {
 		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
 		return;
 	}
-	else if (_bytes_received < 0) {
+	else if (_bytes_received < 0) {		// problem: with transfer-encoding: chunked
 		_status = CLIENT_DISCONNECTED;
 		return set_error(500);
 	}
@@ -143,7 +144,7 @@ void	TCPConnection::read_header() {
 		if (_request.getMethod() == "POST" && !_request.getCode()) {
 			_body_start_time = time(NULL);
 			_header_start_time = 0;
-			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end));
+			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end + 4));
 			_status = WAIT_FOR_BODY;
 			return;
 		}
@@ -154,19 +155,23 @@ void	TCPConnection::read_header() {
 	}
 }
 
-void	TCPConnection::read_body() {
+void	TCPConnection::read_body(bool state_changed) {
 	
-	use_recv();
+	if (!state_changed) {
+
+		use_recv();
+
+		if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
+			return;
+		// APPEND TO REQUEST CURRENT BODY
+
+		_request.append_to_body(_buff, _bytes_received);		// THE READING
+	
+	}
 
 	double	max_size;
-	
-	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
-        return;
-	// APPEND TO REQUEST CURRENT BODY
-
-	_request.append_to_body(_buff, BUFF_SIZE);		// THE READING
-
 	// std::cout << "Body: " << _request.getCurrentBody() << std::endl;
+	
 	std::string max_size_str = _config.getDirective("client_max_body_size");
 	if (max_size_str.empty())
 		max_size = BODY_MAX_SIZE;

@@ -12,23 +12,20 @@ Probleme de leak au niveau de connected_socket_end (supprimer cout)
 [ ] parsingAutoConfig : faire une liste de toutes les directives qu'on gere et faire une loop dans config pour les verifier : rtout ce qu'on gere on accepte n'importe pas quelle valeur
 
 
-
-SERVERMONITOR / TCPCONNECTION (GASTON):
     
-    [ ] tester POST sans CGI
-    [ ] tester DELETE
-    [ ] creer CGI en PHP
-    [ ] tester les differentes methodes read()
-
-BONUS:
-
-    ?[ ] gestion des cookies -> mdp + login dans un fichier
-
 TESTS:
 
+    [ ] tester les differentes methodes read()
+    [ ] tester POST sans CGI
+    [ ] tester DELETE
     [ ] leaks avec top ou htop
     [ ] siege
     [ ] fichiers lourds
     [ ] CGI boucle infinie (non bloquant pour autres clienbts + )
     [ ] test fichier de l'ecole
+
+BONUS:
+
+    ?[ ] gestion des cookies -> mdp + login dans un fichier
+
 

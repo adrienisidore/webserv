@@ -53,7 +53,7 @@ public:
 	void	check_body_headers();//if POST : check the headers and update the encoding process of the body
 	void 	use_recv();
 	void	read_header();
-	void	read_body();
+	void	read_body(bool state);
 	void	end_transfer();
 
 	void	set_error(int error_code);

@@ -19,11 +19,10 @@ ServerMonitor::~ServerMonitor() {}
 void	ServerMonitor::handle_sigint(int sig) {
 
 	(void)sig;
-	ServerMonitor::_instance->stop(); // pas sur que suffisant
+	ServerMonitor::_instance->_is_running = false;
 }
 
 void	ServerMonitor::stop() {
-	_is_running = false;
 
 	for (std::map<int, TCPConnection *>::iterator it = _map_connections.begin(); it != _map_connections.end(); ++it) {
 		if (it->second != NULL)
@@ -44,8 +43,7 @@ void	ServerMonitor::set_signals_default() {
 
 void	ServerMonitor::create_all_listening_sockets() {
 
-	for (std::map<std::string, ServerConfig>::const_iterator config_it = _global_config.getServers().begin(); 
-				config_it != _global_config.getServers().end(); ++config_it) {
+	for (std::map<std::string, ServerConfig>::const_iterator config_it = _global_config.getServers().begin(); config_it != _global_config.getServers().end(); ++config_it) {
 
 		// CREATE LISTENING SOCKET
 
@@ -351,6 +349,7 @@ void	ServerMonitor::run() {
             std::cout << "Skipping timeout check (same second)" << std::endl;
         }
 	}
+	stop();
 }
 
 void	ServerMonitor::monitor_listening_sockets() {
@@ -375,12 +374,13 @@ void	ServerMonitor::monitor_connections() {
               << " revents: " << it->revents << std::endl;  // ← ADD THIS
 
 		bool	should_close = false;
+		bool	state_changed_header = false;
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
 			std::cout << "DETECTED HANGUP/ERROR" << std::endl;
 			it = close_tcp_connection(it);
 			continue;
-		}
+		 }
 		
 		TCPConnection	*connection = _map_connections[it->fd];
 
@@ -391,14 +391,17 @@ void	ServerMonitor::monitor_connections() {
 				connection->initialize_transfer();
 
 			//Header en cours de transfert
-			if (connection->get_status() == READING_HEADER)
+			if (connection->get_status() == READING_HEADER) {
 				connection->read_header();
+				if (connection->get_status() == WAIT_FOR_BODY)
+					state_changed_header = true;
+			}
 
 			if (connection->get_status() == WAIT_FOR_BODY)
 				connection->check_body_headers();
 
 			if (connection->get_status() == READING_BODY)
-				connection->read_body();
+				connection->read_body(state_changed_header);
 			// La requet est syntaxiquement complete
 
 			if (connection->get_status() == CLIENT_DISCONNECTED)
@@ -444,6 +447,7 @@ void	ServerMonitor::monitor_connections() {
 	}	
 	for (std::map<int, TCPConnection *>::iterator connection = _map_connections.begin(); connection != _map_connections.end(); ++connection) {
 		for (std::map<int, CGI>::iterator it = connection->second->_map_cgi_fds_to_add.begin(); it != connection->second->_map_cgi_fds_to_add.end(); ++it) {
+			std::cout << "ADD NEW CGI SOCKET" << std::endl;
 			add_new_cgi_socket(it->second);
 
 		}
@@ -495,7 +499,9 @@ void	ServerMonitor::monitor_cgis() {
 				waitpid(cgi._pid, &status, 0); // or NOHANG ?
 				
 				if (WIFEXITED(status) && (WEXITSTATUS(status) != 0)) {
-						cgi._connection->set_error(500);
+						cgi.setCode(500);
+						cgi._connection->_response._error_();
+						cgi._connection->setStatus(READY_TO_SEND);
 						it = close_cgi_socket(it);
 						continue;
 				}
@@ -511,7 +517,9 @@ void	ServerMonitor::monitor_cgis() {
 
 			else if (bytes_received < 0) {
 				std::cout << "errno: " << errno << " (" << strerror(errno) << ")" << std::endl;	// FORBIDDEN
-				cgi._connection->set_error(500);
+				cgi.setCode(500);
+				cgi._connection->_response._error_();
+				cgi._connection->setStatus(READY_TO_SEND);
 				// mettre a POLLIN, etc... bonne idee ?
 				it = close_cgi_socket(it);
 				continue;
@@ -526,19 +534,18 @@ std::vector<pollfd>::iterator ServerMonitor::connected_socket_end() {
     std::vector<pollfd>::iterator it = _pollfds.begin();
     
     // Skip listening sockets
-    for (size_t i = 0; i < _map_server_configs.size(); ++i) {
+    for (size_t i = 0; i < _map_server_configs.size() && it != _pollfds.end(); ++i) {
         ++it;
     }
     
     // Skip TCP connection sockets
-    for (size_t i = 0; i < _map_connections.size(); ++i) {
+    for (size_t i = 0; i < _map_connections.size() && it != _pollfds.end(); ++i) {
         ++it;
     }
 	std::cout << "map server configf size : " << _map_server_configs.size() << std::endl;
 	std::cout << "map connections    size : " << _map_connections.size() << std::endl;
 	std::cout << "map cgis           size : " << _map_cgis.size() << std::endl;
-	std::cout << "connected socket end : " << it->fd << std::endl;
-	//sleep(1);
+	// sleep(1);
     return it;  // ← Now points to first CGI pipe (or end if no CGIs)
 }
 

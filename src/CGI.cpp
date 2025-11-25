@@ -98,11 +98,11 @@ std::string buildScriptFilename(const std::string &root, const std::string &loca
     std::string path = (q == std::string::npos) ? uri : uri.substr(0, q);
 
     // 2. extraire le script_name (après le dernier '/')
-    size_t slash = path.rfind('/');
-    std::string script_name = (slash == std::string::npos)
-                                ? path
-                                : path.substr(slash + 1);
-
+    // size_t slash = path.rfind('/');
+    // std::string script_name = (slash == std::string::npos)
+    //                             ? path
+    //                             : path.substr(slash + 1);
+    //
     // 3. construire le chemin absolu : root + location_uri + script_name
     std::string full = root;
 
@@ -115,7 +115,7 @@ std::string buildScriptFilename(const std::string &root, const std::string &loca
             full += '/';
     }
 
-    full += script_name;
+    full += path;
 
     return std::string("SCRIPT_FILENAME=") + full;
 }
@@ -189,6 +189,7 @@ void CGI::buildEnv() {
 
 	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	_env_strings.push_back("REDIRECT_STATUS=200");
 	std::string request_method = "REQUEST_METHOD=" + _method;
 	_env_strings.push_back(request_method.c_str());//attribut _methods de HTTPcontent
 	std::string request_uri = "REQUEST_URI=" + _URI;

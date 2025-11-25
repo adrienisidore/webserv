@@ -9,6 +9,7 @@
 			temp_file = parseConfig("default.conf");
 		else
 			temp_file = parseConfig(av[1]);
+
  		ServerMonitor	ServerMonitor(temp_file);
 		ServerMonitor.run();
  	}

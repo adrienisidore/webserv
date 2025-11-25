@@ -13,6 +13,7 @@ void	Response::copyFrom(HTTPcontent& other) {
 		_URI = other.getURI();
 		_config = other.getConfig();
 		_headers = other.getHeaders();
+		_current_body = other.getCurrentBody();
 		_autoindex = false;
 }
 
@@ -213,7 +214,7 @@ void	Response::checkPermissions(std::string path) {
 			setCode(404);// ========== ENOTDIR / ELOOP ========== Le chemin contient un composant qui n’est pas un répertoire 
 		else if (er == ENAMETOOLONG)
 			setCode(414);// ========== ENAMETOOLONG ========== Un des éléments du chemin, ou le chemin complet, dépasse la longueur maximale.
-		else
+		else if (_method != "POST")
 			setCode(500);// ========== Cas restants ========== Erreurs internes au serveur (memoire, ...)
 
 		// ========== ENOENT ==========

@@ -4,18 +4,20 @@ server
 listen 127.0.0.1:8080;
 root ./ressources;
 index index.html;
-client_max_body_size 8000;
-client_header_buffer_size 1000;
+client_max_body_size 80000;
+client_header_buffer_size 10000;
 request_header_timeout 3;
 request_body_timeout 6;
-keepalive_timeout 10;
-send_timeout 10;
-cgi_timeout 3;
+keepalive_timeout 20;
+send_timeout 20;
+cgi_timeout 20;
 location /colorfull/
 autoindex on;
 cgi_handler .py /usr/bin/python3;
 location /
 index index.html;
+allow_methods GET POST DELETE;
+cgi_handler .php /usr/bin/php-cgi;
 location /oui
 return 301 /colorfull/;
 index index.html;

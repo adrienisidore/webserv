@@ -16,58 +16,126 @@ void	Request::parse_header() {
 	setHeaders();
 }
 
-void	Request::unchunk_body() {
+void Request::unchunk_body() {
+    std::string new_body = "";
+    size_t  pos = 0;
+    size_t  header_end;
+    size_t  chunk_size;
+    
+	std::cout << "--- DEBUG UNCHUNK ---" << std::endl;
+    std::cout << "Body size: " << _current_body.size() << std::endl;
+    if (_current_body.size() > 0) {
+        std::cout << "First 10 chars integers: ";
+        for (size_t i = 0; i < 10 && i < _current_body.size(); i++) {
+            std::cout << (int)_current_body[i] << " ";
+        }
+        std::cout << "\nFirst 10 chars strings: " << _current_body.substr(0, 10) << std::endl;
+    }
+    while (pos < _current_body.size()) {
+        
+        // 1. Find the end of the chunk size line
+        header_end = _current_body.find("\r\n", pos);
+        if (header_end == std::string::npos)
+            return setCode(400); // Malformed chunk header
 
-	std::string	unchunked_body;
+        // 2. Parse the size (Hexadecimal)
+        std::string size_str = _current_body.substr(pos, header_end - pos);
+        char *endptr;
+        chunk_size = std::strtoul(size_str.c_str(), &endptr, 16);
 
-	std::istringstream stream(_current_body);
-	std::string line;
-	std::string line_without;//line without '\r'
+        // Check for invalid hex characters
+        if (endptr == size_str.c_str() || *endptr != '\0')
+            return setCode(400);
 
-	int		i = 0;
-	size_t	line_len;
-	size_t	backr;
-	double	real_len;
-	char	*end;
-	//Remplissage de la map contenant les headers
-	while (std::getline(stream, line))
-	{
-		//\r : pas de headers ou c'est fini
-		if (line == "0\r")
-			break ;// Verifier ensuite que la prochaine ligne est \r
+        // 3. Move position to start of data
+        pos = header_end + 2; // Skip \r\n
 
-		backr = line.find('\r');
-		if (backr == std::string::npos)
-			return setCode(400); // Verifier le code d'erreur
-		line_without = line.substr(0, backr);
-		
-		if (i % 2 == 0) {
-			//verifier que toute la string a ete convertit, ou pas un nb a virgule
-			//floor : fonction interdite I guess, supprimer librairie math
-			real_len = std::strtod(line_without.c_str(), &end);
-			if (*end != '\0' || std::floor(real_len) != real_len)
-				return setCode(400);
-		}
-		else {
-			//Checker que line_len == real_len
-			line_len = line_without.size();
-			if (line_len != real_len)
-				return setCode(400);
-			//Si tout va bien unchuncked_body.append(line_without); (doit etre init ?)
-			unchunked_body.append(line_without);
-		}
+        // 4. Check for the End Chunk (Size 0)
+        if (chunk_size == 0) {
+            // Check if there is a trailing \r\n after the 0
+            if (_current_body.substr(pos) != "\r\n")
+                return setCode(400); // Trailing garbage or missing CRLF
+            break; // Success
+        }
 
-		i++;
-	}
+        // 5. Validation: Do we have enough data?
+        // We need: chunk_size bytes + 2 bytes for the trailing \r\n
+        if (pos + chunk_size + 2 > _current_body.size()) {
+            // We shouldn't be here if read_body() did its job correctly,
+            // but for safety:
+            return setCode(400); 
+        }
 
-	//Checker que la dernier ligne est bien "\r" sinon error 400
-	if(std::getline(stream, line))
-		return setCode(400);
-	if (line != "\r")
-		return setCode(400);
+        // 6. Check the trailing \r\n after data
+        if (_current_body.substr(pos + chunk_size, 2) != "\r\n")
+            return setCode(400); // Data length mismatch
 
-	_current_body = unchunked_body;
+        // 7. Append data to new body
+        new_body += _current_body.substr(pos, chunk_size);
+
+        // 8. Move to next chunk
+        pos += chunk_size + 2;
+    }
+
+    // Replace the old chunked body with the clean one
+    _current_body = new_body;
+    
+    // Update Content-Length to match the unchunked size
+    _content_length = _current_body.size();
 }
+
+// void	Request::unchunk_body() {
+//
+// 	std::string	unchunked_body;
+//
+// 	std::istringstream stream(_current_body);
+// 	std::string line;
+// 	std::string line_without;//line without '\r'
+//
+// 	int		i = 0;
+// 	size_t	line_len;
+// 	size_t	backr;
+// 	double	real_len;
+// 	char	*end;
+// 	//Remplissage de la map contenant les headers
+// 	while (std::getline(stream, line))
+// 	{
+// 		//\r : pas de headers ou c'est fini
+// 		if (line == "0\r")
+// 			break ;// Verifier ensuite que la prochaine ligne est \r
+//
+// 		backr = line.find('\r');
+// 		if (backr == std::string::npos)
+// 			return setCode(400); // Verifier le code d'erreur
+// 		line_without = line.substr(0, backr);
+//
+// 		if (i % 2 == 0) {
+// 			//verifier que toute la string a ete convertit, ou pas un nb a virgule
+// 			//floor : fonction interdite I guess, supprimer librairie math
+// 			real_len = std::strtod(line_without.c_str(), &end);
+// 			if (*end != '\0' || std::floor(real_len) != real_len)
+// 				return setCode(400);
+// 		}
+// 		else {
+// 			//Checker que line_len == real_len
+// 			line_len = line_without.size();
+// 			if (line_len != real_len)
+// 				return setCode(400);
+// 			//Si tout va bien unchuncked_body.append(line_without); (doit etre init ?)
+// 			unchunked_body.append(line_without);
+// 		}
+//
+// 		i++;
+// 	}
+//
+// 	//Checker que la dernier ligne est bien "\r" sinon error 400
+// 	if(std::getline(stream, line))
+// 		return setCode(400);
+// 	if (line != "\r")
+// 		return setCode(400);
+//
+// 	_current_body = unchunked_body;
+// }
 
 //400 Bad Request : on recupere la start line : La 1ere ligne ne respecte pas la syntaxe <METHOD> <PATH> HTTP/<VERSION>\r\n (trop d'espaces, trop de mots, caracteres interdits). Ou carrement pas de 1er mot
 void	Request::setStartLine() {
