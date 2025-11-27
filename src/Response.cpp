@@ -476,11 +476,10 @@ void		Response::_post_() {
 	if (getCode())
 		return _error_();
 
-	// size_t content_length = _current_body.length();// si je ne renvoie pas de corps, alors pas de content_length
 	// 2) on erase le body pour le remplir avec les nouvelles infos
 	setCurrentBody("");
 	// 3) on set les headers appropries
-	std::map<std::string, std::string>::const_iterator it = _headers.find("CONTENT-TYPE");
+	// std::map<std::string, std::string>::const_iterator it = _headers.find("CONTENT-TYPE");
 	std::stringstream ss;
 	ss << success_code;
 	_current_body = _protocol + " " + ss.str() + " ";
@@ -488,46 +487,44 @@ void		Response::_post_() {
 		_current_body += "Created\r\n";
 	else if (success_code == 204)
 		_current_body += "No Content\r\n";
-	if (success_code == 201) {
-		if (it == _headers.end())
-			_current_body = _current_body + "Content-Type: " + "Unknown\r\n";
-		else
-			_current_body = _current_body + "Content-Type: " + it->second + "\r\n";
-	}
+	// if (success_code == 201) {
+	// 	if (it == _headers.end())
+	// 		_current_body = _current_body + "Content-Type: " + "Unknown\r\n";
+	// 	else
+	// 		_current_body = _current_body + "Content-Type: " + it->second + "\r\n";
+	// }
 
-	// _current_body += "Content-Length: " + std::to_string(content_length) + "\r\n";
+	_current_body += "Content-Length: 0\r\n";
 	if (success_code == 201)
-		_current_body +="Location: " + _path + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+		_current_body +="Location: " + _URI + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+
 	_current_body += "\r\n";// On decide arbitrairement de ne pas renvoyer de body ici.
 }
 
 void		Response::_delete_() {
 
-    if (std::remove(_path.c_str()) == 0)
-        return; // supprimé (fichier ou dossier vide)
-
-    const int e = errno;
-    if (e == ENOENT)
-		setCode(404);	// n'existe pas
-	if (e == EACCES || e == EPERM)
-		setCode(403); // droits insuffisants
-	if (e == ENOTEMPTY || e == EEXIST) 
-		setCode(409); // dossier non vide
-	else
-		setCode(500);
-	
-	setCurrentBody("");
-
-	if (getCode())
+    if (std::remove(_path.c_str()) != 0) {
+		const int e = errno;
+		if (e == ENOENT)
+			setCode(404);	// n'existe pas
+		if (e == EACCES || e == EPERM)
+			setCode(403); // droits insuffisants
+		if (e == ENOTEMPTY || e == EEXIST) 
+			setCode(409); // dossier non vide
+		else
+			setCode(500);
 		return _error_();
-	
+	}
+
 	// 3) on set les headers appropries
 
-	int success_code = 204; 
 	setCurrentBody("");
+	int success_code = 204; 
 	std::stringstream ss2;
 	ss2 << success_code;
 	_current_body = _protocol + " " + ss2.str() + " No Content\r\n";
+	_current_body += "Content-Length: 0\r\n";
+	_current_body +="Location: " + _URI + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
 	_current_body += "\r\n";
 }
 

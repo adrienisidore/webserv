@@ -157,6 +157,9 @@ void	TCPConnection::read_header() {
 
 void	TCPConnection::read_body(bool state_changed) {
 	
+	// state_changed is necessary to prevent from reading twice on the same call:
+	// 1 time the body and 1 time the body when the request hasn't sent the body yet 
+	// -> only read from the network once per poll cycle
 	if (!state_changed) {
 
 		use_recv();
@@ -187,8 +190,8 @@ void	TCPConnection::read_body(bool state_changed) {
 	// CHECK IF END OF BODY
 	if (getBodyProtocol() == CHUNKED) {
 
-		size_t header_end = _request.getCurrentBody().find("0\r\n\r\n");
-		if (header_end != std::string::npos) {
+		size_t body_end = _request.getCurrentBody().find("0\r\n\r\n");
+		if (body_end != std::string::npos) {
 
 			_request.unchunk_body();
 			_status = READ_COMPLETE;
