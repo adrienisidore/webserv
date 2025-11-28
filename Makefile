@@ -6,7 +6,7 @@
 #    By: aisidore <aisidore@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/03 14:09:31 by aisidore          #+#    #+#              #
-#    Updated: 2025/10/20 15:06:31 by aisidore         ###   ########.fr        #
+#    Updated: 2025/11/28 18:53:42 by aisidore         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -33,7 +33,8 @@ SRC = src/main.cpp \
 	  src/GlobalConfig.cpp \
 	  src/autoconfig.cpp \
 	  src/parsing.cpp \
-	  src/CGI.cpp
+	  src/CGI.cpp \
+	  src/utils.cpp
 
 OBJ = objets/
 

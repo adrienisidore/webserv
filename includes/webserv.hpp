@@ -78,6 +78,8 @@ enum {
 # include <cstdlib>
 # include <cstdio>
 
+# include <cctype> // pour std::isspace dans findCgiProgramForPath
+# include "./utils.hpp"
 
 // Parsing
 void	check_args(int ac, char **av);
