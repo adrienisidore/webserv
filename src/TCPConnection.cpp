@@ -5,8 +5,8 @@
 TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len)
 	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)
 {
-	_header_max_time = ret_time_directive("client_header_timeout", HEADER_MAX_TIME);
-	_body_max_time = ret_time_directive("client_body_timeout", BODY_MAX_TIME);
+	_header_max_time = ret_time_directive("request_header_timeout", HEADER_MAX_TIME);
+	_body_max_time = ret_time_directive("request_body_timeout", BODY_MAX_TIME);
 	_between_chunks_max_time = ret_time_directive("send_timeout", BETWEEN_CHUNK_MAX_TIME);
 	_no_request_max_time = ret_time_directive("keepalive_timeout", NO_REQUEST_MAX_TIME);
 	_cgi_max_time = ret_time_directive("cgi_timeout", CGI_TIMEOUT);
@@ -58,8 +58,10 @@ void	TCPConnection::check_body_headers() {
 	if (headers.find("CONTENT-LENGTH") != headers.end()) {
 		if (!is_valid_length(headers["CONTENT-LENGTH"]))
 			return set_error(413);
-		else
+		else {
+			_request.setContentLength(std::atol(headers["CONTENT_LENGTH"].c_str()));
 			setBodyProtocol(CONTENT_LENGTH);
+		}
 	}
 
 	else if (headers.find("TRANSFER-ENCODING") != headers.end() 
@@ -202,12 +204,12 @@ void	TCPConnection::read_body(bool state_changed) {
 	else if (getBodyProtocol() == CONTENT_LENGTH) {
 
 		int diff = _request.getCurrentBody().size() - _request.getContentLength();
-		if (diff == 0) {
+		std::cout << "DIFFERENCE IS: " << diff << std::endl;
+		if (diff >= 0) {
 			_status = READ_COMPLETE;
+			_request.setCurrentBody(_request.getCurrentBody().substr(0, _request.getContentLength()));
 			return;
 		}
-		else if (diff > 0)
-			return set_error(400);
 	}
 	return;
 }
@@ -307,7 +309,7 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 	if (length > max_size)
 		return false;
 
-	_request.setContentLength(length);
+	//_request.setContentLength(length);
     return true;
 }
 

@@ -9,7 +9,7 @@
 
 # define BETWEEN_CHUNK_MAX_TIME 10000	// max time between TCP chunks WHEN A REQUEST 
 # define HEADER_MAX_TIME 10000	// max time for the header to be sent
-# define BODY_MAX_TIME 10000 // max time for the body to be sent
+# define BODY_MAX_TIME 100 // max time for the body to be sent
 # define NO_REQUEST_MAX_TIME 20000 // max time between request
 # define CGI_TIMEOUT 10000
 

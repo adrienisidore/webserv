@@ -87,39 +87,25 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
     }
 }
 
-// root           : chemin absolu du dossier racine
-// location_uri   : chemin défini dans la config (ex: "cgi-bin")
-// uri            : URI complète fournie par le client (ex: "/cgi-bin/run.cgi?x=1")
-
-std::string buildScriptFilename(const std::string &root, const std::string &location_uri, const std::string &uri)
+std::string buildScriptFilename(const std::string &root, const std::string &uri)
 {
-    // 1. enlever la query string
+    // 1. Remove query string
     size_t q = uri.find('?');
     std::string path = (q == std::string::npos) ? uri : uri.substr(0, q);
 
-    // 2. extraire le script_name (après le dernier '/')
-    // size_t slash = path.rfind('/');
-    // std::string script_name = (slash == std::string::npos)
-    //                             ? path
-    //                             : path.substr(slash + 1);
-    //
-    // 3. construire le chemin absolu : root + location_uri + script_name
-    std::string full = root;
+    // 2. Simple concatenation: Root + Path
+    // Ensure we don't double-slash or miss a slash
+    std::string full_path = root;
+    
+    if (!full_path.empty() && full_path[full_path.size() - 1] == '/' && !path.empty() && path[0] == '/')
+        full_path.erase(full_path.size() - 1); // remove trailing slash from root if path has one
+    else if ((full_path.empty() || full_path[full_path.size() - 1] != '/') && (path.empty() || path[0] != '/'))
+        full_path += '/'; // add slash if neither has one
 
-    // if (!full.empty() && full[full.size() - 1] != '/')
-    //     full += '/';
+    full_path += path;
 
-    if (!location_uri.empty()) {
-        full += location_uri;
-        if (full[full.size() - 1] != '/')
-            full += '/';
-    }
-
-    full += path;
-
-    return std::string("SCRIPT_FILENAME=") + full;
+    return std::string("SCRIPT_FILENAME=") + full_path;
 }
-
 
 static std::string buildScriptName(const std::string &uri)
 {
@@ -195,7 +181,7 @@ void CGI::buildEnv() {
 	std::string request_uri = "REQUEST_URI=" + _URI;
 	_env_strings.push_back(request_uri.c_str());//attribut _URI de HTTPcontent
 
-	_env_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI));//Chemin absolu complet vers l'executable cgi
+	_env_strings.push_back(buildScriptFilename(_config.getDirective("root"), _URI));//Chemin absolu complet vers l'executable cgi
 	_env_strings.push_back(buildScriptName(_URI));//Chemin relatif vers le CGI
 
 	// _env_strings.push_back("REMOTE_ADDR=127.0.0.1");
@@ -298,28 +284,12 @@ void	CGI::execute_cgi() {
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
 
-
-        // Simule un corps POST
-        const char *post_data = "name=adrien";//redondant avec _body mais necessaire car STDIN_FILENO est en lecture seule,
-		//si je veux ecrire _body dans dans STDIN depuis l'enfant c'est galere
-		// Parent : ecrit _body dans _inpipe
-        write(_inpipe[1], post_data, 11);
-        close(_inpipe[1]);
-
-
-		if (getMethod() == "POST" && !getCode()) {
+		if (getMethod() == "POST" && !getCode() && getCurrentBody().size() > 0) {
 			ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
         	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
 		}
 
         close(_inpipe[1]);
-		//     int status;
-		// pid_t result = waitpid(_pid, &status, WNOHANG);			-> waitpid() already in monitor_cgi()
-		// if (result != 0) {
-		// 	std::cerr << "CGI died immediately! status=" << status << "\n";
-		// 	throw ServerException("CGI failed to start");
-		//}
-		
 		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
 	}
 }
