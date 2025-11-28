@@ -5,11 +5,11 @@
 TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len)
 	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)
 {
-	_header_max_time = ret_time_directive("client_header_timeout", 60);
-	_body_max_time = ret_time_directive("client_body_timeout", 60);
-	_between_chunks_max_time = ret_time_directive("send_timeout", 10);
-	_no_request_max_time = ret_time_directive("keepalive_timeout", 200);
-	_cgi_max_time = ret_time_directive("cgi_timeout", 10);
+	_header_max_time = ret_time_directive("client_header_timeout", HEADER_MAX_TIME);
+	_body_max_time = ret_time_directive("client_body_timeout", BODY_MAX_TIME);
+	_between_chunks_max_time = ret_time_directive("send_timeout", BETWEEN_CHUNK_MAX_TIME);
+	_no_request_max_time = ret_time_directive("keepalive_timeout", NO_REQUEST_MAX_TIME);
+	_cgi_max_time = ret_time_directive("cgi_timeout", CGI_TIMEOUT);
 
 	end_transfer();//A quoi ca sert ?
 }

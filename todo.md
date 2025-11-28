@@ -7,13 +7,11 @@
 
     [ ] Rendre la page d'accueil connecte au reste
 
-    [ ] connecter CGI_TIMEOUT
     [ ] tests avec differentes fichiers de config
     [ ] leaks avec top ou htop
     [X] siege
     [ ] fichiers lourds
-    [ ] CGI boucle infinie (non bloquant pour autres clienbts + )
-    [ ] test fichier de l'ecole
+    [X] CGI boucle infinie (non bloquant pour autres clienbts + )
 
 BONUS:
 
