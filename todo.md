@@ -1,4 +1,6 @@
 
+TESTS:
+
     [ ] Checker les leaks en toute circonstances
     [ ] checker qu'on a pas incorpore des fonctions interdites (A la fin du projet)
 
@@ -13,8 +15,26 @@
     [ ] fichiers lourds
     [X] CGI boucle infinie (non bloquant pour autres clienbts + )
 
-BONUS:
 
-    ?[ ] gestion des cookies -> mdp + login dans un fichier
+Feuille de correcion : https://wormav.github.io/42_eval/Cursus/Webserv/index.html
 
 
+CORRECTION:
+
+- Savoir expliquer difference entre epoll() poll() select() ...
+
+
+ADRI:
+
+- Attention affichage character non ACII (tout ecrire en anglais)
+- ajouter directive error_pages si le user souhaite afficher une page specifique pour un code specifique
+- multiple CGI a faire
+- Pouvoir gerer plusieurs cgi differents en meme temps (.php et .py par ex)
+- Ameliorer page d'accueil : permettre au user de POST, GET ou DELETE des elements
+
+GASTON:
+
+- Gerer cas ou Content-length ne correspond pas a la bonne taille du POST envoye
+- Gerer .php (error 500)
+- tester les POST avec les CGI (error 403), notamment avec post_test.py (a demander a Alix)
+- tester commande "siege -c255 http://localhost:8080/" avec 1 ou plusieurs serveurs dans config (error) 
