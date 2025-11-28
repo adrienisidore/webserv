@@ -46,7 +46,7 @@ std::string		Response::try_multiple_indexes(std::vector<std::string> indexes) {
 
 	for (std::vector<std::string>::iterator idx = indexes.begin(); idx != indexes.end(); ++idx) {
 		idx_path = _path + *idx;
-		checkPermissions(idx_path);
+		checkPermissions(idx_path, false);
 		if (getCode() == 0) {
 			return *idx;
 		}
@@ -189,67 +189,84 @@ static bool	is_valid_path(std::string filename) {
 	return true;
 }
 
-void	Response::checkPermissions(std::string path) {
+void    Response::checkPermissions(std::string path, bool is_cgi) {
 
-	if (_code) return;//Si j'ai un code ici a priori c'est forcement un code d'erreur
+    if (_code) return; // Si j'ai un code ici a priori c'est forcement un code d'erreur
 
-	struct stat path_properties;//path_properties
+    struct stat path_properties;
 
-	// stat() : Récupération des métadonnées du fichier/répertoire, échoue si la ressource n'existe pas ou n'est pas accessible.
-	if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST")// PUT
-		setCode(405);
+    // stat() : Récupération des métadonnées du fichier/répertoire
+    // échoue si la ressource n'existe pas ou n'est pas accessible.
+    
+    // 1. Vérification des méthodes supportées
+    if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST") // PUT
+        setCode(405);
 
-	else if (!is_valid_path(path))
-		setCode(400);
+    else if (!is_valid_path(path))
+        setCode(400);
 
-	else if (stat(path.c_str(), &path_properties) == -1) {
+    else if (stat(path.c_str(), &path_properties) == -1) {
 
-		int er = errno;
+        int er = errno;
 
-		if (er == ENOENT && (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
-		    setCode(404);// ========== ENOENT ========== La ressource (fichier ou dossier) n’existe pas.
-		else if (er == EACCES)
-			setCode(403);// ========== EACCES ========== Accès aux metadonnees refusé
-		else if (er == ENOTDIR || er == ELOOP)
-			setCode(404);// ========== ENOTDIR / ELOOP ========== Le chemin contient un composant qui n’est pas un répertoire 
-		else if (er == ENAMETOOLONG)
-			setCode(414);// ========== ENAMETOOLONG ========== Un des éléments du chemin, ou le chemin complet, dépasse la longueur maximale.
-		else if (_method != "POST")
-			setCode(500);// ========== Cas restants ========== Erreurs internes au serveur (memoire, ...)
+        if (er == ENOENT) {
+            // ========== ENOENT ==========
+            // Pour un CGI : Le script DOIT exister, peu importe la méthode (GET ou POST).
+            // Pour Static : GET/HEAD/DELETE nécessitent que la ressource existe.
+            if (is_cgi || (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
+                setCode(404);
+            // Pour Static POST : Ce n'est pas une erreur, on va créer le fichier.
+            else if (!is_cgi && _method == "POST")
+                return; 
+        }
+        else if (er == EACCES)
+            setCode(403); // Accès aux métadonnées refusé
+        else if (er == ENOTDIR || er == ELOOP)
+            setCode(404); // Le chemin contient un composant qui n’est pas un répertoire 
+        else if (er == ENAMETOOLONG)
+            setCode(414); // URI Too Long
+        else
+            setCode(500); // Erreurs internes
+    }
 
-		// ========== ENOENT ==========
-		// - Pertinent pour : GET, HEAD, DELETE → on ne peut pas lire/supprimer ce qui n’existe pas → 404
-		// - Pour PUT/POST : ce n’est *pas une erreur*, car ces méthodes peuvent créer la ressource.
-		// ========== EACCES ==========
-		// - A cause d'un répertoire du chemin (ex : /upload/ a des droits 000) : le droit x (execution) n'est pas present sur au moins un des repertoire du chemin
-		// → 403 Forbidden pour toutes les méthodes.
-		// ========== ENOTDIR / ELOOP ==========
-		// Exemple : /dossier/fichier.txt/truc.json → fichier.txt n’est pas un répertoire.
-		// Ou bien : boucle de liens symboliques (ELOOP).
-		// → Le chemin est invalide → 404 Not Found.
-		// ========== ENAMETOOLONG ==========
-		// → Mauvaise requête → 414 URI Too Long.
-	}
-	if (_code) return;
-	// ========= Si on arrive ici =========
-	// stat() a réussi → SOIT la ressource existe et on a acces a ses metadonnees, soit elle n'existe pas mais on va pouvoir la creer.
-	// Il reste à vérifier :
-	//  - Pour GET/HEAD → droit de lecture sur la ressource
-	//  - Pour PUT/POST → droit d’écriture sur la ressource ou le répertoire parent
-	//  - Pour DELETE → droit d’écriture sur le répertoire parent
-	if (_autoindex && !S_ISDIR(path_properties.st_mode))
-		return setCode(404);
-	if (!_autoindex && S_ISDIR(path_properties.st_mode))
-		return setCode(404);
-    if ((_method == "GET" || _method == "HEAD") && access(path.c_str(), R_OK) != 0) return(setCode(403)); // Vérifie que le fichier est lisible
-	else if (_method == "POST") { // _method == "PUT" || _method == "POST"
-		//Si fichier existant mais non modifiable || Repertoire parent ne permet pas de creer un fichier
-		if ((access(path.c_str(), F_OK) == 0 && access(path.c_str(), W_OK) != 0)
-			|| (access(path.c_str(), F_OK) != 0 && access(parentDir(path).c_str(), W_OK | X_OK) != 0))
-			return setCode(403);
-	}
-	else if (_method == "DELETE" && access(parentDir(path).c_str(), W_OK | X_OK) != 0)
-		return setCode(403);//On a acces au repertoire parent pour faire des modifications
+    if (_code) return;
+
+    // ========= Si on arrive ici, la ressource EXISTE =========
+    
+    // 2. Gestion Spécifique CGI
+    if (is_cgi) {
+        // Un CGI ne peut pas être un dossier
+        if (S_ISDIR(path_properties.st_mode))
+            return setCode(404);
+        
+        // Un CGI doit être exécutable (X_OK) et lisible (R_OK - souvent nécessaire pour les interpréteurs)
+        if (access(path.c_str(), X_OK) != 0) 
+            return setCode(403);
+            
+        return; // Tout est bon pour le CGI
+    }
+
+    // 3. Gestion Spécifique STATIC (Non-CGI)
+
+    // Vérification Autoindex vs Dossier
+    if (_autoindex && !S_ISDIR(path_properties.st_mode))
+        return setCode(404); // Autoindex demandé sur un fichier -> 404
+    if (!_autoindex && S_ISDIR(path_properties.st_mode))
+        return setCode(404); // Dossier demandé sans autoindex -> 404 (ou 403 selon config)
+
+    // Vérification Permissions Static
+    if ((_method == "GET" || _method == "HEAD") && access(path.c_str(), R_OK) != 0) 
+        return setCode(403); // Lecture interdite
+
+    else if (_method == "POST") { 
+        // Si fichier existant mais non modifiable (W_OK)
+        // OU si c'est un fichier qu'on veut écraser mais pas les droits
+        if (access(path.c_str(), W_OK) != 0)
+            return setCode(403);
+    }
+    
+    else if (_method == "DELETE" && access(parentDir(path).c_str(), W_OK | X_OK) != 0)
+        return setCode(403); // Pas les droits sur le dossier parent pour supprimer
 }
 
 void Response::checkRedir() {
@@ -284,7 +301,7 @@ bool	Response::is_cgi() {
 		if (!ok)
 			return false;
 		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
-		checkPermissions(s_.substr(pos + 1));
+		checkPermissions(s_.substr(pos + 1), true);
 		return true;
 	}
 }
@@ -304,8 +321,6 @@ int	Response::fetch() {
 		
 	buildPath();
 
-	checkPermissions(_path);
-
 	// Je regarde si la LocationConfig indique que ce path correspond a une cgi.
 	//Si oui alors :
 	if (is_cgi() && !getCode()) {
@@ -321,6 +336,8 @@ int	Response::fetch() {
 			return (0);
 		}
 	}
+	else	
+		checkPermissions(_path, false);
 
 	return 0;
 }

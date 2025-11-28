@@ -10,7 +10,7 @@ TESTS:
     [ ] Rendre la page d'accueil connecte au reste
 
     [ ] tests avec differentes fichiers de config
-    [ ] leaks avec top ou htop
+    [ ] verifier leaks avec top ou htop
     [X] siege
     [ ] fichiers lourds
     [X] CGI boucle infinie (non bloquant pour autres clienbts + )
@@ -37,4 +37,5 @@ GASTON:
 [x] Gerer cas ou Content-length ne correspond pas a la bonne taille du POST envoye
 [x] Gerer .php (error 500)
 - tester les POST avec les CGI (error 403), notamment avec post_test.py (a demander a Alix)
+    -> pour l'instant CGI s'execute mais ne reconnait pas le body 
 - tester commande "siege -c255 http://localhost:8080/" avec 1 ou plusieurs serveurs dans config (error) 

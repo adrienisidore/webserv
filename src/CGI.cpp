@@ -284,6 +284,7 @@ void	CGI::execute_cgi() {
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
 
+		std::cout << getMethod() << " " << getCode() << " " << getCurrentBody() << std::endl;
 		if (getMethod() == "POST" && !getCode() && getCurrentBody().size() > 0) {
 			ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
         	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";

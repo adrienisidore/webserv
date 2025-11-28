@@ -32,7 +32,7 @@ class Response : public HTTPcontent {
 		void			build_valid_response_get(std::string body);
 		std::string		get_autoindex();
 
-		void			checkPermissions(std::string path);
+		void			checkPermissions(std::string path, bool is_cgi);
 
 		void 			checkRedir();
 
