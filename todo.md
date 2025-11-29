@@ -23,14 +23,17 @@ CORRECTION:
 
 - Savoir expliquer difference entre epoll() poll() select() ...
 
-
 ADRI:
 
 - Attention affichage character non ACII (tout ecrire en anglais)
-- ajouter directive error_pages si le user souhaite afficher une page specifique pour un code specifique
-- multiple CGI a faire
-- Pouvoir gerer plusieurs cgi differents en meme temps (.php et .py par ex)
-- Ameliorer page d'accueil : permettre au user de POST, GET ou DELETE des elements
+
+---
+- [ ] ajouter directive error_pages si le user souhaite afficher une page specifique pour un code specifique, pouvoir en gerer plusieurs
+	: il faut d'abord checker si une page particuliere est souhaite pour une erreur, si oui (verifier qu'on a la permission de la lire) on l'affiche sinon on affiche la page par defaut
+- [x] Pouvoir gerer plusieurs cgi differentsen meme temps (.php et .py par ex) : j'ai modifie is_cgi et buildArgv (+ heritage) : A TESTER
+----
+
+- Ameliorer page d'accueil : permettre au user de POST, GET ou DELETE des elements (mettre a jour index.html avec IA)
 
 GASTON:
 

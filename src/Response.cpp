@@ -282,29 +282,45 @@ void Response::checkRedir() {
 	_code = code;  // on applique juste le code
 }
 
-bool	Response::is_cgi() {
-	std::string s_ = _config.getDirective("cgi_handler");
-	std::string::size_type pos = s_.find(' ');
-	bool		ok = false;
+// ADRI : ici on recupere la directive "cgi_handler" et je compare si le 1er arg de cette directive (l'extension .py)
+// correspond a l'extension de l'URL.
+// Modification : on recupere la directive "cgi_handler" et je compare si une des extensions correspond a l'extension de l'URL
+// bool	Response::is_cgi() {
+// 	std::string s_ = _config.getDirective("cgi_handler");
+// 	std::string::size_type pos = s_.find(' ');
+// 	bool		ok = false;
 
-	if (pos == std::string::npos) {
-		return false;
-	} else {
-		// check que le 1er arg de cgi_handler est bien une extension  (ex .py)
-		std::string extension  = s_.substr(0, pos);
-		ok =
-        extension.size() >= 2 &&
-        extension[0] == '.' &&
-        extension.find('.', 1) == std::string::npos;
-		// check que le fichier indique dans la location finit bien par la meme extension
-		ok = ok && extension == _path.substr(_path.rfind('.'));
-		if (!ok)
-			return false;
-		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
-		checkPermissions(s_.substr(pos + 1), true);
-		return true;
-	}
+// 	if (pos == std::string::npos) {
+// 		return false;
+// 	} else {
+// 		// check que le 1er arg de cgi_handler est bien une extension  (ex .py)
+// 		std::string extension  = s_.substr(0, pos);
+// 		ok =
+//         extension.size() >= 2 &&
+//         extension[0] == '.' &&
+//         extension.find('.', 1) == std::string::npos;
+// 		// check que le fichier indique dans la location finit bien par la meme extension
+// 		ok = ok && extension == _path.substr(_path.rfind('.'));
+// 		if (!ok)
+// 			return false;
+// 		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
+// 		checkPermissions(s_.substr(pos + 1));
+// 		return true;
+// 	}
+// }
+
+bool Response::is_cgi() {
+    std::string handlers = _config.getDirective("cgi_handler");
+    std::string program;
+
+    if (!findCgiProgramForPath(handlers, _path, program))
+        return false;
+
+    // on a trouvé le bon binaire pour l’extension
+    checkPermissions(program, true);
+    return true;
 }
+
 
 // fetch s'assure de la compatibilite entre la config de la location et la requete :
 

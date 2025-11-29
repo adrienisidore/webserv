@@ -27,6 +27,7 @@ public:
 
 
 	const std::map<std::string, LocationConfig> &getLocations() const;
+	std::map<std::string, LocationConfig>		&accessLocations();
 };
 
 #endif

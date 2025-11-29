@@ -196,6 +196,77 @@ static void		parseAutoConfig(GlobalConfig & global) {
 	}
 }
 
+// GlobalConfig AutoConfig(const std::string & filename) {
+//     GlobalConfig global;
+//     std::ifstream reader(filename.c_str());
+//     if (!reader.is_open())
+//         throw std::runtime_error("Cannot open temporary config file");
+
+//     std::string line;
+//     ServerConfig currentServer;
+//     LocationConfig currentLocation;
+//     std::string currentServerId;
+//     bool inServer = false;
+//     bool inLocation = false;
+//     std::string currentLocationURI;
+
+//     while (std::getline(reader, line)) {
+//         if (line.empty() || line[0] == '#') continue; // ignorer les lignes vides et les commentaires
+
+//         if (line == "server") {
+//             if (inServer) {
+//                 if (inLocation) { // on termine la location en cours
+//                     currentServer.addLocation(currentLocationURI, currentLocation);
+//                     inLocation = false;
+//                 }
+//                 // ajouter le serveur terminé
+//                 global.addServer(currentServerId, currentServer);
+//             }
+//             currentServer = ServerConfig();
+//             inServer = true;
+//             continue;
+//         }
+
+//         if (line.rfind("location ", 0) == 0) { // ligne commence par "location "
+//             if (inLocation) { // sauvegarder la location précédente
+//                 currentServer.addLocation(currentLocationURI, currentLocation);
+//             }
+//             inLocation = true;
+//             currentLocation = LocationConfig();
+//             size_t pos = line.find(' ');
+//             currentLocationURI = line.substr(pos + 1);
+//             continue;
+//         }
+
+//         // ligne de directive
+//         if (inLocation) {
+//             AutoConfig_setDirective(currentLocation, line);
+//         } else if (inServer) {
+//             AutoConfig_setDirective(currentServer, line);
+// 			//CHECKER QUE CES DIRECTIVES SONT ABSOLUMENT OBLIGATOIRE
+//             currentServerId = currentServer.getDirective("listen");
+//         } else {
+//             AutoConfig_setDirective(global, line);
+//         }
+//     }
+
+//     // sauvegarder le dernier serveur/location
+//     if (inLocation) {
+//         currentServer.addLocation(currentLocationURI, currentLocation);
+//     }
+//     if (inServer) {
+//         global.addServer(currentServerId, currentServer);
+//     }
+
+//     reader.close();
+
+// 	parseAutoConfig(global);
+
+//     printGlobalConfig(global);
+//     return global;
+// }
+
+
 GlobalConfig AutoConfig(const std::string & filename) {
     GlobalConfig global;
     std::ifstream reader(filename.c_str());
@@ -211,15 +282,14 @@ GlobalConfig AutoConfig(const std::string & filename) {
     std::string currentLocationURI;
 
     while (std::getline(reader, line)) {
-        if (line.empty() || line[0] == '#') continue; // ignorer les lignes vides et les commentaires
+        if (line.empty() || line[0] == '#') continue;
 
         if (line == "server") {
             if (inServer) {
-                if (inLocation) { // on termine la location en cours
+                if (inLocation) {
                     currentServer.addLocation(currentLocationURI, currentLocation);
                     inLocation = false;
                 }
-                // ajouter le serveur terminé
                 global.addServer(currentServerId, currentServer);
             }
             currentServer = ServerConfig();
@@ -227,8 +297,8 @@ GlobalConfig AutoConfig(const std::string & filename) {
             continue;
         }
 
-        if (line.rfind("location ", 0) == 0) { // ligne commence par "location "
-            if (inLocation) { // sauvegarder la location précédente
+        if (line.rfind("location ", 0) == 0) {
+            if (inLocation) {
                 currentServer.addLocation(currentLocationURI, currentLocation);
             }
             inLocation = true;
@@ -238,19 +308,16 @@ GlobalConfig AutoConfig(const std::string & filename) {
             continue;
         }
 
-        // ligne de directive
         if (inLocation) {
             AutoConfig_setDirective(currentLocation, line);
         } else if (inServer) {
             AutoConfig_setDirective(currentServer, line);
-			//CHECKER QUE CES DIRECTIVES SONT ABSOLUMENT OBLIGATOIRE
             currentServerId = currentServer.getDirective("listen");
         } else {
             AutoConfig_setDirective(global, line);
         }
     }
 
-    // sauvegarder le dernier serveur/location
     if (inLocation) {
         currentServer.addLocation(currentLocationURI, currentLocation);
     }
@@ -260,7 +327,29 @@ GlobalConfig AutoConfig(const std::string & filename) {
 
     reader.close();
 
-	parseAutoConfig(global);
+    // === HÉRITAGE ICI ===
+    {
+        std::map<std::string, ServerConfig> &servers = global.accessServers();
+        for (std::map<std::string, ServerConfig>::iterator sit = servers.begin();
+             sit != servers.end(); ++sit)
+        {
+            ServerConfig &srv = sit->second;
+
+            // global -> server
+            srv.inheritFromGlobal(global);
+
+            // server -> locations
+            std::map<std::string, LocationConfig> &locs = srv.accessLocations();
+            for (std::map<std::string, LocationConfig>::iterator lit = locs.begin();
+                 lit != locs.end(); ++lit)
+            {
+                lit->second.inheritFromServer(srv);
+            }
+        }
+    }
+
+    // vérifs sur la config déjà héritée
+    parseAutoConfig(global);
 
     printGlobalConfig(global);
     return global;

@@ -6,13 +6,25 @@
 GlobalConfig::GlobalConfig() {}
 
 void		GlobalConfig::setDirective(const std::string &key, const std::string &value) {
-	directives[key] = value;
+	if (key == "error_page" || key == "cgi_handler") {
+
+		std::map<std::string, std::string>::iterator it = directives.find(key);
+		if (it != directives.end())
+		{
+			it->second += "\n";
+			it->second += value;
+		}
+		else
+			directives[key] = value;
+	}
+	else
+		directives[key] = value;
 }
 
 
 void		GlobalConfig::addServer(const std::string &key, const ServerConfig &server) {
 	servers[key] = server;
-	servers[key].inheritFromGlobal(*this);
+	// servers[key].inheritFromGlobal(*this);
 
 }
 

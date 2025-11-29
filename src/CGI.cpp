@@ -206,22 +206,39 @@ void CGI::buildEnv() {
 }
 
 
+// void CGI::buildArgv() {
+
+// 	_argv_strings.clear();
+// 	_argv.clear();
+	
+// 	std::string	handler_directive = _config.getDirective("cgi_handler");
+// 	_argv_strings.push_back(handler_directive.substr(handler_directive.find(' ') + 1));
+//     _argv_strings.push_back(_path); // Chemin vers exécutable
+
+// 	for (size_t i = 0; i < _argv_strings.size(); ++i)
+// 		_argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
+// 	_argv.push_back(NULL);
+// }
 
 void CGI::buildArgv() {
+    _argv_strings.clear();
+    _argv.clear();
 
-	_argv_strings.clear();
-	_argv.clear();
+    std::string handlers = _config.getDirective("cgi_handler");
+    std::string program;
 
-	//_argv_strings.push_back(buildScriptFilename(_config.getDirective("root"), _config.getDirective("location_uri"), _URI)); // Chemin vers exécutable
-	
-	std::string	handler_directive = _config.getDirective("cgi_handler");
-	_argv_strings.push_back(handler_directive.substr(handler_directive.find(' ') + 1));
-    _argv_strings.push_back(_path); // Chemin vers exécutable
+    if (!findCgiProgramForPath(handlers, _path, program))
+        throw std::runtime_error("No matching cgi_handler for requested path");
 
-	for (size_t i = 0; i < _argv_strings.size(); ++i)
-		_argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
-	_argv.push_back(NULL);
+    // argv : [binaire CGI, script, NULL]
+    _argv_strings.push_back(program);
+    _argv_strings.push_back(_path);
+
+    for (size_t i = 0; i < _argv_strings.size(); ++i)
+        _argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
+    _argv.push_back(NULL);
 }
+
 
 void	CGI::openPipes() {
 
