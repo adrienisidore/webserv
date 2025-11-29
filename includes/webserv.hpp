@@ -2,7 +2,7 @@
 # define WEBSERV_HPP
 
 # define MAX_QUEUE 3
-# define MAX_CONNECTIONS 10
+# define MAX_CONNECTIONS 255
 # define BUFF_SIZE 4096
 # define HEADER_MAX_SIZE 100000 // at least BUFF_SIZE because of the do while
 # define BODY_MAX_SIZE 1000000

@@ -24,6 +24,7 @@ void	CGI::copyFrom(HTTPcontent& other) {
 		_config = other.getConfig();
 		_headers = other.getHeaders();
 		_path = other.getPath();
+		_current_body = other.getCurrentBody();
 }
 
 static std::string buildQueryString(const std::string &raw_uri) {
@@ -265,6 +266,9 @@ void	CGI::execute_cgi() {
         close(_outpipe[0]);
         close(_outpipe[1]);
 
+		// reset to BLOCKING -> the child waits for data to arrive in stdin if call to read()
+		fcntl(STDIN_FILENO, F_SETFL, 0); 
+        fcntl(STDOUT_FILENO, F_SETFL, 0);
 		//envp : le CGI recoit ces variables d'env pour tourner
         execve(_argv[0], &_argv[0], &_envp[0]);
 		//modifier le code d'error (500 probleme serveur ??)
@@ -284,13 +288,13 @@ void	CGI::execute_cgi() {
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
 
-		std::cout << getMethod() << " " << getCode() << " " << getCurrentBody() << std::endl;
-		if (getMethod() == "POST" && !getCode() && getCurrentBody().size() > 0) {
-			ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
-        	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
-		}
+		// std::cout << getMethod() << " " << getCode() << " " << getCurrentBody() << std::endl;
+		// if (getMethod() == "POST" && !getCode() && getCurrentBody().size() > 0) {
+		// 	ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
+		//       	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
+		// }
+		//       close(_inpipe[1]);
 
-        close(_inpipe[1]);
 		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
 	}
 }

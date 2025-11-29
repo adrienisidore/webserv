@@ -36,6 +36,7 @@ GASTON:
 
 [x] Gerer cas ou Content-length ne correspond pas a la bonne taille du POST envoye
 [x] Gerer .php (error 500)
-- tester les POST avec les CGI (error 403), notamment avec post_test.py (a demander a Alix)
-    -> pour l'instant CGI s'execute mais ne reconnait pas le body 
-- tester commande "siege -c255 http://localhost:8080/" avec 1 ou plusieurs serveurs dans config (error) 
+[x] tester les POST avec les CGI (error 403), notamment avec post_test.py (a demander a Alix)
+[x] inpipe[1] is not in poll() for CGIS -> very large body could fail
+[x] tester commande "siege -c255 http://localhost:8080/" avec 1 ou plusieurs serveurs dans config (error) 
+    -> ca semble fonctionner pour l'instant

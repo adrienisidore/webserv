@@ -149,15 +149,37 @@ void ServerMonitor::add_new_client_socket(int listening) {
 	}
 }
 
+// ServerMonitor.cpp
 
 void	ServerMonitor::add_new_cgi_socket(CGI cgi) {
 
-	_pollfds.push_back(pollfd_wrapper(cgi._outpipe[0]));
-	_map_cgis.insert(std::pair<int, CGI>(cgi._outpipe[0], cgi));  
+    // 1. SETUP READER (Output Pipe from Child)
+    _pollfds.push_back(pollfd_wrapper(cgi._outpipe[0]));
+    _pollfds.back().events = POLLIN;
 
+    // Insert the CGI object into the map
+    _map_cgis.insert(std::pair<int, CGI>(cgi._outpipe[0], cgi));
+
+    // [CRITICAL FIX] Access the map entry and CLEAR the body
+    // We must remove "LOLILOL" from the reader, otherwise it sticks to the response.
+    _map_cgis[cgi._outpipe[0]].setCurrentBody(""); 
+
+
+    // 2. SETUP WRITER (Input Pipe to Child)
+    if (cgi.getMethod() == "POST" && !cgi.getCurrentBody().empty()) {
+        
+        _pollfds.push_back(pollfd_wrapper(cgi._inpipe[1]));
+        _pollfds.back().events = POLLOUT;
+        
+        // We insert the ORIGINAL 'cgi' here (which still has the body "LOLILOL")
+        // because the writer needs it.
+        _map_cgis.insert(std::pair<int, CGI>(cgi._inpipe[1], cgi));
+    }
+    else {
+        // If no body or GET, close the write end immediately so child gets EOF
+        close(cgi._inpipe[1]);
+    }
 }
-
-
 
 std::vector<pollfd>::iterator ServerMonitor::close_tcp_connection(std::vector<pollfd>::iterator it) {
     
@@ -522,6 +544,32 @@ void	ServerMonitor::monitor_cgis() {
 				cgi._connection->setStatus(READY_TO_SEND);
 				// mettre a POLLIN, etc... bonne idee ?
 				it = close_cgi_socket(it);
+				continue;
+			}
+		}
+		else if (it->revents & POLLOUT) {
+            std::string body = cgi.getCurrentBody(); // The data to send
+            
+            ssize_t written = write(it->fd, body.c_str(), body.size());
+
+            if (written > 0) {
+                // Remove the part we just sent from the buffer
+                cgi.setCurrentBody(body.erase(0, written));
+                
+                // If body is empty, we are done writing!
+                if (body.empty()) {
+                    std::cout << "Finished writing body to CGI.\n";
+					close(it->fd);          // Send EOF to CGI stdin
+                    _map_cgis.erase(it->fd); // Remove this specific FD from map
+                    it = _pollfds.erase(it); // Remove from poll
+                    continue;
+                }
+            }
+			else if (written < 0) {
+				std::cerr << "Write Error\n";
+				close(it->fd);          // Send EOF to CGI stdin
+				_map_cgis.erase(it->fd); // Remove this specific FD from map
+				it = _pollfds.erase(it); // Remove from poll
 				continue;
 			}
 		}

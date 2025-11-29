@@ -59,7 +59,7 @@ void	TCPConnection::check_body_headers() {
 		if (!is_valid_length(headers["CONTENT-LENGTH"]))
 			return set_error(413);
 		else {
-			_request.setContentLength(std::atol(headers["CONTENT_LENGTH"].c_str()));
+			_request.setContentLength(std::atol(headers["CONTENT-LENGTH"].c_str()));
 			setBodyProtocol(CONTENT_LENGTH);
 		}
 	}
