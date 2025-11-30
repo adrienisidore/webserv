@@ -204,7 +204,7 @@ void	TCPConnection::read_body(bool state_changed) {
 	else if (getBodyProtocol() == CONTENT_LENGTH) {
 
 		int diff = _request.getCurrentBody().size() - _request.getContentLength();
-		std::cout << "DIFFERENCE IS: " << diff << std::endl;
+		// std::cout << "DIFFERENCE IS: " << diff << std::endl;
 		if (diff >= 0) {
 			_status = READ_COMPLETE;
 			_request.setCurrentBody(_request.getCurrentBody().substr(0, _request.getContentLength()));

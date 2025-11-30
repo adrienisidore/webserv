@@ -1,66 +1,66 @@
 #include "autoconfig.hpp"
 
 // --- Helper : indentation lisible ---
-static void printIndent(int depth) {
-	for (int i = 0; i < depth; ++i)
-		std::cout << "    ";
-}
-
-// --- LOCATION CONFIG ---
-static void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
-	printIndent(depth);
-	std::cout << "location " << path << " {" << std::endl;
-
-	const std::map<std::string, std::string> &directives = loc.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(depth + 1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	printIndent(depth);
-	std::cout << "}" << std::endl;
-}
-
-// --- SERVER CONFIG ---
-static void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
-	printIndent(depth);
-	std::cout << "server (" << key << ") {" << std::endl;
-
-	const std::map<std::string, std::string> &directives = server.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(depth + 1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	// Locations
-	const std::map<std::string, LocationConfig> &locs = server.getLocations();
-	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
-		 it != locs.end(); ++it)
-		printLocationConfig(it->first, it->second, depth + 1);
-
-	printIndent(depth);
-	std::cout << "}" << std::endl;
-}
-
-// --- GLOBAL CONFIG ---
-static void printGlobalConfig(GlobalConfig &global) {
-
-	const std::map<std::string, std::string> &directives = global.getDirectives();
-	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-		 it != directives.end(); ++it) {
-		printIndent(1);
-		std::cout << it->first << " " << it->second << ";" << std::endl;
-	}
-
-	std::map<std::string, ServerConfig> &servers = global.accessServers();
-	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
-		 it != servers.end(); ++it)
-		printServerConfig(it->first, it->second, 1);
-}
-
-
+// static void printIndent(int depth) {
+// 	for (int i = 0; i < depth; ++i)
+// 		std::cout << "    ";
+// }
+//
+// // --- LOCATION CONFIG ---
+// static void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
+// 	printIndent(depth);
+// 	std::cout << "location " << path << " {" << std::endl;
+//
+// 	const std::map<std::string, std::string> &directives = loc.getDirectives();
+// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+// 		 it != directives.end(); ++it) {
+// 		printIndent(depth + 1);
+// 		std::cout << it->first << " " << it->second << ";" << std::endl;
+// 	}
+//
+// 	printIndent(depth);
+// 	std::cout << "}" << std::endl;
+// }
+//
+// // --- SERVER CONFIG ---
+// static void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
+// 	printIndent(depth);
+// 	std::cout << "server (" << key << ") {" << std::endl;
+//
+// 	const std::map<std::string, std::string> &directives = server.getDirectives();
+// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+// 		 it != directives.end(); ++it) {
+// 		printIndent(depth + 1);
+// 		std::cout << it->first << " " << it->second << ";" << std::endl;
+// 	}
+//
+// 	// Locations
+// 	const std::map<std::string, LocationConfig> &locs = server.getLocations();
+// 	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
+// 		 it != locs.end(); ++it)
+// 		printLocationConfig(it->first, it->second, depth + 1);
+//
+// 	printIndent(depth);
+// 	std::cout << "}" << std::endl;
+// }
+//
+// // --- GLOBAL CONFIG ---
+// static void printGlobalConfig(GlobalConfig &global) {
+//
+// 	const std::map<std::string, std::string> &directives = global.getDirectives();
+// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
+// 		 it != directives.end(); ++it) {
+// 		printIndent(1);
+// 		std::cout << it->first << " " << it->second << ";" << std::endl;
+// 	}
+//
+// 	std::map<std::string, ServerConfig> &servers = global.accessServers();
+// 	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
+// 		 it != servers.end(); ++it)
+// 		printServerConfig(it->first, it->second, 1);
+// }
+//
+//
 static std::string resolvePath(const std::string &root, const std::string &target)
 {
 	std::string full = root;
@@ -351,6 +351,6 @@ GlobalConfig AutoConfig(const std::string & filename) {
     // vérifs sur la config déjà héritée
     parseAutoConfig(global);
 
-    printGlobalConfig(global);
+    // printGlobalConfig(global);
     return global;
 }

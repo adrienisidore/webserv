@@ -54,8 +54,9 @@ void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
 	// Success! Assign the configuration from the found iterator's value
 	_config = found->second;
 }
+
 // HTTPcontent	&HTTPcontent::operator=(const CGI &src) {
-// 	_code = src.getCode();
+// 	_code = src.getCode();j
 // 	_config = src.getConfig();
 // 	_headers = src.getHeaders();
 // 	_method = src.getMethod();

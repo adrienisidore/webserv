@@ -45,6 +45,7 @@ public:
 	~ServerMonitor();
 
 	void	add_new_cgi_socket(CGI cgi);
+	void	visualize();
 	void	run();// monitor the listening socket and launch monitor_connections
 	void	stop();
 

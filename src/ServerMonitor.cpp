@@ -62,7 +62,7 @@ void	ServerMonitor::create_all_listening_sockets() {
 
 		bind_listening_socket(listening);	
 		
-		std::cout << "listening socket created" << std::endl;
+		//std::cout << "listening socket created" << std::endl;
 		}
 }
 
@@ -96,8 +96,8 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 		// Format: "127.0.0.1:8080"
 		host = listen_value.substr(0, colon_pos);
 		port = listen_value.substr(colon_pos + 1);
-		std::cout << "host -> '" << host << "'" << std::endl;
-		std::cout << "port -> '" << port << "'" << std::endl;
+		// std::cout << "host -> '" << host << "'" << std::endl;
+		// std::cout << "port -> '" << port << "'" << std::endl;
 	}
 	else
 		throw ParsingException("listn: invalid IP / Port"); // devrait etre inutile si parsing est bien fait
@@ -141,10 +141,10 @@ void ServerMonitor::add_new_client_socket(int listening) {
 
 		_map_connections[tcp_socket] = connection;
 
-		std::cout << "A new TCP connection arrived !" << std::endl;
+		// std::cout << "A new TCP connection arrived !" << std::endl;
 	}
 	else {
-		std::cout << "Too many TCP connections, impossible to connect" << std::endl;
+		// std::cout << "Too many TCP connections, impossible to connect" << std::endl;
 		close(tcp_socket);
 	}
 }
@@ -185,7 +185,7 @@ std::vector<pollfd>::iterator ServerMonitor::close_tcp_connection(std::vector<po
     
     int fd = it->fd;
 
-	std::cout << "CLOSE TCP CONNECTION: " << fd << std::endl;
+	// std::cout << "CLOSE TCP CONNECTION: " << fd << std::endl;
 
     std::map<int, TCPConnection*>::iterator conn_it = _map_connections.find(fd);
     if (conn_it == _map_connections.end()) {
@@ -232,7 +232,7 @@ std::vector<pollfd>::iterator ServerMonitor::find_pollfd_iterator(int fd) {
 
 std::vector<pollfd>::iterator	ServerMonitor::close_associated_cgi(int fd) {
 
-	std::cout << "CLOSE ASSOCIATED CGI" << std::endl;
+	// std::cout << "CLOSE ASSOCIATED CGI" << std::endl;
 
 	std::map<int, TCPConnection*>::iterator conn_it = _map_connections.find(fd);
     
@@ -243,10 +243,10 @@ std::vector<pollfd>::iterator	ServerMonitor::close_associated_cgi(int fd) {
 
 	CGI cgi = conn_it->second->_response._cgi;
 
-	std::cout << "cgi socket : " << cgi._outpipe[0] << std::endl;
+	// std::cout << "cgi socket : " << cgi._outpipe[0] << std::endl;
 
 	for (std::vector<pollfd>::iterator it = connected_socket_end(); it != _pollfds.end(); ++it) {
-		std::cout << "it->fd : " << it->fd << std::endl;
+		// std::cout << "it->fd : " << it->fd << std::endl;
 		if (it->fd == cgi._outpipe[0]) {
 			return (close_cgi_socket(it));
 		}
@@ -256,7 +256,7 @@ std::vector<pollfd>::iterator	ServerMonitor::close_associated_cgi(int fd) {
 
 std::vector<pollfd>::iterator ServerMonitor::close_cgi_socket(std::vector<pollfd>::iterator it) {
 
-	std::cout << "CLOSE CGI SOCKET" << std::endl;
+	// std::cout << "CLOSE CGI SOCKET" << std::endl;
 
     int fd = it->fd;
     
@@ -271,7 +271,7 @@ std::vector<pollfd>::iterator ServerMonitor::close_cgi_socket(std::vector<pollfd
     pid_t pid = cgi_it->second._pid;
     
     if (pid > 0) {
-        std::cout << "Killing CGI process: " << pid << std::endl;
+        // std::cout << "Killing CGI process: " << pid << std::endl;
         kill(pid, SIGKILL);
         
         // int status;
@@ -336,6 +336,8 @@ void	ServerMonitor::run() {
 	while (_is_running) {
 
 		int	timeout_ms = calculate_next_timeout();
+		if (timeout_ms < 0 || timeout_ms > UI_REFRESH_RATE_MS)
+			timeout_ms = UI_REFRESH_RATE_MS;
 
 		if (poll(&_pollfds[0], _pollfds.size(), timeout_ms) == -1) {
 			int	saved_er = errno;
@@ -345,11 +347,11 @@ void	ServerMonitor::run() {
 				throw SocketException(strerror(errno));
 		}
 		
-		for (size_t i = 0; i < _pollfds.size(); ++i) {
-			if (_pollfds[i].revents != 0) {
-				std::cout << "fd " << _pollfds[i].fd << " revents: " << _pollfds[i].revents << std::endl;
-			}
-		}
+		// for (size_t i = 0; i < _pollfds.size(); ++i) {
+		// 	if (_pollfds[i].revents != 0) {
+		// 		std::cout << "fd " << _pollfds[i].fd << " revents: " << _pollfds[i].revents << std::endl;
+		// 	}
+		// }
 
 		// std::cout << "before monitoring listening" << std::endl;
 		monitor_listening_sockets();
@@ -361,14 +363,16 @@ void	ServerMonitor::run() {
 		// std::cout << "size of map server configs: " << _map_server_configs.size() << std::endl;
 		monitor_cgis();
 
+		this->visualize();
+
 		time_t now = time(NULL);
         if (now != last_timeout_check) {
-            std::cout << "Checking timeouts at " << now << std::endl;
+            // std::cout << "Checking timeouts at " << now << std::endl;
             check_timeouts();
             last_timeout_check = now;
         }
         else {
-            std::cout << "Skipping timeout check (same second)" << std::endl;
+            // std::cout << "Skipping timeout check (same second)" << std::endl;
         }
 	}
 	stop();
@@ -392,14 +396,14 @@ void	ServerMonitor::monitor_connections() {
 	}
 
 	while (it != _pollfds.end() && it != connected_socket_end() && _is_running) {	// IT can be last_socket
-		std::cout << "connection check - checking fd: " << it->fd 
-              << " revents: " << it->revents << std::endl;  // ← ADD THIS
+		// std::cout << "connection check - checking fd: " << it->fd 
+              // << " revents: " << it->revents << std::endl;  // ← ADD THIS
 
 		bool	should_close = false;
 		bool	state_changed_header = false;
 
 		if (it->revents & (POLLHUP | POLLERR | POLLNVAL)) {
-			std::cout << "DETECTED HANGUP/ERROR" << std::endl;
+			// std::cout << "DETECTED HANGUP/ERROR" << std::endl;
 			it = close_tcp_connection(it);
 			continue;
 		 }
@@ -407,7 +411,7 @@ void	ServerMonitor::monitor_connections() {
 		TCPConnection	*connection = _map_connections[it->fd];
 
 		if (it->revents & POLLIN) {
-			std::cout << "DETECTED POLLIN" << std::endl;
+			// std::cout << "DETECTED POLLIN" << std::endl;
 			//La requete precedente a etre geree
 			if (connection->get_status() == END)
 				connection->initialize_transfer();
@@ -447,7 +451,7 @@ void	ServerMonitor::monitor_connections() {
                     std::cout << "Send failed: " << strerror(errno) << std::endl;
                     should_close = true;
                 } else {
-                    std::cout << "Send succeded: " << connection->getResponse().getCurrentBody() << std::endl;
+                    // std::cout << "Send succeded: " << connection->getResponse().getCurrentBody() << std::endl;
 					connection->end_transfer();
 					it->events = POLLIN;
 
@@ -463,13 +467,13 @@ void	ServerMonitor::monitor_connections() {
 		if (should_close)
 			it = close_tcp_connection(it);
 		else {
-			std::cout << "++it" << std::endl;
+			// std::cout << "++it" << std::endl;
 			++it;
 		}
 	}	
 	for (std::map<int, TCPConnection *>::iterator connection = _map_connections.begin(); connection != _map_connections.end(); ++connection) {
 		for (std::map<int, CGI>::iterator it = connection->second->_map_cgi_fds_to_add.begin(); it != connection->second->_map_cgi_fds_to_add.end(); ++it) {
-			std::cout << "ADD NEW CGI SOCKET" << std::endl;
+			// std::cout << "ADD NEW CGI SOCKET" << std::endl;
 			add_new_cgi_socket(it->second);
 
 		}
@@ -487,10 +491,10 @@ void	ServerMonitor::monitor_cgis() {
 
 	while (it != _pollfds.end() && _is_running) {
 
-		std::cout << "CGI check" << std::endl;
+		// std::cout << "CGI check" << std::endl;
 
         if (_map_cgis.find(it->fd) == _map_cgis.end()) {
-			std::cout << "CGI skip" << std::endl;
+			// std::cout << "CGI skip" << std::endl;
             ++it;
             continue;
         }
@@ -499,24 +503,24 @@ void	ServerMonitor::monitor_cgis() {
 
 		if (it->revents & (POLLIN | POLLHUP)) {
 
-			std::cout << "=== CGI READ ATTEMPT ===" << std::endl;
-			std::cout << "fd: " << it->fd << std::endl;
-			std::cout << "revents: " << it->revents << " (POLLIN=" << (it->revents & POLLIN) 
-					<< ", POLLHUP=" << (it->revents & POLLHUP) << ")" << std::endl;
-			std::cout << "Current body size: " << cgi.getCurrentBody().size() << std::endl;
+			// std::cout << "=== CGI READ ATTEMPT ===" << std::endl;
+			// std::cout << "fd: " << it->fd << std::endl;
+			// std::cout << "revents: " << it->revents << " (POLLIN=" << (it->revents & POLLIN) 
+			// 		<< ", POLLHUP=" << (it->revents & POLLHUP) << ")" << std::endl;
+			// std::cout << "Current body size: " << cgi.getCurrentBody().size() << std::endl;
 
 			memset(buff, 0, BUFF_SIZE);
 			bytes_received = read(it->fd, buff, BUFF_SIZE);
 
 			if (bytes_received > 0) {
-				std::cout << "Data received: [" << std::string(buff, bytes_received) << "]" << std::endl;
+				// std::cout << "Data received: [" << std::string(buff, bytes_received) << "]" << std::endl;
 				cgi.append_to_body(buff, bytes_received);
 				++it;
 				continue;
 			}
 
 			else if (bytes_received == 0) {	// EOF
-				std::cout << "EOF" << std::endl;
+				// std::cout << "EOF" << std::endl;
 				int	status;
 				waitpid(cgi._pid, &status, 0); // or NOHANG ?
 				
@@ -531,8 +535,8 @@ void	ServerMonitor::monitor_cgis() {
 
 					cgi._connection->setStatus(READY_TO_SEND);
 					cgi._connection->_response.createFromCgi(cgi);
-					std::cout << "CURRENT BODY" << cgi._connection->_response.getCurrentBody() << std::endl;
-					std::cout << "CGI CURRENT BODY" << cgi.getCurrentBody() << std::endl;
+					// std::cout << "CURRENT BODY" << cgi._connection->_response.getCurrentBody() << std::endl;
+					// std::cout << "CGI CURRENT BODY" << cgi.getCurrentBody() << std::endl;
 					it = close_cgi_socket(it);
 					continue;
 			}
@@ -558,7 +562,7 @@ void	ServerMonitor::monitor_cgis() {
                 
                 // If body is empty, we are done writing!
                 if (body.empty()) {
-                    std::cout << "Finished writing body to CGI.\n";
+                    // std::cout << "Finished writing body to CGI.\n";
 					close(it->fd);          // Send EOF to CGI stdin
                     _map_cgis.erase(it->fd); // Remove this specific FD from map
                     it = _pollfds.erase(it); // Remove from poll
@@ -590,9 +594,9 @@ std::vector<pollfd>::iterator ServerMonitor::connected_socket_end() {
     for (size_t i = 0; i < _map_connections.size() && it != _pollfds.end(); ++i) {
         ++it;
     }
-	std::cout << "map server configf size : " << _map_server_configs.size() << std::endl;
-	std::cout << "map connections    size : " << _map_connections.size() << std::endl;
-	std::cout << "map cgis           size : " << _map_cgis.size() << std::endl;
+	// std::cout << "map server configf size : " << _map_server_configs.size() << std::endl;
+	// std::cout << "map connections    size : " << _map_connections.size() << std::endl;
+	// std::cout << "map cgis           size : " << _map_cgis.size() << std::endl;
 	// sleep(1);
     return it;  // ← Now points to first CGI pipe (or end if no CGIs)
 }
@@ -640,11 +644,11 @@ int		ServerMonitor::calculate_next_timeout() {
 				next_timeout = remaining;
 		}
 	}
-	std::cout << "next timeout: " << next_timeout << std::endl;
+	// std::cout << "next timeout: " << next_timeout << std::endl;
+
 
 	if (next_timeout <= 0)
-		return 1;
-
+		return 1;	// WHAT TO RETURN HERE?
 	return next_timeout * 1000;
 }
 
@@ -678,7 +682,7 @@ void	ServerMonitor::check_timeouts() {
 			timeout = 1;
 
 		if (timeout) {
-			std::cout << "TIMEOUT !" << std::endl;
+			// std::cout << "TIMEOUT !" << std::endl;
 			conn->_response.setCode(504);
 			if (conn->getCGITime()) {
 				close_associated_cgi(conn->getTCPSocket());

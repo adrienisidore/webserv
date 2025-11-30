@@ -54,7 +54,7 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
     // config.listen contient typiquement "127.0.0.1:8080"
     std::string listen = config.getDirective("listen");
     std::string conf_host = listen;
-    std::string conf_port = "8080"; // fallback raisonnable
+    std::string conf_port = "8080"; // WHAT ??
 
     size_t pos = listen.find(':');
     if (pos != std::string::npos) {
@@ -201,8 +201,8 @@ void CGI::buildEnv() {
     _envp.push_back(NULL);
 
 	//Affichage du resultat :
-	for (std::vector<std::string>::const_iterator it = _env_strings.begin(); it != _env_strings.end(); ++it)
-		std::cout << *it << std::endl;
+	// for (std::vector<std::string>::const_iterator it = _env_strings.begin(); it != _env_strings.end(); ++it)
+		// std::cout << *it << std::endl;
 }
 
 

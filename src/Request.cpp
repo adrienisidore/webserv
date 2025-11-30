@@ -22,15 +22,15 @@ void Request::unchunk_body() {
     size_t  header_end;
     size_t  chunk_size;
     
-	std::cout << "--- DEBUG UNCHUNK ---" << std::endl;
-    std::cout << "Body size: " << _current_body.size() << std::endl;
-    if (_current_body.size() > 0) {
-        std::cout << "First 10 chars integers: ";
-        for (size_t i = 0; i < 10 && i < _current_body.size(); i++) {
-            std::cout << (int)_current_body[i] << " ";
-        }
-        std::cout << "\nFirst 10 chars strings: " << _current_body.substr(0, 10) << std::endl;
-    }
+	// std::cout << "--- DEBUG UNCHUNK ---" << std::endl;
+	//    std::cout << "Body size: " << _current_body.size() << std::endl;
+	//    if (_current_body.size() > 0) {
+	//        std::cout << "First 10 chars integers: ";
+	//        for (size_t i = 0; i < 10 && i < _current_body.size(); i++) {
+	//            std::cout << (int)_current_body[i] << " ";
+	//        }
+	//        std::cout << "\nFirst 10 chars strings: " << _current_body.substr(0, 10) << std::endl;
+	//    }
     while (pos < _current_body.size()) {
         
         // 1. Find the end of the chunk size line

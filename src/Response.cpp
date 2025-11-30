@@ -145,7 +145,7 @@ void			Response::buildPath() {
 	std::string	uri = _URI.substr(0, query);	
 
 	_path = root + uri;
-	std::cout << "path is : " << _path << std::endl;
+	// std::cout << "path is : " << _path << std::endl;
 	// -----------------Differencie les types de requetes------------------------
 	if (uri[uri.size() - 1] == '/') {
 		// Si uri == directory
@@ -430,7 +430,7 @@ void Response::_error_() {
 		reason[504] = "Timeout";
 	}
 
-	std::cout << "CODE IS " << _code << std::endl;
+	// std::cout << "CODE IS " << _code << std::endl;
 	// Sélection du corps de la page
 	std::map<int, std::string>::iterator it = pages.find(_code);
 	const std::string &body = (it != pages.end()) ? it->second : pages[500];
@@ -530,6 +530,10 @@ void		Response::_post_() {
 	_current_body += "Content-Length: 0\r\n";
 	if (success_code == 201)
 		_current_body +="Location: " + _URI + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+
+	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
+	if (it != _headers.end() && it->second == "close")
+		_current_body += "Connection: close\r\n"; 
 
 	_current_body += "\r\n";// On decide arbitrairement de ne pas renvoyer de body ici.
 }
