@@ -66,3 +66,45 @@ bool findCgiProgramForPath(const std::string &handlers, const std::string &path,
 
     return false;
 }
+
+//Recherche si error_page contient _code
+bool findErrorPageForCode(const std::string &value,
+                          int code,
+                          std::string &outPath)
+{
+    outPath.clear();
+    if (value.empty())
+        return false;
+
+    std::size_t start = 0;
+    while (start < value.size()) {
+        std::size_t end = value.find('\n', start);
+        if (end == std::string::npos)
+            end = value.size();
+
+        std::string line = value.substr(start, end - start);
+        start = end + 1;
+
+        // trim début
+        std::size_t i = 0;
+        while (i < line.size() && std::isspace(static_cast<unsigned char>(line[i])))
+            ++i;
+        if (i == line.size())
+            continue;
+        line = line.substr(i);
+
+        // parser "CODE URI"
+        std::istringstream iss(line);
+        int cfgCode;
+        std::string uri;
+        iss >> cfgCode >> uri;
+        if (!iss || uri.empty())
+            continue;
+
+        if (cfgCode == code) {
+            outPath = uri;
+            return true;
+        }
+    }
+    return false;
+}
