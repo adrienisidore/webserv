@@ -28,9 +28,27 @@ ADRI:
 - Attention affichage character non ACII (tout ecrire en anglais)
 
 ---
-- [ ] ajouter directive error_pages si le user souhaite afficher une page specifique pour un code specifique, pouvoir en gerer plusieurs
-	: il faut d'abord checker si une page particuliere est souhaite pour une erreur, si oui (verifier qu'on a la permission de la lire) on l'affiche sinon on affiche la page par defaut
-- [x] Pouvoir gerer plusieurs cgi differentsen meme temps (.php et .py par ex) : j'ai modifie is_cgi et buildArgv (+ heritage) : A TESTER
+- [x] ajouter directive error_pages si le user souhaite afficher une page specifique pour un code specifique, pouvoir en gerer plusieurs
+	Taper "<html><body>File error</body></html>" pour savoir ce qu'on renvoie si le fichier
+	specifie dans error_page n'est pas ouvrable. De preference il faudrait checker les permissions avant d'essayer d'ouvrir ?
+
+ [ ] A PARSER directives geree :
+ 	return : 3xx location_presente dans serverConfig
+	autoindex : on ou off
+	cgi_handler : .xxx binary
+	allow_methods : GET HEAD POST DELETE
+	error_page : code_derreur_gere chemin_autorise
+
+  [x] ATTENTION : appliquer is_valid_path(std::string filename) dans loadFile pour eviter
+  de pouvoir entrer des chemins interdits
+
+  [x] comprendre pourquoi quand on specifie une page html inexistante "inde.html" au lieu de "index.html" : taper "ICIIIII buildPath 2" dans la barre de recherche
+
+  [ ] c'est peut etre les messages de debug qui font buguer siege (pas le temps de gerer les co et afficher les messages)
+
+- [ ] Tester si on peut gerer plusieurs cgi differents en meme temps (.php et .py par ex) : j'ai modifie is_cgi et buildArgv (+ heritage) : tester directement dans le code car on
+peut pas afficher de message depuis le processus enfant (afficher program)
+
 ----
 
 - Ameliorer page d'accueil : permettre au user de POST, GET ou DELETE des elements (mettre a jour index.html avec IA)

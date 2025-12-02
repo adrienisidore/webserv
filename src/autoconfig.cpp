@@ -159,6 +159,9 @@ static void		parseAutoConfig(GlobalConfig & global) {
 	std::string global_root = global.getDirective("root");
 	if (!global_root.empty() && !isSafePath(global_root))
 		throw ParsingException("Global root path is unsafe");
+	
+	// autoindex et cgi_handler (creer des fonctions utils)
+
 
 
 	// On parcourt toutes les locations (contenant toutes les directives) de chaque serveur et on verifie les incoherences :
@@ -169,6 +172,8 @@ static void		parseAutoConfig(GlobalConfig & global) {
 		std::string server_root = tmp_serv.getDirective("root");
 		if (!server_root.empty() && !isSafePath(server_root))
 			throw ParsingException("Server root path is unsafe");
+		std::string server_root = tmp_serv.getDirective("root");
+		// if ()
 
 		// Ici on fait les tests pour chaque location :
 		std::map<std::string, LocationConfig>	tmp_locations = tmp_serv.getLocations();

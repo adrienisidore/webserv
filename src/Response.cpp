@@ -157,7 +157,9 @@ void			Response::buildPath() {
 			if ((_method == "GET" || _method == "HEAD") && _config.getDirective("autoindex") == "on")
 				_autoindex = true;
 			else
-				return setCode(403);
+			{
+				return setCode(403);//XYZ : si index n'est pas present alors c'est Forbidden ?	
+			}
 		}
 		else {
 			indexes = split(index, ' ');
@@ -167,7 +169,10 @@ void			Response::buildPath() {
 				if ((_method == "GET" || _method == "HEAD") && _config.getDirective("autoindex") == "on")
 					_autoindex = true;
 				else
-					return setCode(403);
+				{
+					std::cout << "ICIIIII buildPath 2" << std::endl;
+					return setCode(403);//XYZ : si index n'est pas present alors c'est Forbidden ?
+				}
 			}
 			else
 				_path += index;
@@ -310,11 +315,11 @@ void Response::checkRedir() {
 // }
 
 bool Response::is_cgi() {
-    std::string handlers = _config.getDirective("cgi_handler");
-    std::string program;
+	std::string handlers = _config.getDirective("cgi_handler");
+	std::string program;
 
-    if (!findCgiProgramForPath(handlers, _path, program))
-        return false;
+	if (!findCgiProgramForPath(handlers, _path, program))
+		return false;
 
     // on a trouvé le bon binaire pour l’extension
     checkPermissions(program, true);
@@ -379,12 +384,105 @@ void	Response::execute() {
 static std::string loadFile(const std::string &path) {
 	std::ifstream f(path.c_str());
 	if (!f.is_open())
+	{
 		return "<html><body>File error</body></html>";
+	}
 	std::string content, line;
 	while (std::getline(f, line))
 		content += line + "\n";
 	return content;
 }
+
+// void Response::_error_() {
+
+// 	// Pages HTML des erreurs (chargées une seule fois)
+// 	static std::map<int, std::string> pages;
+// 	if (pages.empty()) {
+// 		pages[301] = loadFile("ressources/errors/301.html");
+// 		pages[302] = loadFile("ressources/errors/302.html");
+// 		pages[307] = loadFile("ressources/errors/307.html");
+// 		pages[308] = loadFile("ressources/errors/308.html");
+
+// 		pages[400] = loadFile("ressources/errors/400.html");
+// 		pages[403] = loadFile("ressources/errors/403.html");
+// 		pages[404] = loadFile("ressources/errors/404.html");
+// 		pages[405] = loadFile("ressources/errors/405.html");
+// 		pages[409] = loadFile("ressources/errors/409.html");
+// 		pages[411] = loadFile("ressources/errors/411.html");
+// 		pages[413] = loadFile("ressources/errors/413.html");
+// 		pages[414] = loadFile("ressources/errors/414.html");
+// 		pages[500] = loadFile("ressources/errors/500.html");
+// 		pages[501] = loadFile("ressources/errors/501.html");
+// 		pages[504] = loadFile("ressources/errors/504.html");
+// 	}
+
+// 	// Reason phrases
+// 	static std::map<int, std::string> reason;
+// 	if (reason.empty()) {
+// 		reason[301] = "Moved Permanently";
+// 		reason[302] = "Found";
+// 		reason[307] = "Temporary Redirect";
+// 		reason[308] = "Permanent Redirect";
+
+// 		reason[400] = "Bad Request";
+// 		reason[403] = "Forbidden";
+// 		reason[404] = "Not Found";
+// 		reason[405] = "Method Not Allowed";
+// 		reason[409] = "Conflict";
+// 		reason[411] = "Length Required";
+// 		reason[413] = "Payload Too Large";
+// 		reason[414] = "URI Too Long";
+// 		reason[500] = "Internal Server Error";
+// 		reason[501] = "Not Implemented";
+// 		reason[504] = "Timeout";
+// 	}
+
+// 	std::cout << "CODE IS " << _code << std::endl;
+// 	// Sélection du corps de la page
+// 	std::map<int, std::string>::iterator it = pages.find(_code);
+// 	const std::string &body = (it != pages.end()) ? it->second : pages[500];
+
+// 	// Reason phrase
+// 	std::string rp = "Error";
+// 	if (reason.find(_code) != reason.end())
+// 		rp = reason[_code];
+
+// 	std::ostringstream out;
+
+// 	// Status line
+// 	out << "HTTP/1.1 " << _code << " " << rp << "\r\n"
+// 		<< "Content-Type: text/html\r\n"
+// 		<< "Content-Length: " << body.size() << "\r\n"
+// 		<< "Connection: close\r\n";
+
+// 	// Redirections 3xx → ajouter Location:
+// 	if (_code >= 300 && _code <= 399) {
+// 		std::string ret = _config.getDirective("return"); // "301 /new"
+// 		if (!ret.empty()) {
+// 			std::istringstream iss(ret);
+// 			int code_3xx;
+// 			std::string target;
+// 			iss >> code_3xx >> target;
+// 			out << "Location: " << target << "\r\n";
+// 		}
+// 	}
+
+// 	// Méthode interdite → ajouter Allow:
+// 	if (_code == 405) {
+// 		const std::map<std::string, std::string> &dirs = _config.getDirectives();
+// 		std::map<std::string, std::string>::const_iterator it2 = dirs.find("allowed_methods");
+// 		if (it2 != dirs.end())
+// 			out << "Allow: " << it2->second << "\r\n";
+// 	}
+
+// 	// Fin des headers
+// 	out << "\r\n";
+
+// 	// Corps HTML
+// 	out << body;
+
+// 	_current_body = out.str();
+// }
 
 void Response::_error_() {
 
@@ -430,10 +528,33 @@ void Response::_error_() {
 		reason[504] = "Timeout";
 	}
 
-	// std::cout << "CODE IS " << _code << std::endl;
-	// Sélection du corps de la page
-	std::map<int, std::string>::iterator it = pages.find(_code);
-	const std::string &body = (it != pages.end()) ? it->second : pages[500];
+	std::cout << "CODE IS " << _code << std::endl;
+
+	// Sélection du corps de la page (error_page custom si présente, sinon défaut)
+	std::string body;
+
+	// On essaie d'abord de trouver une error_page custom pour ce code
+	std::string epValue = _config.getDirective("error_page");
+	std::string customUri;
+	if (!epValue.empty() && findErrorPageForCode(epValue, _code, customUri) && is_valid_path(customUri)) {
+
+		// IMPORTANT : on utilise exactement le chemin spécifié dans la directive,
+		// sans le préfixer par root (customUri peut être ./ressources/errors/404.html,
+		// /chemin/absolu, etc.)
+		std::string fsPath = customUri;
+
+		body = loadFile(fsPath);
+
+		// Si la page custom ne peut pas être chargée, on retombe sur les pages par défaut
+		if (body.empty()) {
+			std::map<int, std::string>::iterator it = pages.find(_code);
+			body = (it != pages.end()) ? it->second : pages[500];
+		}
+	} else {
+		// Aucune error_page custom correspondante → pages par défaut
+		std::map<int, std::string>::iterator it = pages.find(_code);
+		body = (it != pages.end()) ? it->second : pages[500];
+	}
 
 	// Reason phrase
 	std::string rp = "Error";
@@ -476,6 +597,7 @@ void Response::_error_() {
 
 	_current_body = out.str();
 }
+
 
 
 // Gerer les redirections redirection directive -> vers une nouvelle location, ATTENTION AUX REDIRECTIONS INFINIES
@@ -545,7 +667,9 @@ void		Response::_delete_() {
 		if (e == ENOENT)
 			setCode(404);	// n'existe pas
 		if (e == EACCES || e == EPERM)
+		{
 			setCode(403); // droits insuffisants
+		}	
 		if (e == ENOTEMPTY || e == EEXIST) 
 			setCode(409); // dossier non vide
 		else

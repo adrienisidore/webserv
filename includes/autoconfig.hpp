@@ -18,6 +18,9 @@ void	AutoConfig_setDirective(T & config_element, const std::string & line) {
 	config_element.setDirective(name, value);
 }
 
+// pour global, server et location : root, listen, index, error_page, (redir?)
+// static void		basic_tests(T)
+
 GlobalConfig AutoConfig(const std::string & filename);
 
 #endif
