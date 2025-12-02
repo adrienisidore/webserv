@@ -59,8 +59,7 @@
 // 		 it != servers.end(); ++it)
 // 		printServerConfig(it->first, it->second, 1);
 // }
-//
-//
+
 static std::string resolvePath(const std::string &root, const std::string &target)
 {
 	std::string full = root;
@@ -171,8 +170,7 @@ static void		parseAutoConfig(GlobalConfig & global) {
 		ServerConfig		tmp_serv = tmp_servers[it->first];
 		std::string server_root = tmp_serv.getDirective("root");
 		if (!server_root.empty() && !isSafePath(server_root))
-			throw ParsingException("Server root path is unsafe");
-		std::string server_root = tmp_serv.getDirective("root");
+			throw ParsingException("Server root path is unsafe");;
 		// if ()
 
 		// Ici on fait les tests pour chaque location :
@@ -200,77 +198,6 @@ static void		parseAutoConfig(GlobalConfig & global) {
 		}
 	}
 }
-
-// GlobalConfig AutoConfig(const std::string & filename) {
-//     GlobalConfig global;
-//     std::ifstream reader(filename.c_str());
-//     if (!reader.is_open())
-//         throw std::runtime_error("Cannot open temporary config file");
-
-//     std::string line;
-//     ServerConfig currentServer;
-//     LocationConfig currentLocation;
-//     std::string currentServerId;
-//     bool inServer = false;
-//     bool inLocation = false;
-//     std::string currentLocationURI;
-
-//     while (std::getline(reader, line)) {
-//         if (line.empty() || line[0] == '#') continue; // ignorer les lignes vides et les commentaires
-
-//         if (line == "server") {
-//             if (inServer) {
-//                 if (inLocation) { // on termine la location en cours
-//                     currentServer.addLocation(currentLocationURI, currentLocation);
-//                     inLocation = false;
-//                 }
-//                 // ajouter le serveur terminé
-//                 global.addServer(currentServerId, currentServer);
-//             }
-//             currentServer = ServerConfig();
-//             inServer = true;
-//             continue;
-//         }
-
-//         if (line.rfind("location ", 0) == 0) { // ligne commence par "location "
-//             if (inLocation) { // sauvegarder la location précédente
-//                 currentServer.addLocation(currentLocationURI, currentLocation);
-//             }
-//             inLocation = true;
-//             currentLocation = LocationConfig();
-//             size_t pos = line.find(' ');
-//             currentLocationURI = line.substr(pos + 1);
-//             continue;
-//         }
-
-//         // ligne de directive
-//         if (inLocation) {
-//             AutoConfig_setDirective(currentLocation, line);
-//         } else if (inServer) {
-//             AutoConfig_setDirective(currentServer, line);
-// 			//CHECKER QUE CES DIRECTIVES SONT ABSOLUMENT OBLIGATOIRE
-//             currentServerId = currentServer.getDirective("listen");
-//         } else {
-//             AutoConfig_setDirective(global, line);
-//         }
-//     }
-
-//     // sauvegarder le dernier serveur/location
-//     if (inLocation) {
-//         currentServer.addLocation(currentLocationURI, currentLocation);
-//     }
-//     if (inServer) {
-//         global.addServer(currentServerId, currentServer);
-//     }
-
-//     reader.close();
-
-// 	parseAutoConfig(global);
-
-//     printGlobalConfig(global);
-//     return global;
-// }
-
 
 GlobalConfig AutoConfig(const std::string & filename) {
     GlobalConfig global;

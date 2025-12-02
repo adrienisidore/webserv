@@ -1,17 +1,5 @@
 #include "webserv.hpp"
 
-// CGI doit être instancié dans la même portée que celle où tu gères la boucle d’événements,
-// ou au moins conservé tant que le descripteur associé (pipe, pid) est surveillé.
-// pas forcément instancier dans la même fonction que poll(),
-// mais il faut que la durée de vie du CGI couvre toute la période où poll() surveille ses pipes.
-
-// Sinon l’objet serait détruit avant la fin de l’exécution du CGI,
-// et ses champs (_inpipe, _outpipe, _pid, _envp, etc.) deviendraient invalides.
-
-// NB : _outpipe[0] au pollfd
-// Quand le poll() détecte l’événement (lecture terminée ou EOF),
-// alors seulement tu détruis l’objet CGI
-
 CGI::CGI() {}
 
 CGI::~CGI() {}
@@ -42,7 +30,7 @@ static std::string buildContentLength(const std::string &body) {
 static std::string buildContentType(const std::map<std::string,std::string> &headers) {
     std::map<std::string,std::string>::const_iterator it = headers.find("Content-Type");
     if (it == headers.end())
-        return ""; // ne pas ajouter
+        return "";
     return std::string("CONTENT_TYPE=") + it->second;
 }
 
@@ -50,11 +38,9 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
 {
     std::map<std::string,std::string>::const_iterator it = headers.find("HOST");
 
-    // --- Correction point 2 : séparer correctement host et port depuis la config ---
-    // config.listen contient typiquement "127.0.0.1:8080"
     std::string listen = config.getDirective("listen");
     std::string conf_host = listen;
-    std::string conf_port = "8080"; // WHAT ??
+    std::string conf_port = "8080";
 
     size_t pos = listen.find(':');
     if (pos != std::string::npos) {
@@ -83,26 +69,21 @@ static std::string buildServerNameHost(const std::map<std::string,std::string> &
                 return std::string("SERVER_PORT=") + host.substr(p + 1);
         }
 
-        // --- Correction point 3 : fallback dynamique depuis listen ---
         return std::string("SERVER_PORT=") + conf_port;
     }
 }
 
 std::string buildScriptFilename(const std::string &root, const std::string &uri)
 {
-    // 1. Remove query string
     size_t q = uri.find('?');
     std::string path = (q == std::string::npos) ? uri : uri.substr(0, q);
 
-    // 2. Simple concatenation: Root + Path
-    // Ensure we don't double-slash or miss a slash
     std::string full_path = root;
     
     if (!full_path.empty() && full_path[full_path.size() - 1] == '/' && !path.empty() && path[0] == '/')
-        full_path.erase(full_path.size() - 1); // remove trailing slash from root if path has one
+        full_path.erase(full_path.size() - 1); 
     else if ((full_path.empty() || full_path[full_path.size() - 1] != '/') && (path.empty() || path[0] != '/'))
-        full_path += '/'; // add slash if neither has one
-
+        full_path += '/';
     full_path += path;
 
     return std::string("SCRIPT_FILENAME=") + full_path;
@@ -152,9 +133,6 @@ void CGI::buildEnv() {
 
 	_env_strings.clear();
     _envp.clear();
-	//Voir tableau : https://www.alimnaqvi.com/blog/webserv car certains elements sont obligatoires.
-
-	//Doit-on egalement ajouter l'environnement global ? Non je crois pas
 
 	std::map<std::string, std::string>	cgi_headers;
 	cgi_headers = _headers;
@@ -188,8 +166,6 @@ void CGI::buildEnv() {
 	// _env_strings.push_back("REMOTE_ADDR=127.0.0.1");
 	_env_strings.push_back(buildRemoteAddr(_connection->_client_addr, _connection->_client_addr_len));//L'adresse IP du client
 
-	///////////////////////////////////////////////
-
 	_env_strings.push_back(buildQueryString(_URI));//la partie apres le "?"
 	_env_strings.push_back(buildContentLength(_current_body));
 	_env_strings.push_back(buildContentType(_headers));
@@ -199,26 +175,7 @@ void CGI::buildEnv() {
     for (size_t i = 0; i < _env_strings.size(); ++i)
         _envp.push_back(const_cast<char*>(_env_strings[i].c_str()));
     _envp.push_back(NULL);
-
-	//Affichage du resultat :
-	// for (std::vector<std::string>::const_iterator it = _env_strings.begin(); it != _env_strings.end(); ++it)
-		// std::cout << *it << std::endl;
 }
-
-
-// void CGI::buildArgv() {
-
-// 	_argv_strings.clear();
-// 	_argv.clear();
-	
-// 	std::string	handler_directive = _config.getDirective("cgi_handler");
-// 	_argv_strings.push_back(handler_directive.substr(handler_directive.find(' ') + 1));
-//     _argv_strings.push_back(_path); // Chemin vers exécutable
-
-// 	for (size_t i = 0; i < _argv_strings.size(); ++i)
-// 		_argv.push_back(const_cast<char*>(_argv_strings[i].c_str()));
-// 	_argv.push_back(NULL);
-// }
 
 void CGI::buildArgv() {
 	_argv_strings.clear();
@@ -244,8 +201,6 @@ void	CGI::openPipes() {
 
 	//Dans constructeur
     if (pipe(_inpipe) < 0 || pipe(_outpipe) < 0) {
-        // perror("pipe");
-		//thorw une Exception, ne pas exit SINON LEAKS
         exit(EXIT_FAILURE);
     }
     fcntl(_inpipe[0], F_SETFL, O_NONBLOCK);
@@ -304,13 +259,6 @@ void	CGI::execute_cgi() {
 		fcntl(_inpipe[1], F_SETFL, flags | O_NONBLOCK);
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
-
-		// std::cout << getMethod() << " " << getCode() << " " << getCurrentBody() << std::endl;
-		// if (getMethod() == "POST" && !getCode() && getCurrentBody().size() > 0) {
-		// 	ssize_t written = write(_inpipe[1], _current_body.c_str(), _current_body.size());
-		//       	std::cerr << "Wrote " << written << " bytes to CGI stdin\n";
-		// }
-		//       close(_inpipe[1]);
 
 		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
 	}

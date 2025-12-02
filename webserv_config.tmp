@@ -1,7 +1,5 @@
 root ./ressources;
 autoindex off;
-cgi_handler .js /usr/bin/python0;
-cgi_handler .py /usr/bin/python1;
 server
 listen 127.0.0.1:8080;
 root ./ressources;
@@ -10,18 +8,16 @@ client_max_body_size 80000;
 client_header_buffer_size 10000;
 request_header_timeout 3;
 request_body_timeout 6;
-keepalive_timeout 10;
-send_timeout 10;
-cgi_timeout 3;
-cgi_handler .py /usr/bin/python2;
-error_page 403 ./ressources/errors/301.html;
-location /colorfull/
-autoindex on;
+keepalive_timeout 20;
+send_timeout 20;
+cgi_timeout 40;
 cgi_handler .py /usr/bin/python3;
-error_page 404 ./ressources/../includes/CGI.hpp;
+location /home/
+autoindex on;
+cgi_handler .php /usr/bin/php-cgi;
 location /
 index index.html;
 allow_methods GET POST DELETE;
 location /oui
-return 301 /colorfull/;
+return 301 /home/;
 index index.html;

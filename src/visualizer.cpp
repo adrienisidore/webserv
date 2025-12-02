@@ -42,7 +42,6 @@ struct BoxInfo {
     std::string uri;
 };
 
-// --- Implementation ---
 
 int visualize_timeout(TCPConnection *conn) {
     time_t now = time(NULL);
@@ -76,10 +75,8 @@ int visualize_timeout(TCPConnection *conn) {
 }
 
 void ServerMonitor::visualize() {
-    // 1. Prepare Buffer (avoids flickering)
     std::stringstream buffer;
 
-    // Clear Screen + Cursor Home
     buffer << "\033[2J\033[1;1H";
 
 	buffer << "map server configf size : " << _map_server_configs.size() << std::endl;
@@ -88,7 +85,6 @@ void ServerMonitor::visualize() {
 
     std::vector<BoxInfo> boxes;
 
-    // 2. Gather Data
     for (std::map<int, TCPConnection *>::iterator it = _map_connections.begin(); it != _map_connections.end(); ++it) {
         TCPConnection *conn = it->second;
         Request req = conn->getRequest();
@@ -113,7 +109,7 @@ void ServerMonitor::visualize() {
         boxes.push_back(box);
     }
 
-    // 3. Draw to Buffer
+    // Draw to Buffer
     const int box_inner_width = 11;
     const int boxes_per_row = 6;
     std::string reset_color = "\033[0m";
@@ -122,44 +118,37 @@ void ServerMonitor::visualize() {
         buffer << "\n   Waiting for connections...\n";
     } else {
         for (size_t i = 0; i < boxes.size(); i += boxes_per_row) {
-            // Row 1: Timeouts
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << "  " << center_text(to_string(boxes[j].timeout), box_inner_width) << "   ";
             }
             buffer << "\n";
 
-            // Row 2: Top Border
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << " ┌───────────┐  ";
             }
             buffer << "\n";
 
-            // Row 3: Method
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 std::string color = get_method_color(boxes[j].method);
                 buffer << " │" << color << center_text(boxes[j].method, box_inner_width) << reset_color << "│  ";
             }
             buffer << "\n";
 
-            // Row 4: IP
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << " │" << center_text(boxes[j].ip, box_inner_width) << "│  ";
             }
             buffer << "\n";
 
-            // Row 5: Port
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << " │" << center_text(boxes[j].port, box_inner_width) << "│  ";
             }
             buffer << "\n";
 
-            // Row 6: URI
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << " │" << truncate_start(boxes[j].uri, box_inner_width) << "│  ";
             }
             buffer << "\n";
 
-            // Row 7: Bottom Border
             for (size_t j = i; j < i + boxes_per_row && j < boxes.size(); ++j) {
                 buffer << " └───────────┘  ";
             }
@@ -167,6 +156,6 @@ void ServerMonitor::visualize() {
         }
     }
 
-    // 4. Print everything at once
+    // print everything
     std::cout << buffer.str() << std::flush;
 }

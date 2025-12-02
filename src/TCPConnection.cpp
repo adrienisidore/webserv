@@ -1,7 +1,6 @@
 #include "webserv.hpp"
 
 
-// TCPConnection::TCPConnection(int tcp_socket, ServerConfig config): _tcp_socket(tcp_socket), _config(config) {
 TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct sockaddr_storage &addr, socklen_t addr_len)
 	: _tcp_socket(fd), _config(config), _client_addr(addr), _client_addr_len(addr_len)
 {
@@ -11,7 +10,7 @@ TCPConnection::TCPConnection(int fd, const ServerConfig &config, const struct so
 	_no_request_max_time = ret_time_directive("keepalive_timeout", NO_REQUEST_MAX_TIME);
 	_cgi_max_time = ret_time_directive("cgi_timeout", CGI_TIMEOUT);
 
-	end_transfer();//A quoi ca sert ?
+	end_transfer();
 }
 
 TCPConnection::~TCPConnection() {}
@@ -81,30 +80,14 @@ void TCPConnection::use_recv() {
 	_last_tcp_chunk_time = time(NULL);
 
 	if (_bytes_received == 0) {
-		_status = CLIENT_DISCONNECTED;	// there is one more case right ?
+		_status = CLIENT_DISCONNECTED;
 		return;
 	}
-	else if (_bytes_received < 0) {		// problem: with transfer-encoding: chunked
+	else if (_bytes_received < 0) {
 		_status = CLIENT_DISCONNECTED;
 		return set_error(500);
 	}
 }
-
-//On reutilise les attributs _buff, _bytes_received ...
-// void TCPConnection::use_recv2() {
-
-// 	memset(_buff, 0, BUFF_SIZE);
-// 	_bytes_received = read(outpipe, _buff, BUFF_SIZE);//outpipe : d'ou vient la data du CGI
-// 	_last_tcp_chunk_time = time(NULL);
-
-// 	// Veut dire que le CGI a finit d'ecrire (checker si c'est ca ou si y'a EOF)
-// 	if (_bytes_received == 0) {
-// 		_status = ;	
-// 		return;
-// 	}
-// 	else if (_bytes_received < 0)
-// 		return set_error(500);
-// }
 
 void	TCPConnection::read_header() {
 
@@ -114,10 +97,8 @@ void	TCPConnection::read_header() {
 
 	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
         return;
-	// APPEND TO REQUEST CURRENT HEADER
 	_request.append_to_header(_buff, _bytes_received);
 
-	// std::cout << "Header: " << _request.getCurrentHeader() << std::endl;
 	std::string max_size_str = _config.getDirective("client_header_buffer_size");
 	if (max_size_str.empty())
 		max_size = HEADER_MAX_SIZE;
@@ -130,7 +111,6 @@ void	TCPConnection::read_header() {
 	if (max_size < _request.getCurrentHeader().size())
 		return set_error(431);
 
-	// CHECK IF END OF HEADER
 	size_t header_end = _request.getCurrentHeader().find("\r\n\r\n");
 
 	if (header_end != std::string::npos) {
@@ -168,14 +148,11 @@ void	TCPConnection::read_body(bool state_changed) {
 
 		if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
 			return;
-		// APPEND TO REQUEST CURRENT BODY
 
-		_request.append_to_body(_buff, _bytes_received);		// THE READING
-	
-	}
+		_request.append_to_body(_buff, _bytes_received);
+		}
 
 	double	max_size;
-	// std::cout << "Body: " << _request.getCurrentBody() << std::endl;
 	
 	std::string max_size_str = _config.getDirective("client_max_body_size");
 	if (max_size_str.empty())
@@ -204,7 +181,6 @@ void	TCPConnection::read_body(bool state_changed) {
 	else if (getBodyProtocol() == CONTENT_LENGTH) {
 
 		int diff = _request.getCurrentBody().size() - _request.getContentLength();
-		// std::cout << "DIFFERENCE IS: " << diff << std::endl;
 		if (diff >= 0) {
 			_status = READ_COMPLETE;
 			_request.setCurrentBody(_request.getCurrentBody().substr(0, _request.getContentLength()));
@@ -214,8 +190,6 @@ void	TCPConnection::read_body(bool state_changed) {
 	return;
 }
 
-
-// execute la method puis construit la reponse -> plus qu'a l'envoyer
 void	TCPConnection::execute_method() {
 
 	int	poll_cgi;
@@ -226,7 +200,8 @@ void	TCPConnection::execute_method() {
 	_body_start_time = 0;
 	_last_tcp_chunk_time = 0;
 
-	poll_cgi = _response.fetch();// check compatibilite entre location config et request
+	poll_cgi = _response.fetch();
+	// check compatibilite entre location config et request
 	if (poll_cgi) {
 
 		_status = NOT_READY_TO_SEND;
@@ -278,7 +253,7 @@ std::string	get_time_stamp() {
 bool TCPConnection::is_valid_length(const std::string& content_length) {
 
 	if (content_length.empty())
-		return false; //would in theory a get cgi be able to upload a file 
+		return false;
 	
 	for (size_t i = 0; i < content_length.length(); i++) {
 		if (!std::isdigit(static_cast<unsigned char>(content_length[i])))
@@ -309,7 +284,6 @@ bool TCPConnection::is_valid_length(const std::string& content_length) {
 	if (length > max_size)
 		return false;
 
-	//_request.setContentLength(length);
     return true;
 }
 

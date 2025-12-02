@@ -81,8 +81,6 @@ public:
 	int		getBodyProtocol() const;
 	void	setBodyProtocol(int);
 
-	void	send_response(void);
-
 };
 
 #endif

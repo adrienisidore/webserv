@@ -215,7 +215,7 @@ void    ConfigParser::parseGlobal() {
     while (true) {
             std::string line = readLine();
             
-            if (line.empty() && _input.eof()) { // VERIFIER QUE EMPTY MARCHe
+            if (line.empty() && _input.eof()) {
                 break;
             }
             
@@ -244,15 +244,13 @@ std::string generate_filename() {
     return default_filename;
 }
 
+// First parsing: syntactic validation of the config file
 std::string parseConfig(const std::string& configFile) {
     
-    // Attention: que se passe-t-il si le fichier existe deja 
     std::string tempFile = generate_filename();
     
-    // First pass: Syntactic validation
     ConfigParser parser(configFile, tempFile);
     parser.parseGlobal();
     
-    // Second pass: Semantic validation and object creation
     return tempFile;
 }

@@ -60,6 +60,6 @@ GASTON:
 [x] tester les POST avec les CGI (error 403), notamment avec post_test.py (a demander a Alix)
 [x] inpipe[1] is not in poll() for CGIS -> very large body could fail
 [x] tester commande "siege -c255 http://localhost:8080/" avec 1 ou plusieurs serveurs dans config (error)
-[ ] pourquoi buildServerNameHost a une valeur de 'port' absolue ?
-[ ] mauvaise erreur (500) si GET fichier .py qui n'existe pas
-
+[x] mauvaise erreur (500) si GET fichier .py qui n'existe pas
+[x] verifier comportement plusieurs cgis 
+[x] refaire les fichiers .html en anglais

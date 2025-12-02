@@ -24,8 +24,6 @@ void		GlobalConfig::setDirective(const std::string &key, const std::string &valu
 
 void		GlobalConfig::addServer(const std::string &key, const ServerConfig &server) {
 	servers[key] = server;
-	// servers[key].inheritFromGlobal(*this);
-
 }
 
 std::string	GlobalConfig::getDirective(const std::string &key) const {

@@ -1,7 +1,5 @@
 #include "webserv.hpp"
 
-//405: Methode interdite pour la ressource
-
 Response::Response(): HTTPcontent() {
 	_autoindex = false;
 }
@@ -145,7 +143,6 @@ void			Response::buildPath() {
 	std::string	uri = _URI.substr(0, query);	
 
 	_path = root + uri;
-	// std::cout << "path is : " << _path << std::endl;
 	// -----------------Differencie les types de requetes------------------------
 	if (uri[uri.size() - 1] == '/') {
 		// Si uri == directory
@@ -181,8 +178,6 @@ void			Response::buildPath() {
 	}
 }
 
-// A noter: on pourrait implementer l'URL encoding (%20, ?, +, etc..). Pas demande mais ca peut etre interessant pour comprendre comment fonctionnent les URLs
-// fonction static
 static bool	is_valid_path(std::string filename) {
 
 	if (filename.empty() ||
@@ -196,14 +191,14 @@ static bool	is_valid_path(std::string filename) {
 
 void    Response::checkPermissions(std::string path, bool is_cgi) {
 
-    if (_code) return; // Si j'ai un code ici a priori c'est forcement un code d'erreur
+    if (_code) return;
 
     struct stat path_properties;
 
     // stat() : Récupération des métadonnées du fichier/répertoire
     // échoue si la ressource n'existe pas ou n'est pas accessible.
     
-    // 1. Vérification des méthodes supportées
+    // Vérification des méthodes supportées
     if (_method != "GET" && _method != "HEAD" && _method != "DELETE" && _method != "POST") // PUT
         setCode(405);
 
@@ -215,7 +210,6 @@ void    Response::checkPermissions(std::string path, bool is_cgi) {
         int er = errno;
 
         if (er == ENOENT) {
-            // ========== ENOENT ==========
             // Pour un CGI : Le script DOIT exister, peu importe la méthode (GET ou POST).
             // Pour Static : GET/HEAD/DELETE nécessitent que la ressource existe.
             if (is_cgi || (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
@@ -251,7 +245,7 @@ void    Response::checkPermissions(std::string path, bool is_cgi) {
         return; // Tout est bon pour le CGI
     }
 
-    // 3. Gestion Spécifique STATIC (Non-CGI)
+    // Gestion Spécifique STATIC (Non-CGI)
 
     // Vérification Autoindex vs Dossier
     if (_autoindex && !S_ISDIR(path_properties.st_mode))
@@ -323,7 +317,7 @@ bool Response::is_cgi() {
 
     // on a trouvé le bon binaire pour l’extension
     checkPermissions(program, true);
-    return true;
+	return true;
 }
 
 
@@ -345,6 +339,10 @@ int	Response::fetch() {
 	// Je regarde si la LocationConfig indique que ce path correspond a une cgi.
 	//Si oui alors :
 	if (is_cgi() && !getCode()) {
+
+		checkPermissions(_path, false);
+        if (getCode()) 
+            return 0;
 		try {
 			this->_cgi.copyFrom(*this);
 			this->_cgi.buildEnv();
@@ -393,96 +391,6 @@ static std::string loadFile(const std::string &path) {
 	return content;
 }
 
-// void Response::_error_() {
-
-// 	// Pages HTML des erreurs (chargées une seule fois)
-// 	static std::map<int, std::string> pages;
-// 	if (pages.empty()) {
-// 		pages[301] = loadFile("ressources/errors/301.html");
-// 		pages[302] = loadFile("ressources/errors/302.html");
-// 		pages[307] = loadFile("ressources/errors/307.html");
-// 		pages[308] = loadFile("ressources/errors/308.html");
-
-// 		pages[400] = loadFile("ressources/errors/400.html");
-// 		pages[403] = loadFile("ressources/errors/403.html");
-// 		pages[404] = loadFile("ressources/errors/404.html");
-// 		pages[405] = loadFile("ressources/errors/405.html");
-// 		pages[409] = loadFile("ressources/errors/409.html");
-// 		pages[411] = loadFile("ressources/errors/411.html");
-// 		pages[413] = loadFile("ressources/errors/413.html");
-// 		pages[414] = loadFile("ressources/errors/414.html");
-// 		pages[500] = loadFile("ressources/errors/500.html");
-// 		pages[501] = loadFile("ressources/errors/501.html");
-// 		pages[504] = loadFile("ressources/errors/504.html");
-// 	}
-
-// 	// Reason phrases
-// 	static std::map<int, std::string> reason;
-// 	if (reason.empty()) {
-// 		reason[301] = "Moved Permanently";
-// 		reason[302] = "Found";
-// 		reason[307] = "Temporary Redirect";
-// 		reason[308] = "Permanent Redirect";
-
-// 		reason[400] = "Bad Request";
-// 		reason[403] = "Forbidden";
-// 		reason[404] = "Not Found";
-// 		reason[405] = "Method Not Allowed";
-// 		reason[409] = "Conflict";
-// 		reason[411] = "Length Required";
-// 		reason[413] = "Payload Too Large";
-// 		reason[414] = "URI Too Long";
-// 		reason[500] = "Internal Server Error";
-// 		reason[501] = "Not Implemented";
-// 		reason[504] = "Timeout";
-// 	}
-
-// 	std::cout << "CODE IS " << _code << std::endl;
-// 	// Sélection du corps de la page
-// 	std::map<int, std::string>::iterator it = pages.find(_code);
-// 	const std::string &body = (it != pages.end()) ? it->second : pages[500];
-
-// 	// Reason phrase
-// 	std::string rp = "Error";
-// 	if (reason.find(_code) != reason.end())
-// 		rp = reason[_code];
-
-// 	std::ostringstream out;
-
-// 	// Status line
-// 	out << "HTTP/1.1 " << _code << " " << rp << "\r\n"
-// 		<< "Content-Type: text/html\r\n"
-// 		<< "Content-Length: " << body.size() << "\r\n"
-// 		<< "Connection: close\r\n";
-
-// 	// Redirections 3xx → ajouter Location:
-// 	if (_code >= 300 && _code <= 399) {
-// 		std::string ret = _config.getDirective("return"); // "301 /new"
-// 		if (!ret.empty()) {
-// 			std::istringstream iss(ret);
-// 			int code_3xx;
-// 			std::string target;
-// 			iss >> code_3xx >> target;
-// 			out << "Location: " << target << "\r\n";
-// 		}
-// 	}
-
-// 	// Méthode interdite → ajouter Allow:
-// 	if (_code == 405) {
-// 		const std::map<std::string, std::string> &dirs = _config.getDirectives();
-// 		std::map<std::string, std::string>::const_iterator it2 = dirs.find("allowed_methods");
-// 		if (it2 != dirs.end())
-// 			out << "Allow: " << it2->second << "\r\n";
-// 	}
-
-// 	// Fin des headers
-// 	out << "\r\n";
-
-// 	// Corps HTML
-// 	out << body;
-
-// 	_current_body = out.str();
-// }
 
 void Response::_error_() {
 
@@ -598,23 +506,16 @@ void Response::_error_() {
 	_current_body = out.str();
 }
 
-
-
-// Gerer les redirections redirection directive -> vers une nouvelle location, ATTENTION AUX REDIRECTIONS INFINIES
-
-
 // post le _body de _response, le vide et prerempli le nouveau body pour l'envoyer au client
 void		Response::_post_() {
 
-	// ATTENTION :	si une nouvelle ressource est cree : 201
-	// 				si j'ecrase un fichier alors : 200 ou 204
 	int	success_code;
 	if (access(_path.c_str(), F_OK) == 0)
-		success_code = 204;// 200 (body optionnel indiquant que c'est ok) ou 204 (pas de body)
+		success_code = 204;
 	else
-		success_code = 201;// body optionnel representant la ressource
+		success_code = 201;
 
-	// 1) si le fichier existe on l'ecrase, sinon on le cree (on y inclut _body)
+	// si le fichier existe on l'ecrase, sinon on le cree (on y inclut _body)
 	// Créer (ou écraser) le fichier: -rw-r--r-- (0644), affecté par umask
     int fd = open(_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) {
@@ -631,10 +532,10 @@ void		Response::_post_() {
 	if (getCode())
 		return _error_();
 
-	// 2) on erase le body pour le remplir avec les nouvelles infos
+	// on erase le body pour le remplir avec les nouvelles infos
 	setCurrentBody("");
-	// 3) on set les headers appropries
-	// std::map<std::string, std::string>::const_iterator it = _headers.find("CONTENT-TYPE");
+	// on set les headers appropries
+
 	std::stringstream ss;
 	ss << success_code;
 	_current_body = _protocol + " " + ss.str() + " ";
@@ -642,16 +543,9 @@ void		Response::_post_() {
 		_current_body += "Created\r\n";
 	else if (success_code == 204)
 		_current_body += "No Content\r\n";
-	// if (success_code == 201) {
-	// 	if (it == _headers.end())
-	// 		_current_body = _current_body + "Content-Type: " + "Unknown\r\n";
-	// 	else
-	// 		_current_body = _current_body + "Content-Type: " + it->second + "\r\n";
-	// }
-
 	_current_body += "Content-Length: 0\r\n";
 	if (success_code == 201)
-		_current_body +="Location: " + _URI + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+		_current_body +="Location: " + _URI + "\r\n";
 
 	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
 	if (it != _headers.end() && it->second == "close")
@@ -677,7 +571,7 @@ void		Response::_delete_() {
 		return _error_();
 	}
 
-	// 3) on set les headers appropries
+	// on set les headers appropries
 
 	setCurrentBody("");
 	int success_code = 204; 
@@ -685,7 +579,7 @@ void		Response::_delete_() {
 	ss2 << success_code;
 	_current_body = _protocol + " " + ss2.str() + " No Content\r\n";
 	_current_body += "Content-Length: 0\r\n";
-	_current_body +="Location: " + _URI + "\r\n";// Location: /api/ressources/123 si dans la location /api/ressources j'ai cree 123
+	_current_body +="Location: " + _URI + "\r\n";
 	_current_body += "\r\n";
 }
 
@@ -769,7 +663,7 @@ void	Response::_get_() {
 	build_valid_response_get(body);
 }
 
-// --- Construction de la réponse HTTP/1.1 (200 OK) ---
+// Construction de la réponse HTTP/1.1 (200 OK)
 void	Response::build_valid_response_get(std::string body) {
 
 	// 2. Sauvegarder le contenu du fichier et sa taille

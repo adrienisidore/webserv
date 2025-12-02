@@ -2,7 +2,6 @@
 
 HTTPcontent::HTTPcontent() : _code(0), _protocol("HTTP/1.1") {}
 
-//Potentiellement useless, uniquement par securite
 void	HTTPcontent::reset(TCPConnection *connection) {
 	_code = 0;
 	_method.clear();
@@ -11,7 +10,6 @@ void	HTTPcontent::reset(TCPConnection *connection) {
 	_current_header.clear();
 	_current_body.clear();
 	_connection = connection;
-	//a priori Locationconfig n'a pas besoin d'etre nettoye (a checker).
 }
 
 void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
@@ -29,7 +27,8 @@ void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
         
         const std::string& location_path = it->first;
 
-        if (_URI.rfind(location_path, 0) == 0) {	// rfind because we search backwards starting at position 0 (only 1 check)
+        if (_URI.rfind(location_path, 0) == 0) {
+            // rfind because we search backwards starting at position 0 (only 1 check)
             
             // It's a prefix match. Check if it's the longest one found so far.
             int current_length = static_cast<int>(location_path.length());
@@ -40,7 +39,7 @@ void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
         }
     }
 
-    // 2. After checking all locations, get the config for the best match
+    // After checking all locations, get the config for the best match
 	if (max_length == -1) {
 		return setCode(404);
 	}
@@ -54,17 +53,6 @@ void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
 	// Success! Assign the configuration from the found iterator's value
 	_config = found->second;
 }
-
-// HTTPcontent	&HTTPcontent::operator=(const CGI &src) {
-// 	_code = src.getCode();j
-// 	_config = src.getConfig();
-// 	_headers = src.getHeaders();
-// 	_method = src.getMethod();
-// 	_URI = src.getURI();
-// 	_content_length = src._content_length;
-// 	_current_header = src._current_header;
-// 	_current_body = src._current_body;
-// }
 
 void	HTTPcontent::setCode(const int & code) {_code = code;}
 
