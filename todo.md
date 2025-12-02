@@ -35,13 +35,13 @@ ADRI:
  [ ] A TESTER directives geree :
  	[x]return : 3xx location_presente dans serverConfig
 	[x]autoindex : on ou off
-	[ ]cgi_handler : .xxx binary ATTENTION je throw des erreurs alors que le serveur est pas cense s'arreter en cours de route
+	[vvvvv]cgi_handler : .xxx binary ATTENTION je throw des erreurs alors que le serveur est pas cense s'arreter en cours de route
 	que le serveur n'est pas cense s'arreter aller voir dans CGI.cpp :
 	if (!findCgiProgramForPath(handlers, _path, program))
 		throw std::runtime_error("No matching cgi_handler for requested path");
 	GASTON verifie deja que la directive cgi_handler mene vers un binaire executable etc (en modifiant ma checkPermission)
 
-	[ ]allowed_methods : GET HEAD POST DELETE
+	[x]allowed_methods : GET HEAD POST DELETE
 
 	[x]error_page : code_derreur_gere chemin_autorise :deja fait dans l'exec
 	[x]listen: checker format (format 127.0.0.1:8080)
