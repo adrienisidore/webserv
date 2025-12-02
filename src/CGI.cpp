@@ -154,7 +154,7 @@ void CGI::buildEnv() {
 
 	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	_env_strings.push_back("REDIRECT_STATUS=200");
+	_env_strings.push_back("REDIRECT_STATUS=200");//Le code retourne est celui pour lequel le script est appele : si le script est appelé pour gérer une erreur "Not Found", REDIRECT_STATUS sera égal à 404
 	std::string request_method = "REQUEST_METHOD=" + _method;
 	_env_strings.push_back(request_method.c_str());//attribut _methods de HTTPcontent
 	std::string request_uri = "REQUEST_URI=" + _URI;
@@ -185,7 +185,7 @@ void CGI::buildArgv() {
 	std::string program;
 
 	if (!findCgiProgramForPath(handlers, _path, program))
-		throw std::runtime_error("No matching cgi_handler for requested path");
+		throw std::runtime_error("No matching cgi_handler for requested path");// Afficher une page par defaut pour ne pas que le programme s'arrete ?
 
 	// argv : [binaire CGI, script, NULL]
 	_argv_strings.push_back(program);

@@ -20,7 +20,7 @@ time_t TCPConnection::ret_time_directive(std::string directive_name, int defaul)
 	std::string	directive_str = _config.getDirective(directive_name);
 	if (!directive_str.empty()) {
 		time_t	time = std::atoi(directive_str.c_str());
-		if (time > 0)
+		if (time > 0 && time <= defaul)
 			return time;
 	}
 	return defaul; 

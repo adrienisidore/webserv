@@ -1,7 +1,7 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
-# define MAX_QUEUE 3
+# define MAX_QUEUE 1024
 # define MAX_CONNECTIONS 255
 # define BUFF_SIZE 4096
 # define UI_REFRESH_RATE_MS 1000

@@ -233,14 +233,14 @@ server {
 
 
     location / {								-> when 
-        allow_methods  DELETE POST GET;
+        allowed_methods  DELETE POST GET;
         autoindex off;
     }
 
     location /tours/bonjour {
         autoindex on;
         index tours1.html;
-        allow_methods GET POST PUT HEAD;
+        allowed_methods GET POST PUT HEAD;
     }
 
 	location /red {
@@ -249,7 +249,7 @@ server {
 
     location /cgi-bin {
         root ./;
-        allow_methods GET POST DELETE;
+        allowed_methods GET POST DELETE;
         index time.py;
         cgi_path /usr/bin/python3 /bin/bash;
         cgi_ext .py .sh;
