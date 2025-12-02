@@ -32,10 +32,17 @@ ADRI:
 	Taper "<html><body>File error</body></html>" pour savoir ce qu'on renvoie si le fichier
 	specifie dans error_page n'est pas ouvrable. De preference il faudrait checker les permissions avant d'essayer d'ouvrir ?
 
+ [ ] A PARSER directives geree :
+ 	return : 3xx location_presente dans serverConfig
+	autoindex : on ou off
+	cgi_handler : .xxx binary
+	allow_methods : GET HEAD POST DELETE
+	error_page : code_derreur_gere chemin_autorise
+
   [x] ATTENTION : appliquer is_valid_path(std::string filename) dans loadFile pour eviter
   de pouvoir entrer des chemins interdits
 
-  [ ] comprendre pourquoi quand on specifie une page html inexistante "inde.html" au lieu de "index.html" : taper "ICIIIII buildPath 2" dans la barre de recherche
+  [x] comprendre pourquoi quand on specifie une page html inexistante "inde.html" au lieu de "index.html" : taper "ICIIIII buildPath 2" dans la barre de recherche
 
   [ ] c'est peut etre les messages de debug qui font buguer siege (pas le temps de gerer les co et afficher les messages)
 
