@@ -1,65 +1,5 @@
 #include "autoconfig.hpp"
 
-// --- Helper : indentation lisible ---
-// static void printIndent(int depth) {
-// 	for (int i = 0; i < depth; ++i)
-// 		std::cout << "    ";
-// }
-//
-// // --- LOCATION CONFIG ---
-// static void printLocationConfig(const std::string &path, const LocationConfig &loc, int depth = 2) {
-// 	printIndent(depth);
-// 	std::cout << "location " << path << " {" << std::endl;
-//
-// 	const std::map<std::string, std::string> &directives = loc.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(depth + 1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
-//
-// 	printIndent(depth);
-// 	std::cout << "}" << std::endl;
-// }
-//
-// // --- SERVER CONFIG ---
-// static void printServerConfig(const std::string &key, const ServerConfig &server, int depth = 1) {
-// 	printIndent(depth);
-// 	std::cout << "server (" << key << ") {" << std::endl;
-//
-// 	const std::map<std::string, std::string> &directives = server.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(depth + 1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
-//
-// 	// Locations
-// 	const std::map<std::string, LocationConfig> &locs = server.getLocations();
-// 	for (std::map<std::string, LocationConfig>::const_iterator it = locs.begin();
-// 		 it != locs.end(); ++it)
-// 		printLocationConfig(it->first, it->second, depth + 1);
-//
-// 	printIndent(depth);
-// 	std::cout << "}" << std::endl;
-// }
-//
-// // --- GLOBAL CONFIG ---
-// static void printGlobalConfig(GlobalConfig &global) {
-//
-// 	const std::map<std::string, std::string> &directives = global.getDirectives();
-// 	for (std::map<std::string, std::string>::const_iterator it = directives.begin();
-// 		 it != directives.end(); ++it) {
-// 		printIndent(1);
-// 		std::cout << it->first << " " << it->second << ";" << std::endl;
-// 	}
-//
-// 	std::map<std::string, ServerConfig> &servers = global.accessServers();
-// 	for (std::map<std::string, ServerConfig>::const_iterator it = servers.begin();
-// 		 it != servers.end(); ++it)
-// 		printServerConfig(it->first, it->second, 1);
-// }
-
 static std::string resolvePath(const std::string &root, const std::string &target)
 {
 	std::string full = root;
@@ -144,7 +84,6 @@ static void		parseAutoConfig(GlobalConfig & global) {
 				if (!isSafePath(resolved))
 					throw ParsingException("Resolved location path is unsafe");
 			}
-
 			parseRedir(tmp_loc, tmp_serv);
 		}
 	}
@@ -210,18 +149,14 @@ GlobalConfig AutoConfig(const std::string & filename) {
 
     reader.close();
 
-    // === HÉRITAGE ICI ===
+    // HÉRITAGE ICI
     {
         std::map<std::string, ServerConfig> &servers = global.accessServers();
         for (std::map<std::string, ServerConfig>::iterator sit = servers.begin();
              sit != servers.end(); ++sit)
         {
             ServerConfig &srv = sit->second;
-
-            // global -> server
             srv.inheritFromGlobal(global);
-
-            // server -> locations
             std::map<std::string, LocationConfig> &locs = srv.accessLocations();
             for (std::map<std::string, LocationConfig>::iterator lit = locs.begin();
                  lit != locs.end(); ++lit)
@@ -230,11 +165,7 @@ GlobalConfig AutoConfig(const std::string & filename) {
             }
         }
     }
-
-    // vérifs sur la config déjà héritée
     parseAutoConfig(global);
-
-    // printGlobalConfig(global);
     return global;
 }
 
@@ -244,19 +175,12 @@ bool isSafePath(const std::string &path) {
 	const std::string base = "./ressources";
 	if (path.compare(0, base.size(), base) != 0)
 		return false;
-
-	// 2) doit ne contenir aucun ".."
 	if (path.find("..") != std::string::npos)
 		return false;
-
-		// Sous windows peut poser pb, 
 	if (path.find('\\') != std::string::npos)
 		return false;
-
 	if (path.find('~') != std::string::npos)
 		return false;
-
-	// %2e%2e est l'encodage URL de ".."
 	std::string lower = path;
 	for (size_t i = 0; i < lower.size(); ++i)
 		lower[i] = std::tolower(lower[i]);
@@ -276,10 +200,8 @@ bool isValidPort(const std::string& port_str) {
 	if (!(iss >> port_num) || !iss.eof()) {
 		return false; 
 	}
-
 	const long MIN_PORT = 1;
 	const long MAX_PORT = 65535;
-
 	return port_num >= MIN_PORT && port_num <= MAX_PORT;
 }
 
@@ -314,7 +236,6 @@ void validateListenFormat(const std::string& listen_value, const std::string& co
 		throw ParsingException(context + ": listen directive has an invalid or out-of-range port number: '" + port_str + "'. Must be between 1 and 65535.");
 	}
 }
-
 
 void validateCgiDirective(const std::string &handlers, const std::string &context)
 {
@@ -363,13 +284,11 @@ void validateCgiDirective(const std::string &handlers, const std::string &contex
             throw ParsingException(context + ": invalid CGI extension in cgi_handler: '" + ext + "'");
         }
 
-        // éventuellement, tu peux aussi vérifier ici que prog n'est pas vide / commence par '/'
         if (prog.empty()) {
             throw ParsingException(context + ": empty CGI binary in cgi_handler");
         }
     }
 }
-
 
 void validateAllowedMethods(const std::string &value, const std::string &context) {
     if (value.empty())

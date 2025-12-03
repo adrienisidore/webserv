@@ -24,7 +24,6 @@ void		ServerConfig::setDirective(const std::string &key, const std::string &valu
 
 void		ServerConfig::inheritFromGlobal(const GlobalConfig &global) {
 
-	// Est-ce que l'instance possédait déjà error_page/cgi_handler avant héritage ?
 	bool hadErrorPage   = (directives.find("error_page")   != directives.end());
 	bool hadCgiHandler  = (directives.find("cgi_handler")  != directives.end());
 
@@ -58,8 +57,6 @@ void		ServerConfig::inheritFromGlobal(const GlobalConfig &global) {
 void ServerConfig::addLocation(const std::string &path, LocationConfig &location) {
 	location.setDirective("location_uri", path);
     locations[path] = location;
-    // locations[path].inheritFromServer(*this);
-
 }
 
 std::string	ServerConfig::getDirective(const std::string &key) const {

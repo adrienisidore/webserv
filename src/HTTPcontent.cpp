@@ -29,7 +29,6 @@ void    HTTPcontent::setLocation(const ServerConfig & servconfig) {
 
         if (_URI.rfind(location_path, 0) == 0) {
             // rfind because we search backwards starting at position 0 (only 1 check)
-            
             // It's a prefix match. Check if it's the longest one found so far.
             int current_length = static_cast<int>(location_path.length());
             if (current_length > max_length) {

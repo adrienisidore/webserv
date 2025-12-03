@@ -57,7 +57,7 @@ bool findCgiProgramForPath(const std::string &handlers, const std::string &path,
 		if (!ok)
 			continue;
 
-		// PREMIÈRE extension compatible → on s'arrête
+		// PREMIÈRE extension compatible -> on s'arrête
 		if (ext == pathExt) {
 			outProgram = prog;
 			return true;
@@ -68,9 +68,7 @@ bool findCgiProgramForPath(const std::string &handlers, const std::string &path,
 }
 
 //Recherche si error_page contient _code
-bool findErrorPageForCode(const std::string &value,
-                          int code,
-                          std::string &outPath)
+bool findErrorPageForCode(const std::string &value, int code, std::string &outPath)
 {
     outPath.clear();
     if (value.empty())

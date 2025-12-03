@@ -11,7 +11,7 @@ print("<body>")
 print("<h1>Slow CGI Script</h1>")
 print("<p>This script sleeps for 5 seconds...</p>")
 
-time.sleep(5)
+time.sleep(20)
 
 print("<p>Done sleeping!</p>")
 print("</body>")

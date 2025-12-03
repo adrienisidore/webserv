@@ -33,13 +33,13 @@ void	TCPConnection::end_transfer() {
 	_last_tcp_chunk_time = 0;
 	_body_start_time = 0;
 	_cgi_start_time = 0;
-	_end_of_request_time = time(NULL);
+	_end_of_request_time = std::time(NULL);
 }
 
 //When a new request arrives
 void	TCPConnection::initialize_transfer() {
 	
-	_header_start_time = time(NULL);
+	_header_start_time = std::time(NULL);
 	_end_of_request_time = 0;
 	_body_start_time = 0;
 	_cgi_start_time = 0;
@@ -75,9 +75,9 @@ void	TCPConnection::check_body_headers() {
 }
 
 void TCPConnection::use_recv() {
-	memset(_buff, 0, BUFF_SIZE);
+	std::fill(_buff, _buff + BUFF_SIZE, 0);//memset
 	_bytes_received = recv(_tcp_socket, _buff, BUFF_SIZE, 0);
-	_last_tcp_chunk_time = time(NULL);
+	_last_tcp_chunk_time = std::time(NULL);
 
 	if (_bytes_received == 0) {
 		_status = CLIENT_DISCONNECTED;
@@ -92,7 +92,7 @@ void TCPConnection::use_recv() {
 void	TCPConnection::read_header() {
 
 	unsigned long	max_size;
-
+	
 	use_recv();
 
 	if (_status == CLIENT_DISCONNECTED || _status == READ_COMPLETE)
@@ -124,7 +124,7 @@ void	TCPConnection::read_header() {
 		_request.setLocation(_config);
 		
 		if (_request.getMethod() == "POST" && !_request.getCode()) {
-			_body_start_time = time(NULL);
+			_body_start_time = std::time(NULL);
 			_header_start_time = 0;
 			_request.setCurrentBody(_request.getCurrentHeader().substr(header_end + 4));
 			_status = WAIT_FOR_BODY;
@@ -138,10 +138,7 @@ void	TCPConnection::read_header() {
 }
 
 void	TCPConnection::read_body(bool state_changed) {
-	
-	// state_changed is necessary to prevent from reading twice on the same call:
-	// 1 time the body and 1 time the body when the request hasn't sent the body yet 
-	// -> only read from the network once per poll cycle
+
 	if (!state_changed) {
 
 		use_recv();
@@ -209,7 +206,7 @@ void	TCPConnection::execute_method() {
 		try {
 			_response._cgi.execute_cgi();
 			_map_cgi_fds_to_add.insert(std::pair<int, CGI>(poll_cgi, _response._cgi));  
-			_cgi_start_time = time(NULL);
+			_cgi_start_time = std::time(NULL);
 			return;
 		} 
 		catch (std::exception &er) {
@@ -236,7 +233,7 @@ void	TCPConnection::set_error(int error_code) {
 
 std::string	get_time_stamp() {
 
-	time_t	t = time(NULL);
+	time_t	t = std::time(NULL);
 	tm *now = localtime(&t);
 	std::ostringstream oss;
 

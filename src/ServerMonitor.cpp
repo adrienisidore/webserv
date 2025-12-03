@@ -70,7 +70,7 @@ void	ServerMonitor::bind_listening_socket(int listening) {
 	
 	struct addrinfo hints, *res;
 
-	memset(&hints, 0, sizeof(hints));
+	std::fill((char*)&hints, (char*)&hints + sizeof(hints), 0);//memset
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -114,7 +114,7 @@ void ServerMonitor::add_new_client_socket(int listening) {
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof(client_addr);
 
-	// accept client → fill client_addr
+	// accept client -> fill client_addr
 	int tcp_socket = accept(listening, (struct sockaddr *)&client_addr, &addr_len);
 
 	if (tcp_socket == -1)
@@ -150,7 +150,7 @@ void	ServerMonitor::add_new_cgi_socket(CGI cgi) {
     _pollfds.back().events = POLLIN;
     _map_cgis.insert(std::pair<int, CGI>(cgi._outpipe[0], cgi));
     
-	_map_cgis[cgi._outpipe[0]].setCurrentBody(""); 
+	_map_cgis[cgi._outpipe[0]].setCurrentBody("");
 
     // setup writer (input pipe)
     if (cgi.getMethod() == "POST" && !cgi.getCurrentBody().empty()) {
@@ -300,7 +300,7 @@ void	ServerMonitor::run() {
 
 		this->visualize();
 
-		time_t now = time(NULL);
+		time_t now = std::time(NULL);
         if (now != last_timeout_check) {
             check_timeouts();
             last_timeout_check = now;
@@ -377,7 +377,6 @@ void	ServerMonitor::monitor_connections() {
 				ssize_t sent;
 				sent = send(it->fd, connection->getResponse().getCurrentBody().c_str(), connection->getResponse().getCurrentBody().size(), 0);
                 if (sent < 0) {
-                    std::cout << "Send failed: " << strerror(errno) << std::endl;
                     should_close = true;
                 } else {
 					connection->end_transfer();
@@ -415,7 +414,7 @@ void	ServerMonitor::monitor_cgis() {
 		CGI	&cgi = _map_cgis[it->fd];
 		if (it->revents & (POLLIN | POLLHUP)) {
 
-			memset(buff, 0, BUFF_SIZE);
+			std::fill(buff, buff + BUFF_SIZE, 0);//memset
 			bytes_received = read(it->fd, buff, BUFF_SIZE);
 
 			if (bytes_received > 0) {
@@ -495,12 +494,12 @@ std::vector<pollfd>::iterator ServerMonitor::connected_socket_end() {
     for (size_t i = 0; i < _map_connections.size() && it != _pollfds.end(); ++i) {
         ++it;
     }
-    return it;  // ← Now points to first CGI pipe (or end if no CGIs)
+    return it;  // Now points to first CGI pipe (or end if no CGIs)
 }
 
 int		ServerMonitor::calculate_next_timeout() {
 
-	int	now = time(NULL);
+	int	now = std::time(NULL);
 
 	if (_map_connections.empty())
 		return (100);
@@ -549,7 +548,7 @@ int		ServerMonitor::calculate_next_timeout() {
 
 void	ServerMonitor::check_timeouts() {
 	
-	time_t	now = time(NULL);
+	time_t	now = std::time(NULL);
 	int		timeout = 0;
 
     std::vector<pollfd>::iterator it = _pollfds.begin();

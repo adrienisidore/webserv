@@ -4,7 +4,6 @@ Response::Response(): HTTPcontent() {
 	_autoindex = false;
 }
 
-//Si changement, penser a changer la version de Request + les prototypes + CGI
 void	Response::copyFrom(HTTPcontent& other) {
 		_code = other.getCode();
 		_method = other.getMethod();
@@ -17,7 +16,6 @@ void	Response::copyFrom(HTTPcontent& other) {
 
 Response::~Response() {}
 
-//fonction static
 static std::string		parentDir(const std::string &path) {
 	std::string::size_type pos = path.rfind('/');
 	if (pos == std::string::npos) 
@@ -88,7 +86,7 @@ void Response::checkAllowedMethods() {
 	// Vérifier si "allowed_methods" existe
 	std::map<std::string, std::string>::const_iterator it = dirs.find("allowed_methods");
 
-	// S'il n'y a pas de directive allowed_methods → tout est autorisé
+	// S'il n'y a pas de directive allowed_methods alors tout est autorisé
 	if (it == dirs.end())
 		return;
 
@@ -111,24 +109,14 @@ void Response::checkAllowedMethods() {
 		}
 	}
 
-	// Méthode non autorisée → 405
+	// Méthode non autorisée -> 405
 	if (!ok) {
 		setCode(405);
 	}
 }
 
-
-
-//1) https://www.alimnaqvi.com/blog/webserv
-// A partir de la locationConfig on construit un chemin vers un fichier
-// 1) regarder si root/URI correspond a un fichier, si oui _path = ROOT/URI
-// 2) regarder si root/URI correspond a un dossier, auquel cas on construit le path a partir des index
-// 3) regarger si root/URI correspond a un dossier sans index, mais avec autoindex "on", auquel cas on
-// construit un fichier html liste deroulante et _path = root/URI/"ce fichier"
-
 void			Response::buildPath() {
 
-	// A replacer au bon endroit
 	if (getCode())
 		return;
 
@@ -155,7 +143,7 @@ void			Response::buildPath() {
 				_autoindex = true;
 			else
 			{
-				return setCode(403);//XYZ : si index n'est pas present alors c'est Forbidden ?	
+				return setCode(403);
 			}
 		}
 		else {
@@ -167,7 +155,7 @@ void			Response::buildPath() {
 					_autoindex = true;
 				else
 				{
-					return setCode(403);//XYZ : si index n'est pas present alors c'est Forbidden ?
+					return setCode(403);
 				}
 			}
 			else
@@ -209,11 +197,8 @@ void    Response::checkPermissions(std::string path, bool is_cgi) {
         int er = errno;
 
         if (er == ENOENT) {
-            // Pour un CGI : Le script DOIT exister, peu importe la méthode (GET ou POST).
-            // Pour Static : GET/HEAD/DELETE nécessitent que la ressource existe.
             if (is_cgi || (_method == "GET" || _method == "HEAD" || _method == "DELETE"))
                 setCode(404);
-            // Pour Static POST : Ce n'est pas une erreur, on va créer le fichier.
             else if (!is_cgi && _method == "POST")
                 return; 
         }
@@ -276,36 +261,9 @@ void Response::checkRedir() {
 
 	std::istringstream iss(value);
 	int code;
-	iss >> code;   // lit uniquement le code (301, 302, 307, 308)
-	_code = code;  // on applique juste le code
+	iss >> code;
+	_code = code;
 }
-
-// ADRI : ici on recupere la directive "cgi_handler" et je compare si le 1er arg de cette directive (l'extension .py)
-// correspond a l'extension de l'URL.
-// Modification : on recupere la directive "cgi_handler" et je compare si une des extensions correspond a l'extension de l'URL
-// bool	Response::is_cgi() {
-// 	std::string s_ = _config.getDirective("cgi_handler");
-// 	std::string::size_type pos = s_.find(' ');
-// 	bool		ok = false;
-
-// 	if (pos == std::string::npos) {
-// 		return false;
-// 	} else {
-// 		// check que le 1er arg de cgi_handler est bien une extension  (ex .py)
-// 		std::string extension  = s_.substr(0, pos);
-// 		ok =
-//         extension.size() >= 2 &&
-//         extension[0] == '.' &&
-//         extension.find('.', 1) == std::string::npos;
-// 		// check que le fichier indique dans la location finit bien par la meme extension
-// 		ok = ok && extension == _path.substr(_path.rfind('.'));
-// 		if (!ok)
-// 			return false;
-// 		// check que le 2eme arg de cgi_handler va bien permettre de lancer l'exec
-// 		checkPermissions(s_.substr(pos + 1));
-// 		return true;
-// 	}
-// }
 
 bool Response::is_cgi() {
 	std::string handlers = _config.getDirective("cgi_handler");
@@ -321,7 +279,6 @@ bool Response::is_cgi() {
 
 
 // fetch s'assure de la compatibilite entre la config de la location et la requete :
-
 // renvoie -1 si le body s'est remplie avec une page d'erreur
 // renvoie 0 si le body s'est rempli avec une page statique html (tout s'est bien passé)
 // renvoie le fd du pipe si un CGI a été enclenché (tout s'est bien passé)
@@ -400,7 +357,6 @@ void Response::_error_() {
 		pages[302] = loadFile("ressources/errors/302.html");
 		pages[307] = loadFile("ressources/errors/307.html");
 		pages[308] = loadFile("ressources/errors/308.html");
-
 		pages[400] = loadFile("ressources/errors/400.html");
 		pages[403] = loadFile("ressources/errors/403.html");
 		pages[404] = loadFile("ressources/errors/404.html");
@@ -409,6 +365,7 @@ void Response::_error_() {
 		pages[411] = loadFile("ressources/errors/411.html");
 		pages[413] = loadFile("ressources/errors/413.html");
 		pages[414] = loadFile("ressources/errors/414.html");
+		pages[431] = loadFile("ressources/errors/431.html");
 		pages[500] = loadFile("ressources/errors/500.html");
 		pages[501] = loadFile("ressources/errors/501.html");
 		pages[504] = loadFile("ressources/errors/504.html");
@@ -421,7 +378,6 @@ void Response::_error_() {
 		reason[302] = "Found";
 		reason[307] = "Temporary Redirect";
 		reason[308] = "Permanent Redirect";
-
 		reason[400] = "Bad Request";
 		reason[403] = "Forbidden";
 		reason[404] = "Not Found";
@@ -430,12 +386,11 @@ void Response::_error_() {
 		reason[411] = "Length Required";
 		reason[413] = "Payload Too Large";
 		reason[414] = "URI Too Long";
+		reason[431] = "Header Too Long";
 		reason[500] = "Internal Server Error";
 		reason[501] = "Not Implemented";
 		reason[504] = "Timeout";
 	}
-
-	std::cout << "CODE IS " << _code << std::endl;
 
 	// Sélection du corps de la page (error_page custom si présente, sinon défaut)
 	std::string body;
@@ -476,7 +431,7 @@ void Response::_error_() {
 		<< "Content-Length: " << body.size() << "\r\n"
 		<< "Connection: close\r\n";
 
-	// Redirections 3xx → ajouter Location:
+	// Redirections 3xx -> ajouter Location:
 	if (_code >= 300 && _code <= 399) {
 		std::string ret = _config.getDirective("return"); // "301 /new"
 		if (!ret.empty()) {
@@ -488,7 +443,7 @@ void Response::_error_() {
 		}
 	}
 
-	// Méthode interdite → ajouter Allow:
+	// Méthode interdite -> ajouter Allow:
 	if (_code == 405) {
 		const std::map<std::string, std::string> &dirs = _config.getDirectives();
 		std::map<std::string, std::string>::const_iterator it2 = dirs.find("allowed_methods");
@@ -514,8 +469,6 @@ void		Response::_post_() {
 	else
 		success_code = 201;
 
-	// si le fichier existe on l'ecrase, sinon on le cree (on y inclut _body)
-	// Créer (ou écraser) le fichier: -rw-r--r-- (0644), affecté par umask
     int fd = open(_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) {
 		setCode(405);
@@ -552,7 +505,7 @@ void		Response::_post_() {
 	else
 		_current_body += "Connection: keep-alive\r\n";
 
-	_current_body += "\r\n";// On decide arbitrairement de ne pas renvoyer de body ici.
+	_current_body += "\r\n";
 }
 
 void		Response::_delete_() {
@@ -591,7 +544,6 @@ void		Response::_delete_() {
 static const std::map<std::string, std::string>& get_mime_map() {
 	static std::map<std::string, std::string> mime_types;
 	
-	// Initialisation conditionnelle (C++98 safety check pour static init)
 	if (mime_types.empty()) {
 		// Encodage de texte et HTML
 		mime_types[".html"] = "text/html";
@@ -627,7 +579,6 @@ static std::string get_mime_type_from_path(const std::string& path) {
 	}
 	
 	// 2. Extraire l'extension (y compris le point)
-	// Nous présumons ici que cette extension est déjà en minuscules.
 	std::string ext = path.substr(pos);
 	
 	// 3. Rechercher dans la map

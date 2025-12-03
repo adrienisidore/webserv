@@ -44,7 +44,7 @@ struct BoxInfo {
 
 
 int visualize_timeout(TCPConnection *conn) {
-    time_t now = time(NULL);
+    time_t now = std::time(NULL);
     int remaining;
     int next_timeout = -1;
 

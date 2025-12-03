@@ -2,7 +2,7 @@ import socket
 import time
 
 HOST = '127.0.0.1'
-PORT = 8080
+PORT = 8002
 
 def test_chunked_upload():
     try:

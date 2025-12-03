@@ -4,7 +4,6 @@ CGI::CGI() {}
 
 CGI::~CGI() {}
 
-// //Si changement, penser a changer la version de Response + les prototypes + CGI
 void	CGI::copyFrom(HTTPcontent& other) {
 		_code = other.getCode();
 		_method = other.getMethod();
@@ -154,18 +153,14 @@ void CGI::buildEnv() {
 
 	_env_strings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_env_strings.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	_env_strings.push_back("REDIRECT_STATUS=200");//Le code retourne est celui pour lequel le script est appele : si le script est appelé pour gérer une erreur "Not Found", REDIRECT_STATUS sera égal à 404
+	_env_strings.push_back("REDIRECT_STATUS=200");//CGI appele uniquement pour du 200 (pas de CGI pour les erreurs)
 	std::string request_method = "REQUEST_METHOD=" + _method;
 	_env_strings.push_back(request_method.c_str());//attribut _methods de HTTPcontent
 	std::string request_uri = "REQUEST_URI=" + _URI;
 	_env_strings.push_back(request_uri.c_str());//attribut _URI de HTTPcontent
-
 	_env_strings.push_back(buildScriptFilename(_config.getDirective("root"), _URI));//Chemin absolu complet vers l'executable cgi
 	_env_strings.push_back(buildScriptName(_URI));//Chemin relatif vers le CGI
-
-	// _env_strings.push_back("REMOTE_ADDR=127.0.0.1");
 	_env_strings.push_back(buildRemoteAddr(_connection->_client_addr, _connection->_client_addr_len));//L'adresse IP du client
-
 	_env_strings.push_back(buildQueryString(_URI));//la partie apres le "?"
 	_env_strings.push_back(buildContentLength(_current_body));
 	_env_strings.push_back(buildContentType(_headers));
@@ -185,9 +180,8 @@ void CGI::buildArgv() {
 	std::string program;
 
 	if (!findCgiProgramForPath(handlers, _path, program))
-		throw std::runtime_error("No matching cgi_handler for requested path");// Afficher une page par defaut pour ne pas que le programme s'arrete ?
+		throw std::runtime_error("No matching cgi_handler for requested path");
 
-	// argv : [binaire CGI, script, NULL]
 	_argv_strings.push_back(program);
 	_argv_strings.push_back(_path);
 
@@ -199,9 +193,8 @@ void CGI::buildArgv() {
 
 void	CGI::openPipes() {
 
-	//Dans constructeur
     if (pipe(_inpipe) < 0 || pipe(_outpipe) < 0) {
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Can't open pipe !");
     }
     fcntl(_inpipe[0], F_SETFL, O_NONBLOCK);
     fcntl(_inpipe[1], F_SETFL, O_NONBLOCK);
@@ -209,20 +202,10 @@ void	CGI::openPipes() {
     fcntl(_outpipe[1], F_SETFL, O_NONBLOCK);
 }
 
-/*
-Il faut ecrire dans stdin apres fork()
-Dans Parent:
-	- ferme extremites inutiles
-	- met descripteurs en non-blocking
-	- inscrit descripteur dans poll/epoll (maintenant ou plus tard ?)
-	- ecrit le body dans stdin
-	- ferme l'ecriture pour signaler EOF
-*/
 void	CGI::execute_cgi() {
 
     _pid = fork();
     if (_pid < 0) {
-		//Ou modifier setCode puis return ;
 		throw (ServerException("fork"));
     }
 
@@ -244,11 +227,8 @@ void	CGI::execute_cgi() {
 		//envp : le CGI recoit ces variables d'env pour tourner
         execve(_argv[0], &_argv[0], &_envp[0]);
 		//modifier le code d'error (500 probleme serveur ??)
-        perror("execve");
 		throw (ServerException("execve"));
     } else {
-
-
         // Parent
         close(_inpipe[0]);
         close(_outpipe[1]);
@@ -259,7 +239,5 @@ void	CGI::execute_cgi() {
 		fcntl(_inpipe[1], F_SETFL, flags | O_NONBLOCK);
 		flags = fcntl(_outpipe[0], F_GETFL, 0);
 		fcntl(_outpipe[0], F_SETFL, flags | O_NONBLOCK);
-
-		std::cerr << "CGI started successfully, PID=" << _pid << " outpipe[0]=" << _outpipe[0] << "\n";
 	}
 }
