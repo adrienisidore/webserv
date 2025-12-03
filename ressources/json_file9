@@ -1,0 +1,20 @@
+{
+  "boolean_key": "--- vrai\n",
+  "empty_string_translation": "",
+  "key_with_description": "Regardez ça ! Cette clé a une description ! (Au moins dans certains formats)",
+  "key_with_line-break": "Cette traduction contient\nun saut de ligne.",
+  "nested.deeply.key": "Ouah, cette clé est imbriquée encore plus profondément.",
+  "nested.key": "Cette clé est imbriquée à l'intérieur d'un espace de noms.",
+  "pluralized_key": {
+    "one": "Une pluralisation unique trouvée.",
+    "other": "Ouah, %s pluralisations !",
+    "zero": "Aucune pluralisation."
+  },
+  "sample_collection": [
+    "premier élément",
+    "deuxième élément",
+    "troisième élément"
+  ],
+  "simple_key": "Juste une clé simple avec un message simple.",
+  "unverified_key": "Cette traduction n'a pas encore été vérifiée, elle est en attente. (Dans certains formats, nous exportons également ce statut)"
+}

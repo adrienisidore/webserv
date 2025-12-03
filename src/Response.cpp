@@ -167,7 +167,6 @@ void			Response::buildPath() {
 					_autoindex = true;
 				else
 				{
-					std::cout << "ICIIIII buildPath 2" << std::endl;
 					return setCode(403);//XYZ : si index n'est pas present alors c'est Forbidden ?
 				}
 			}
@@ -550,6 +549,8 @@ void		Response::_post_() {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
 	if (it != _headers.end() && it->second == "close")
 		_current_body += "Connection: close\r\n"; 
+	else
+		_current_body += "Connection: keep-alive\r\n";
 
 	_current_body += "\r\n";// On decide arbitrairement de ne pas renvoyer de body ici.
 }
@@ -692,6 +693,8 @@ void	Response::build_valid_response_get(std::string body) {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("CONNECTION");
 	if (it != _headers.end() && it->second == "close")
 		_current_body += "Connection: close\r\n"; 
+	else
+		_current_body += "Connection: keep-alive\r\n";
 
 	// 8. Séparateur double \r\n (Fin des en-têtes)
 	_current_body += "\r\n";
