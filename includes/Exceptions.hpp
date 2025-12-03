@@ -38,6 +38,4 @@ class 	ServerException : public std::runtime_error {
 		ServerException(std::string msg): std::runtime_error(msg) {} 
 };
 
-// we should also deal with error codes
-
 #endif

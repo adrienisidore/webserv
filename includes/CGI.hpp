@@ -3,7 +3,6 @@
 
 # include "webserv.hpp"
 
-// class Response : public HTTPcontent {
 class CGI : public HTTPcontent {
 
 	public:
@@ -15,8 +14,8 @@ class CGI : public HTTPcontent {
 		int		_status;
 
 		//On surveille uniquement inpipe
-		int		_inpipe[2];   // pour envoyer le _nody a execve depuis stdin (necessaire pour faire les choses proprement)
-		int		_outpipe[2];  // pour lire la sortie du CGI
+		int		_inpipe[2];
+		int		_outpipe[2];
 		void openPipes();
 
 		std::vector<std::string> _env_strings;

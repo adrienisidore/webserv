@@ -23,6 +23,9 @@ void		GlobalConfig::setDirective(const std::string &key, const std::string &valu
 
 
 void		GlobalConfig::addServer(const std::string &key, const ServerConfig &server) {
+	if (servers.find(key) != servers.end()) {
+			throw ParsingException("Duplicate server configuration for port: " + key);
+		}
 	servers[key] = server;
 }
 

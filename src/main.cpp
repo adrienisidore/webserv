@@ -23,7 +23,7 @@ int	main(int ac, char **av) {
  		std::cerr << "Error Http: " << er.what() << std::endl;
  	}
 	catch (ParsingException &er) {
-		std::cerr << "Error Parsing:" << er.what() << std::endl;
+		std::cerr << "Error Parsing: " << er.what() << std::endl;
 	}
  	catch (std::exception &er) {
  		std::cerr << "Error: " << er.what() << std::endl;

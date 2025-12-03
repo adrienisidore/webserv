@@ -53,7 +53,4 @@ public:
 
 };
 
-// on pourra utilser run() et stop() a partir de l'instance de chaque serveur
-
-
 #endif

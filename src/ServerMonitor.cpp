@@ -376,7 +376,7 @@ void	ServerMonitor::monitor_connections() {
 			if (connection->get_status() == READY_TO_SEND) {
 				ssize_t sent;
 				sent = send(it->fd, connection->getResponse().getCurrentBody().c_str(), connection->getResponse().getCurrentBody().size(), 0);
-                if (sent < 0) {
+                if (sent <= 0) {
                     should_close = true;
                 } else {
 					connection->end_transfer();
@@ -449,8 +449,18 @@ void	ServerMonitor::monitor_cgis() {
             std::string body = cgi.getCurrentBody();
             
             ssize_t written = write(it->fd, body.c_str(), body.size());
+			
+			// error
+			if (written < 0) {
+                close(it->fd); 
+                _map_cgis.erase(it->fd);
+                it = _pollfds.erase(it);
+                continue;
+            }
 
-            if (written > 0) {
+			// si written < body.size(), on doit attendre la suite
+			else if (written > 0) {
+
                 cgi.setCurrentBody(body.erase(0, written));
                 
                 // If body is empty, we are done writing
@@ -462,13 +472,6 @@ void	ServerMonitor::monitor_cgis() {
                     continue;
                 }
             }
-			// error
-			else if (written < 0) {
-				close(it->fd); 
-				_map_cgis.erase(it->fd);
-				it = _pollfds.erase(it);
-				continue;
-			}
 		}
 		else
 			++it;

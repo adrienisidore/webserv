@@ -36,7 +36,7 @@ public:
 	Response		_response; // current response, must be initialized by another function
 	Request			_request;	// current request, initialized by initialize_transfer()
 	std::map<int, CGI>	_map_cgi_fds_to_add; //all sockets we monitor, wrapped up for poll()
-	ServerConfig	_config;// WARNING : A chaque requete il se peut que le client parle a un nouveau serveur ?
+	ServerConfig	_config;
 
 	struct sockaddr_storage _client_addr;
 	socklen_t               _client_addr_len;

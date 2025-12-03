@@ -1,18 +1,7 @@
 #ifndef GLOBALCONFIG_HPP
-# define GLOBALCONFIG_HPP
-
-//Code handled :
-//200, 201, 400, 403, 404, 405, 409, 411, 413, 414, 500, 501		
+# define GLOBALCONFIG_HPP	
 
 #include "./webserv.hpp"
-
-// Global → paramètres généraux pour tout le serveur (ex. root, error_page, etc.), le fichier de configuration
-//  └── server → paramètres pour un “virtual host” (une IP:port, un site)
-//        └── location → paramètres pour une route spécifique (ex. /images/)
-			// ├── location / {}
-			// ├── location /images {}
-			// └── location /cgi-bin {}
-			// }
 
 class ServerConfig;
 

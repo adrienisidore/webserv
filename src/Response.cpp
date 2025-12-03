@@ -475,7 +475,10 @@ void		Response::_post_() {
         return ;
     }
 
-    if (write(fd, _current_body.c_str(), _current_body.size()) < 0) {
+    ssize_t written = write(fd, _current_body.c_str(), _current_body.size());
+	
+	if (written < 0 || static_cast<size_t>(written) != _current_body.size()) {
+        setCode(500);
         close(fd);
         return;
     }

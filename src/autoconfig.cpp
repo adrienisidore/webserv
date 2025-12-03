@@ -87,6 +87,7 @@ static void		parseAutoConfig(GlobalConfig & global) {
 			parseRedir(tmp_loc, tmp_serv);
 		}
 	}
+
 }
 
 GlobalConfig AutoConfig(const std::string & filename) {
